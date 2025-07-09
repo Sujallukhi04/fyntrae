@@ -17,16 +17,19 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   name          String
-  password      String
+  password      String?
   currentTeamId String?
   weekStart     WeekStart
+  isPlaceholder Boolean   @default(false)
+  isActive      Boolean   @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  currentTeam        Organizations?  @relation("UserCurrentTeam", fields: [currentTeamId], references: [id], onDelete: Restrict)
-  ownedOrganizations Organizations[] @relation("OrganizationOwner")
+  currentTeam        Organizations?           @relation("UserCurrentTeam", fields: [currentTeamId], references: [id], onDelete: SetNull)
+  ownedOrganizations Organizations[]          @relation("OrganizationOwner")
   members            Member[]
+  invitations        OrganizationInvitation[]
 }
 
 enum WeekStart {
@@ -39,17 +42,28 @@ enum WeekStart {
   sunday
 }
 
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  EMPLOYEE
+  PLACEHOLDER
+}
+
 model Organizations {
-  id             String   @id @default(cuid())
-  userId         String
-  name           String
-  personalTeam   Boolean
-  dateFormat     String
-  intervalFormat String
-  timeFormat     String
-  numberFormat   String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                           String   @id @default(cuid())
+  userId                       String
+  name                         String
+  personalTeam                 Boolean
+  dateFormat                   String
+  currency                     String
+  employeesCanSeeBillableRates Boolean  @default(false)
+  billableRates                Decimal?
+  intervalFormat               String
+  timeFormat                   String
+  numberFormat                 String
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
 
   currentTeamUsers User[]                   @relation("UserCurrentTeam")
   owner            User                     @relation("OrganizationOwner", fields: [userId], references: [id], onDelete: Restrict)
@@ -61,24 +75,40 @@ model Member {
   id             String   @id @default(cuid())
   userId         String
   organizationId String
-  role           String?
+  billableRate   Decimal?
+  role           Role     @default(EMPLOYEE)
+  isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
-  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
 }
 
 model OrganizationInvitation {
-  id             String   @id @default(cuid())
+  id             String           @id @default(cuid())
   email          String
   organizationId String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  role           Role             @default(EMPLOYEE)
+  invitedBy      String
+  token          String           @unique
+  status         InvitationStatus @default(PENDING)
+  expiresAt      DateTime
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
-  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  resendCount Int @default(0)
+  lastReSentAt DateTime?
+
+  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter      User         @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
 
   @@unique([email, organizationId])
+}
+
+enum InvitationStatus {
+  PENDING
+  EXPIRED
 }
