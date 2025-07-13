@@ -11,37 +11,24 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    const vaildatedData = loginSchema.safeParse({ email, password });
-    if (!vaildatedData.success) {
-      const messages = vaildatedData.error.errors.map(
-        (err: any) => err.message
-      );
-      throw new ErrorHandler(messages, 400);
+    console.log(email, password);
+
+    const validatedData = loginSchema.safeParse({ email, password });
+    if (!validatedData.success) {
+      const messages = validatedData.error.errors.map((err) => err.message);
+      throw new ErrorHandler(messages.join(", "), 400);
     }
 
     const existingUser = await getUserByEmail(email);
+    if (!existingUser) throw new ErrorHandler("User does not exist", 401);
 
-    if (!existingUser) {
-      throw new ErrorHandler("Invalid email or password", 401);
-    }
-
-    // Check if user is not a placeholder
-    if (existingUser.isPlaceholder) {
+    if (existingUser.isPlaceholder || !existingUser.isActive) {
       throw new ErrorHandler(
-        "Account is deactivated. Please contact your administrator.",
+        "Account is deactivated. Contact administrator.",
         401
       );
     }
 
-    // Check if user is active
-    if (!existingUser.isActive) {
-      throw new ErrorHandler(
-        "Account is deactivated. Please contact your administrator.",
-        401
-      );
-    }
-
-    // Check if password exists (placeholders don't have passwords)
     if (!existingUser.password) {
       throw new ErrorHandler("Invalid email or password", 401);
     }
@@ -50,7 +37,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       password,
       existingUser.password
     );
-
     if (!isPasswordValid) {
       throw new ErrorHandler("Invalid email or password", 401);
     }
@@ -75,9 +61,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           where: {
             organizationId: existingUser.currentTeamId || "",
           },
-          select: {
-            role: true,
-          },
+          select: { role: true },
           take: 1,
         },
       },
@@ -86,10 +70,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const token = generateToken({ id: existingUser.id });
 
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true, // Prevent access via JavaScript (XSS protection)
+      secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS in production
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax", // Lax in dev for tools, strict in prod
+      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      path: "/", // Cookie is sent for all routes
     });
 
     res.status(200).json({
@@ -123,15 +108,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, weekStart = "monday" } = req.body;
 
-    const vaildedData = signupSchema.safeParse({ name, email, password });
-
-    if (!vaildedData.success) {
-      const messages = vaildedData.error.errors.map((err: any) => err.message);
-      throw new ErrorHandler(messages, 400);
+    const validatedData = signupSchema.safeParse({ name, email, password });
+    if (!validatedData.success) {
+      const messages = validatedData.error.errors.map((err) => err.message);
+      throw new ErrorHandler(messages.join(", "), 400);
     }
 
     const existingUser = await getUserByEmail(email);
-
     if (existingUser) throw new ErrorHandler("Email already exists", 400);
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -145,7 +128,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       "saturday",
       "sunday",
     ];
+
     const weekStartValue = weekStart.toLowerCase() as WeekStart;
+    if (!validWeekStarts.includes(weekStartValue)) {
+      throw new ErrorHandler("Invalid week start day", 400);
+    }
 
     const result = await db.$transaction(async (tx) => {
       const newUser = await tx.user.create({
@@ -171,10 +158,16 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         },
       });
 
-      const updateuser = await tx.user.update({
-        where: {
-          id: newUser.id,
+      await tx.member.create({
+        data: {
+          userId: newUser.id,
+          organizationId: personalOrganization.id,
+          role: "OWNER",
         },
+      });
+
+      const updatedUser = await tx.user.update({
+        where: { id: newUser.id },
         data: {
           currentTeamId: personalOrganization.id,
         },
@@ -188,16 +181,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         },
       });
 
-      await tx.member.create({
-        data: {
-          userId: newUser.id,
-          organizationId: personalOrganization.id,
-          role: "OWNER",
-        },
-      });
-
       return {
-        user: updateuser,
+        user: updatedUser,
         organization: personalOrganization,
       };
     });
@@ -205,22 +190,16 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const token = generateToken({ id: result.user.id });
 
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true, // Prevent access via JavaScript (XSS protection)
+      secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS in production
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax", // Lax in dev for tools, strict in prod
+      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      path: "/", // Cookie is sent for all routes
     });
 
     res.status(201).json({
       message: "User registered successfully",
-      user: {
-        id: result.user.id,
-        name: result.user.name,
-        email: result.user.email,
-        weekStart: result.user.weekStart,
-        currentTeamId: result.user.currentTeamId,
-        createdAt: result.user.createdAt,
-      },
+      user: result.user,
       personalOrganization: {
         id: result.organization.id,
         name: result.organization.name,
@@ -242,12 +221,11 @@ export const getAuthUser = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-
     if (!user) {
       throw new ErrorHandler("Unauthorized - User not found", 404);
     }
 
-    const currentUser = await getAuthUserData(user?.id);
+    const currentUser = await getAuthUserData(user.id);
     res.status(200).json({
       message: "User fetched successfully",
       user: currentUser,

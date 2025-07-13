@@ -33,7 +33,7 @@ export const inviteUserSchema = z.object({
 });
 
 export const updateMemberRoleSchema = z.object({
-  role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE", "OWNER","PLACEHOLDER"]),
+  role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE", "OWNER", "PLACEHOLDER"]),
   billableRate: z.number().optional(),
 });
 
@@ -51,3 +51,29 @@ export const updateOrganizationSchema = z.object({
   billableRates: z.number().optional(),
   employeesCanSeeBillableRates: z.boolean(),
 });
+
+export   const createProjectSchema = z
+  .object({
+    name: z.string().min(1),
+    color: z.string().min(1),
+    billable: z.boolean(),
+    billableRate: z.number().optional(),
+    estimatedTime: z.number().optional(),
+    clientId: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // billableRate is required if billable is true
+      if (
+        data.billable &&
+        (data.billableRate === undefined || data.billableRate === null)
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "billableRate is required when billable is true",
+      path: ["billableRate"],
+    }
+  );

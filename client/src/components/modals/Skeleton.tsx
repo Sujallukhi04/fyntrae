@@ -113,3 +113,42 @@ export const InvitationsSkeleton = () => (
     </Table>
   </div>
 );
+export const ClientsSkeleton = () => (
+  <div className="rounded-md bg-muted/40 border border-muted">
+    <Table>
+      <TableHeader>
+        <TableRow className="border-muted/50 hover:bg-muted/30">
+          <TableHead className="text-muted-foreground font-medium">
+            Name
+          </TableHead>
+
+          <TableHead className="text-muted-foreground font-medium">
+            Projects
+          </TableHead>
+          <TableHead className="text-muted-foreground font-medium">
+            Status
+          </TableHead>
+          <TableHead className="w-[50px]" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Array.from({ length: 8 }).map((_, index) => (
+          <TableRow key={index} className="border-muted/50">
+            <TableCell>
+              <Skeleton className="h-4 w-48" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-24" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-16" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-8 w-8 rounded-full" />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);

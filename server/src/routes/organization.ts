@@ -30,27 +30,6 @@ router.delete(
 // Create new organization
 router.post("/", protectRoute, organizationController.createOrganization);
 
-//send invite email
-router.post(
-  "/:organizationId/invite",
-  protectRoute,
-  organizationController.inviteNewMember
-);
-
-//send reinvite email
-router.post(
-  "/:organizationId/invite/:memberId/reinvite",
-  protectRoute,
-  organizationController.reinviteInactiveMember
-);
-
-//resend invitation email
-router.post(
-  "/:organizationId/invitations/:invitationId/resend",
-  protectRoute,
-  organizationController.resendInvite
-);
-
 // Get organization members
 router.get(
   "/:organizationId/members",
@@ -63,19 +42,6 @@ router.get(
   "/:organizationId/invitations",
   protectRoute,
   organizationController.getOrganizationInvitations
-);
-
-//accept invitation request
-router.put(
-  "/invitation/accept/:token",
-  protectRoute,
-  organizationController.acceptInvitation
-);
-
-router.put(
-  "/:organizationId/members/:memberId",
-  protectRoute,
-  organizationController.updateMember
 );
 
 //deactivate member
@@ -98,13 +64,5 @@ router.delete(
   organizationController.deleteInvitation
 );
 
-// Update member role
-// router.patch("/:organizationId/members/role", protectRoute, organizationController.updateMemberRole);
-
-// Deactivate member (convert to placeholder)
-// router.patch("/:organizationId/members/:memberId/deactivate", protectRoute, organizationController.deactivateMember);
-
-// Reactivate placeholder user
-// router.post("/:organizationId/members/:memberId/reactivate", protectRoute, organizationController.reactivatePlaceholder);
 
 export default router;

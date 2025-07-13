@@ -149,7 +149,6 @@ const useMember = () => {
           organizationId,
           inviteId
         );
-        toast.success(response.message || "Invitation resent successfully!");
 
         setInvitations((prev) => {
           const idx = prev.findIndex(
@@ -163,6 +162,7 @@ const useMember = () => {
           return [...prev, response.invitation];
         });
 
+        toast.success(response.message || "Invitation resent successfully!");
         return response;
       } catch (error: any) {
         const errorMessage =

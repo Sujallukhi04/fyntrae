@@ -33,7 +33,7 @@ import useAuthUser from "@/hooks/useAuthUser";
 import type { OrganizationUpdateData } from "@/types/oraganization";
 import { toast } from "sonner";
 import { LoaderMain } from "@/components/Loader";
-import GeneralModal from "@/components/modals/Normalmodal";
+import GeneralModal from "@/components/modals/shared/Normalmodal";
 
 // Configuration constants
 const CURRENCY_OPTIONS = [

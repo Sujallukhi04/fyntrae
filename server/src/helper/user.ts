@@ -40,11 +40,13 @@ export const getAuthUserData = async (userId: string) => {
 
     if (!user) return null;
 
-    const organizations = user.members.map((member) => ({
-      id: member.organization.id,
-      name: member.organization.name,
-      role: member.role,
-    }));
+    const organizations = user.members
+      .filter((member) => member.isActive)
+      .map((member) => ({
+        id: member.organization.id,
+        name: member.organization.name,
+        role: member.role,
+      }));
 
     const { members, ...userWithoutMembers } = user;
 

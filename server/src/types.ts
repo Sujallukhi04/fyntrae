@@ -1,16 +1,18 @@
+import { WeekStart } from "@prisma/client";
+
 export interface TokenPayload {
   id: string;
 }
 
-interface UserMain {
+export interface UserMain {
   id: string;
   email: string;
   password: string;
   currentTeamId: string | null;
   isActive: boolean;
-  weekStart: string;
+  weekStart: WeekStart;
   createdAt: Date;
-  updateAt: Date;
+  updatedAt: Date;
 }
 
 declare global {

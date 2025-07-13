@@ -30,6 +30,7 @@ model User {
   ownedOrganizations Organizations[]          @relation("OrganizationOwner")
   members            Member[]
   invitations        OrganizationInvitation[]
+  projectMembers     ProjectMember[]
 }
 
 enum WeekStart {
@@ -69,6 +70,8 @@ model Organizations {
   owner            User                     @relation("OrganizationOwner", fields: [userId], references: [id], onDelete: Restrict)
   members          Member[]
   invitations      OrganizationInvitation[]
+  clients          Client[]
+  projects         Project[]
 }
 
 model Member {
@@ -81,8 +84,9 @@ model Member {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organizations   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projectMembers ProjectMember[]
 
   @@unique([userId, organizationId])
 }
@@ -99,11 +103,11 @@ model OrganizationInvitation {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  resendCount Int @default(0)
+  resendCount  Int       @default(0)
   lastReSentAt DateTime?
 
   organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  inviter      User         @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+  inviter      User          @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
 
   @@unique([email, organizationId])
 }
@@ -111,4 +115,57 @@ model OrganizationInvitation {
 enum InvitationStatus {
   PENDING
   EXPIRED
+}
+
+model Client {
+  id             String    @id @default(cuid())
+  name           String
+  organizationId String
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects     Project[]
+
+  @@unique([organizationId, name])
+}
+
+model Project {
+  id             String    @id @default(cuid())
+  name           String
+  color          String
+  billable       Boolean   @default(true)
+  billableRate   Int?
+  estimatedTime  Int?
+  isActive       Boolean   @default(true)
+  isArchived     Boolean   @default(false)
+  spentTime      Int    @default(0)
+  organizationId String
+  clientId       String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organizations   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  members      ProjectMember[]
+
+  @@unique([organizationId, name])
+}
+
+model ProjectMember {
+  id           String   @id @default(cuid())
+  projectId    String
+  memberId     String
+  userId       String
+  billableRate Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, memberId])
 }

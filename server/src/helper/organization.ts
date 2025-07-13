@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import { db } from "../prismaClient";
 import { ErrorHandler } from "../utils/errorHandler";
+import { emailTemplates, sendMail } from "./mailer";
 
 export const hasPermission = (
   userRole: Role,
@@ -101,5 +102,52 @@ export const validateRoleChange = async (
 export const getOrganization = async (organizationId: string) => {
   return await db.organizations.findUnique({
     where: { id: organizationId },
+  });
+};
+
+export const assertActivePermissionedMember = async (
+  userId: string | undefined,
+  organizationId: string,
+  allowedRoles: Role[]
+) => {
+  if (!userId) {
+    throw new ErrorHandler("User not authenticated", 401);
+  }
+
+  if (!organizationId) {
+    throw new ErrorHandler("Organization ID is required", 400);
+  }
+
+  const membership = await isUserActiveMember(userId, organizationId);
+
+  if (!membership || !hasPermission(membership.role, allowedRoles)) {
+    throw new ErrorHandler("You don't have permission for this action", 403);
+  }
+
+  return membership;
+};
+
+export const sendInvitationEmail = async ({
+  email,
+  inviterName,
+  organizationName,
+  inviteLink,
+  role,
+}: {
+  email: string;
+  inviterName: string;
+  organizationName: string;
+  inviteLink: string;
+  role: string;
+}) => {
+  await sendMail({
+    to: email,
+    subject: `Invitation to join ${organizationName}`,
+    html: emailTemplates.organizationInvitation({
+      inviterName,
+      organizationName,
+      inviteLink,
+      role,
+    }),
   });
 };

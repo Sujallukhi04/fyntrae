@@ -4,16 +4,18 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import useAuthUser from "./hooks/useAuthUser";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import Profile from "./pages/Profile";
-import TeamSetting from "./pages/TeamSetting";
-import DashMain from "./pages/DashMain";
+import TeamSetting from "./pages/Dashboard/TeamSetting";
+import DashMain from "./pages/Dashboard/DashMain";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "sonner";
 import { LoaderMain } from "./components/Loader";
-import CreateOrg from "./pages/CreateOrg";
-import Members from "./pages/Members";
+import CreateOrg from "./pages/Dashboard/CreateOrg";
+import Members from "./pages/Dashboard/Members";
 import { TeamInvite } from "./pages/AcceptInvite";
+import Client from "./pages/Dashboard/Client";
+import ProjectPage from "./pages/Dashboard/Project";
 
 const App = () => {
   const { isLoading, isAuthenticated, user } = useAuthUser();
@@ -40,6 +42,8 @@ const App = () => {
               <Route path="teams/:orgId" element={<TeamSetting />} />
               <Route path="teams/create" element={<CreateOrg />} />
               <Route path="members" element={<Members />} />
+              <Route path="clients" element={<Client />} />
+              <Route path="projects" element={<ProjectPage />} />
             </>
           )}
         </Route>
@@ -56,7 +60,7 @@ const App = () => {
         />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Toaster />
+      <Toaster richColors theme="dark" />
     </div>
   );
 };

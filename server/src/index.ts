@@ -2,6 +2,9 @@ import express from "express";
 import { errorHandler } from "./utils/errorHandler";
 import authRoutes from "./routes/auth";
 import organizationRoutes from "./routes/organization";
+import memberRoutes from "./routes/member";
+import clientRoutes from "./routes/client";
+import projectRoutes from "./routes/project";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
@@ -29,6 +32,9 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/organization", organizationRoutes);
+app.use("/api/member", memberRoutes);
+app.use("/api/client", clientRoutes);
+app.use("/api/project", projectRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

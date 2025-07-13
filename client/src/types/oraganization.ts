@@ -19,7 +19,7 @@ export interface OrganizationUpdateData {
   dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
   timeFormat: "12h" | "24h";
   intervalFormat: "12h" | "decimal";
-  numberFormat: "1,000.00" | "1.000,00" | "1 000.00"; 
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00";
   billableRates: number;
   employeesCanSeeBillableRates: boolean;
 }
@@ -60,4 +60,20 @@ export interface PaginatedResponse<T> {
     pageSize: number;
     totalPages: number;
   };
+}
+
+export interface PaginationType  {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface Client {
+    id : string;
+    name : string;
+    organizationId : string;
+    archivedAt? : Date;
+    createdAt : Date;
+    updatedAt : Date;
 }
