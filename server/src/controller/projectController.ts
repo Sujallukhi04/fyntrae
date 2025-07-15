@@ -438,7 +438,7 @@ export const addProjectMember = async (
         member: {
           select: {
             role: true,
-            
+            isActive: true,
           },
         },
       },
