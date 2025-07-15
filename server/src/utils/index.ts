@@ -52,14 +52,14 @@ export const updateOrganizationSchema = z.object({
   employeesCanSeeBillableRates: z.boolean(),
 });
 
-export   const createProjectSchema = z
+export const createProjectSchema = z
   .object({
     name: z.string().min(1),
     color: z.string().min(1),
     billable: z.boolean(),
     billableRate: z.number().optional(),
     estimatedTime: z.number().optional(),
-    clientId: z.string().optional(),
+    clientId: z.string().nullable().optional(),
   })
   .refine(
     (data) => {
@@ -77,3 +77,12 @@ export   const createProjectSchema = z
       path: ["billableRate"],
     }
   );
+
+export const addProjectMemberSchema = z.object({
+  memberId: z.string(),
+  billableRate: z.number().nullable().optional(),
+});
+
+export const updateProjectMemberSchema = z.object({
+  billableRate: z.number().nullable().optional(),
+});

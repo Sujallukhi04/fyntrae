@@ -2,18 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, UserPlus } from "lucide-react";
+import { Search, UserCircle2, UserPlus } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import useClient from "@/hooks/useClient";
 import ActiveClient from "@/components/clientsOrganation/ActiveClient";
 import ArchivedClient from "@/components/clientsOrganation/ArchivedClient";
 import type { Client } from "@/types/oraganization";
 import AddEditClientModal from "@/components/modals/clientmember/CreateClient";
+import { Separator } from "@/components/ui/separator";
 
 const Client = () => {
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [activeCurrentPage, setActiveCurrentPage] = useState(1);
   const [archivedCurrentPage, setArchivedCurrentPage] = useState(1);
+  const [activeLoaded, setActiveLoaded] = useState(false);
+  const [archivedLoaded, setArchivedLoaded] = useState(false);
 
   const { user } = useAuth();
   const {
@@ -31,6 +34,8 @@ const Client = () => {
     clientPagination,
     archivedPagination,
     createClientLoading,
+    deleteClient,
+    deleteClientLoading,
   } = useClient();
   const [modalState, setModalState] = useState<{
     type: "add" | "edit" | null;
@@ -43,7 +48,10 @@ const Client = () => {
       page: activeCurrentPage,
       pageSize: 10,
     });
+    setActiveLoaded(true);
   }, [user?.currentTeamId, activeCurrentPage, getClients]);
+
+  console.log(activeCurrentPage);
 
   const fetchArchivedClients = useCallback(async () => {
     if (!user?.currentTeamId) return;
@@ -51,19 +59,43 @@ const Client = () => {
       page: archivedCurrentPage,
       pageSize: 10,
     });
+    setArchivedLoaded(true);
   }, [user?.currentTeamId, archivedCurrentPage, getClients]);
 
   useEffect(() => {
     if (!user?.currentTeamId) return;
-    fetchActiveClients();
-    fetchArchivedClients();
+
+    if (activeTab === "active" && !activeLoaded) {
+      fetchActiveClients();
+    }
+    if (activeTab === "archived" && !archivedLoaded) {
+      fetchArchivedClients();
+    }
+  }, [
+    user?.currentTeamId,
+    activeTab,
+    activeCurrentPage,
+    archivedCurrentPage,
+    activeLoaded,
+    archivedLoaded,
+  ]);
+
+  useEffect(() => {
+    if (user?.currentTeamId) {
+      setActiveLoaded(false);
+      setArchivedLoaded(false);
+    }
   }, [user?.currentTeamId]);
 
   useEffect(() => {
-    if (!user?.currentTeamId) return;
-    if (activeTab === "active") fetchActiveClients();
-    if (activeTab === "archived") fetchArchivedClients();
-  }, [user?.currentTeamId, activeCurrentPage, archivedCurrentPage]);
+    if (user?.currentTeamId) {
+      if (activeTab === "active") {
+        setActiveLoaded(false);
+      } else {
+        setArchivedLoaded(false);
+      }
+    }
+  }, [activeCurrentPage, archivedCurrentPage, user?.currentTeamId]);
 
   const createclient = useCallback(async (name: string) => {
     if (!user?.currentTeamId) return;
@@ -72,6 +104,16 @@ const Client = () => {
       await createClient(user?.currentTeamId, name);
     } catch (error) {}
   }, []);
+
+  const handleDeleteClient = useCallback(
+    async (clientId: string) => {
+      if (!user?.currentTeamId) return;
+      try {
+        await deleteClient(clientId, user.currentTeamId);
+      } catch (error) {}
+    },
+    [user?.currentTeamId, deleteClient]
+  );
 
   const handleEditClient = useCallback(
     async (name: string) => {
@@ -105,23 +147,23 @@ const Client = () => {
   );
 
   return (
-    <div className="mx-auto max-w-6xl p-2 w-full space-y-4">
-      <div className="flex flex-col gap-3 pb-3 pt-2">
-        <div className="flex flex-col items-start md:flex-row md:items-center md:justify-between gap-2 w-full">
-          <div>
-            <h1 className="text-xl font-semibold">Clients</h1>
-            <div className="text-sm text-muted-foreground">
-              Manage your clients and their status
-            </div>
+    <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
+      <div className="flex flex-col gap-3 pb-1 pt-2">
+        <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
+          <div className="flex items-center gap-2">
+            <UserCircle2 className="h-6 w-6 text-muted-foreground" />
+            <h1 className="text-lg font-semibold">Clients</h1>
           </div>
           <Button
             className="w-full md:w-auto"
+            variant="outline"
             onClick={() => setModalState({ type: "add", data: null })}
           >
             <UserPlus className="mr-2 h-4 w-4" />
             Create Client
           </Button>
         </div>
+        <Separator />
       </div>
 
       <AddEditClientModal
@@ -146,20 +188,16 @@ const Client = () => {
         onValueChange={(tab: string) =>
           setActiveTab(tab as "active" | "archived")
         }
-        className="space-y-4"
+        className="space-y-3 pt-2 px-5"
       >
         <TabsList className="bg-muted/50">
-          <TabsTrigger value="active">
-            All ({clientPagination?.total || 0})
-          </TabsTrigger>
-          <TabsTrigger value="archived">
-            Archived ({archivedPagination?.total || 0})
-          </TabsTrigger>
+          <TabsTrigger value="active">All</TabsTrigger>
+          <TabsTrigger value="archived">Archived</TabsTrigger>
         </TabsList>
 
         {/* All Clients Tab */}
         <TabsContent value="active" className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          {/* <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="relative flex-1 max-w-md w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -168,7 +206,7 @@ const Client = () => {
                 className="pl-10 bg-transparent border border-muted-foreground/30 focus:border-primary focus:ring-0"
               />
             </div>
-          </div>
+          </div> */}
           {/* Placeholder for clients list */}
           <ActiveClient
             clients={clients}
@@ -179,12 +217,14 @@ const Client = () => {
             onArchive={handlesendArchiveClient}
             isEditLoading={editClientLoading}
             isArchiveLoading={sendArchiveClientLoading}
+            onDelete={handleDeleteClient} // <-- Pass delete handler
+            deleteLoading={deleteClientLoading} // <-- Pass loading state
           />
         </TabsContent>
 
         {/* Invitations Tab */}
         <TabsContent value="archived" className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          {/* <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="relative flex-1 max-w-md w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -193,7 +233,7 @@ const Client = () => {
                 className="pl-10 bg-transparent border border-muted-foreground/30 focus:border-primary focus:ring-0"
               />
             </div>
-          </div>
+          </div> */}
           {/* Placeholder for invitations list */}
           <ArchivedClient
             clients={archivedClients}
@@ -204,6 +244,8 @@ const Client = () => {
             unArchive={handleUnarchiveClient}
             unArchiveLoading={unarchiveClientLoading}
             isEditLoading={editClientLoading}
+            onDelete={handleDeleteClient} // <-- Pass delete handler
+            deleteLoading={deleteClientLoading} // <-- Pass loading state
           />
         </TabsContent>
       </Tabs>

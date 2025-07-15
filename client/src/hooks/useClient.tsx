@@ -14,6 +14,8 @@ const useClient = () => {
     useState<boolean>(false);
   const [unarchiveClientLoading, setUnarchiveClientLoading] =
     useState<boolean>(false);
+  const [deleteClientLoading, setClientDeleteLoading] =
+    useState<boolean>(false);
 
   const [clientPagination, setClientPagination] = useState<{
     total: number;
@@ -182,7 +184,6 @@ const useClient = () => {
 
       // Update paginations
 
-      console.log(archivedPagination);
       setArchivedPagination((prev) => {
         if (!prev) return null;
         const newTotal = prev.total - 1;
@@ -214,6 +215,46 @@ const useClient = () => {
     }
   };
 
+  const deleteClient = async (clientId: string, organizationId: string) => {
+    try {
+      setClientDeleteLoading(true);
+      const response = await clientApi.deleteClient(clientId, organizationId);
+
+      setClients((prev) => prev.filter((client) => client.id !== clientId));
+      setArchivedClients((prev) =>
+        prev.filter((client) => client.id !== clientId)
+      );
+
+      setClientPagination((prev) => {
+        if (!prev) return null;
+        const newTotal = prev.total - 1;
+        return {
+          ...prev,
+          total: newTotal,
+          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
+        };
+      });
+      setArchivedPagination((prev) => {
+        if (!prev) return null;
+        const newTotal = prev.total - 1;
+        return {
+          ...prev,
+          total: newTotal,
+          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
+        };
+      });
+
+      toast.success("Client deleted successfully");
+      return response.client;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to unarchive client";
+      toast.error(errorMessage);
+    } finally {
+      setClientDeleteLoading(false);
+    }
+  };
+
   return {
     clients,
     archivedClients,
@@ -223,6 +264,8 @@ const useClient = () => {
     editClient,
     sendArchiveClient,
     unarchiveClient,
+    deleteClient,
+    deleteClientLoading,
     unarchiveClientLoading,
     sendArchiveClientLoading,
     editClientLoading,

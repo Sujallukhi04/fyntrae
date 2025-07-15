@@ -14,6 +14,8 @@ const useProject = () => {
     useState<boolean>(false);
   const [unarchiveProjectLoading, setUnarchiveProjectLoading] =
     useState<boolean>(false);
+  const [getClientsLoading, setGetClientsLoading] = useState<boolean>(false);
+  const [getProjectLoading, setGetProjectLoading] = useState<boolean>(false);
 
   const [projectPagination, setProjectPagination] = useState<{
     total: number;
@@ -112,9 +114,18 @@ const useProject = () => {
         organizationId,
         data
       );
+
+      console.log(response.project);
       setProjects((prev) =>
         prev.map((proj) => (proj.id === projectId ? response.project : proj))
       );
+
+      setArchivedProjects((prev) =>
+        prev.map((proj) =>
+          proj.id === projectId ? { ...proj, ...response.project } : proj
+        )
+      ); 
+
       toast.success("Project updated successfully");
       return response.project;
     } catch (error: any) {
@@ -215,7 +226,7 @@ const useProject = () => {
 
   // Get project by id
   const getProjectById = async (projectId: string, organizationId: string) => {
-    setIsLoading(true);
+    setGetProjectLoading(true);
     try {
       const response = await projectApi.getProjectById(
         projectId,
@@ -226,20 +237,22 @@ const useProject = () => {
       toast.error("Failed to fetch project details");
       return null;
     } finally {
-      setIsLoading(false);
+      setGetProjectLoading(false);
     }
   };
 
   // Get clients for organization (for project assignment)
   const getClientsByOrganizationId = async (organizationId: string) => {
     try {
+      setGetClientsLoading(true);
       const response = await projectApi.getClientsByOrganizationId(
         organizationId
       );
       return response.clients;
     } catch (error) {
-      toast.error("Failed to fetch clients");
       return [];
+    } finally {
+      setGetClientsLoading(false);
     }
   };
 
@@ -257,6 +270,8 @@ const useProject = () => {
     editProjectLoading,
     sendArchiveProjectLoading,
     unarchiveProjectLoading,
+    getProjectLoading,
+    getClientsLoading,
     projects,
     archivedProjects,
     projectPagination,

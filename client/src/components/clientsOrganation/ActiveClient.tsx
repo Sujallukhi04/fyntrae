@@ -36,7 +36,8 @@ interface ActiveClientTableProps {
   onPageChange: (page: number) => void;
   onEdit?: (client: Client) => void;
   onArchive?: (clientId: string) => void;
-  onDelete?: (client: Client) => void;
+  onDelete?: (clientId: string) => void;
+  deleteLoading?: boolean;
 }
 
 const ActiveClient: React.FC<ActiveClientTableProps> = ({
@@ -48,6 +49,8 @@ const ActiveClient: React.FC<ActiveClientTableProps> = ({
   onPageChange,
   onEdit,
   onArchive,
+  onDelete,
+  deleteLoading,
 }) => {
   return (
     <>
@@ -58,24 +61,27 @@ const ActiveClient: React.FC<ActiveClientTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="border-muted/50 hover:bg-muted/30">
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[50%] min-w-[120px]">
                   Name
                 </TableHead>
-
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[20%] min-w-[80px]">
                   Projects
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[25%] min-w-[80px]">
                   Status
                 </TableHead>
-                <TableHead className="w-[50px]" />
+                <TableHead className="w-[10%] min-w-[50px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {clients.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7}>
-                    <NoData message="No clients found" icon={Users} />
+                    <NoData
+                      icon={Users}
+                      title="No clients found"
+                      description="Add a client to start tracking their projects and billing."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -122,6 +128,14 @@ const ActiveClient: React.FC<ActiveClientTableProps> = ({
                           >
                             <Archive className="mr-2 h-4 w-4" />
                             Archive
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onDelete?.(client.id)}
+                            disabled={deleteLoading}
+                            className="text-red-500 hover:text-red-500 focus:text-red-500"
+                          >
+                            <Trash2 className="mr-2 text-red-500 h-4 w-4" />
+                            Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

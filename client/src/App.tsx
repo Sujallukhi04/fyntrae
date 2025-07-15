@@ -16,6 +16,7 @@ import Members from "./pages/Dashboard/Members";
 import { TeamInvite } from "./pages/AcceptInvite";
 import Client from "./pages/Dashboard/Client";
 import ProjectPage from "./pages/Dashboard/Project";
+import ProjectIdPage from "./pages/Dashboard/ProjectPage";
 
 const App = () => {
   const { isLoading, isAuthenticated, user } = useAuthUser();
@@ -44,6 +45,7 @@ const App = () => {
               <Route path="members" element={<Members />} />
               <Route path="clients" element={<Client />} />
               <Route path="projects" element={<ProjectPage />} />
+              <Route path="project/:id" element={<ProjectIdPage />} />
             </>
           )}
         </Route>

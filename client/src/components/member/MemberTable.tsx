@@ -15,13 +15,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, RefreshCcw, Trash2, User, MoreVertical } from "lucide-react";
+import { Edit, RefreshCcw, Trash2, User, MoreVertical, Users } from "lucide-react";
 import type { Member } from "@/types/oraganization";
 
 import NoData from "@/components/NoData";
 
 import { MembersSkeleton } from "../modals/Skeleton";
 import PaginationControls, { getStatusBadge } from "../PaginationControl";
+import { useOrganization } from "@/providers/OrganizationProvider";
+import { formatNumber } from "@/lib/utils";
 
 interface MemberTableProps {
   members: Member[];
@@ -50,6 +52,8 @@ const MemberTable: React.FC<MemberTableProps> = ({
 }) => {
   const getFormat = (role: string) =>
     role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+
+  const { organization } = useOrganization();
   return (
     <>
       {isLoading ? (
@@ -59,29 +63,33 @@ const MemberTable: React.FC<MemberTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="border-muted/50 hover:bg-muted/30">
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[20%]">
                   Name
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[25%]">
                   Email
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[15%]">
                   Role
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[20%]">
                   Billable Rate
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[15%]">
                   Status
                 </TableHead>
-                <TableHead className="w-[50px]" />
+                <TableHead className="w-[5%]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {members.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6}>
-                    <NoData message="No members found." />
+                    <NoData
+                      icon={Users}
+                      title="No members found"
+                      description="Invite members to your organization to collaborate on projects."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -98,7 +106,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
                             {member.user?.name?.charAt(0).toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-foreground">
+                        <span className="text-foreground max-w-[100px] truncate">
                           {member.user?.name}
                         </span>
                       </div>
@@ -109,7 +117,11 @@ const MemberTable: React.FC<MemberTableProps> = ({
                     <TableCell>{getFormat(member.role)}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {member.billableRate
-                        ? `$${member.billableRate}.00`
+                        ? formatNumber(
+                            member.billableRate ?? 0,
+                            organization?.numberFormat || "1,000.00",
+                            organization?.currency || "USD"
+                          )
                         : "--"}
                     </TableCell>
                     <TableCell>{getStatusBadge(member.isActive)}</TableCell>

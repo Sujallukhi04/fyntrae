@@ -36,6 +36,8 @@ interface ArchivedClientProps {
   unArchive?: (clientId: string) => void;
   unArchiveLoading?: boolean;
   isEditLoading?: boolean;
+  onDelete?: (clientId: string) => void;
+  deleteLoading?: boolean;
 }
 
 const ArchivedClient: React.FC<ArchivedClientProps> = ({
@@ -47,6 +49,8 @@ const ArchivedClient: React.FC<ArchivedClientProps> = ({
   unArchive,
   unArchiveLoading,
   isEditLoading,
+  onDelete,
+  deleteLoading,
 }) => {
   return (
     <>
@@ -57,24 +61,27 @@ const ArchivedClient: React.FC<ArchivedClientProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="border-muted/50 hover:bg-muted/30">
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[50%] min-w-[120px]">
                   Name
                 </TableHead>
-
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[20%] min-w-[80px]">
                   Projects
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[25%] min-w-[80px]">
                   Status
                 </TableHead>
-                <TableHead className="w-[50px]" />
+                <TableHead className="w-[10%] min-w-[50px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {clients.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7}>
-                    <NoData message="No clients found" icon={Users} />
+                    <NoData
+                      icon={Users}
+                      title="No archived clients"
+                      description="Clients you archive will appear here."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -121,6 +128,14 @@ const ArchivedClient: React.FC<ArchivedClientProps> = ({
                           >
                             <Archive className="mr-2 h-4 w-4" />
                             unArchive
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onDelete?.(client.id)}
+                            disabled={deleteLoading}
+                            className="text-red-500 hover:text-red-500 focus:text-red-500"
+                          >
+                            <Trash2 className="mr-2 text-red-500 h-4 w-4" />
+                            Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

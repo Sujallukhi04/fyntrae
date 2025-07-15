@@ -36,8 +36,8 @@ app.use("/api/member", memberRoutes);
 app.use("/api/client", clientRoutes);
 app.use("/api/project", projectRoutes);
 
+app.use(errorHandler);
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-app.use(errorHandler);

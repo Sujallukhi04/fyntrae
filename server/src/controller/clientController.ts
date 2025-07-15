@@ -61,6 +61,7 @@ export const getClients = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
     const type = (req.query.type as "archived" | "active") || "active";
+
     await assertActivePermissionedMember(
       userId,
       organizationId,
@@ -94,7 +95,7 @@ export const getClients = async (req: Request, res: Response) => {
       clients,
       pagination: {
         total: totalCount,
-        page, 
+        page,
         pageSize: limit,
         totalPages: Math.ceil(totalCount / limit),
       },
@@ -241,6 +242,66 @@ export const unArchiveClient = async (req: Request, res: Response) => {
     res.status(200).json({
       message: "Client unarchived successfully",
       client: unArchivedClient,
+    });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const deleteClient = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { clientId, organizationId } = req.params;
+
+    await assertActivePermissionedMember(userId, organizationId, EDIT_ROLES);
+
+    if (!clientId || !organizationId) {
+      throw new ErrorHandler("Client ID and organization ID are required", 400);
+    }
+
+    // Check if client exists and belongs to organization
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, organizationId: true },
+    });
+
+    if (!client) {
+      throw new ErrorHandler("Client not found", 404);
+    }
+
+    if (client.organizationId !== organizationId) {
+      throw new ErrorHandler(
+        "Client does not belong to this organization",
+        403
+      );
+    }
+
+    // Check if client is used in any project
+    const usedInProject = await db.project.findFirst({
+      where: { clientId: clientId },
+      select: { id: true },
+    });
+
+    if (usedInProject) {
+      throw new ErrorHandler(
+        "Cannot delete client: client is used in a project",
+        400
+      );
+    }
+
+    await db.client.delete({
+      where: { id: clientId },
+    });
+
+    res.status(200).json({
+      message: "Client deleted successfully",
+      clientId,
     });
   } catch (error) {
     throw new ErrorHandler(

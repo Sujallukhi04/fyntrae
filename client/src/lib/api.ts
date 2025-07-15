@@ -195,6 +195,12 @@ export const clientApi = {
     });
     return response.data;
   },
+  deleteClient: async (clientId: string, organizationId: string) => {
+    const response = await axiosInstance.delete(
+      `/client/${clientId}/organization/${organizationId}`
+    );
+    return response.data;
+  },
 };
 
 export const projectApi = {
@@ -255,6 +261,7 @@ export const projectApi = {
       clientId?: string | null;
     }
   ) => {
+    console.log("first");
     const response = await axiosInstance.put(
       `/project/update/${projectId}/organization/${organizationId}`,
       data
@@ -279,6 +286,63 @@ export const projectApi = {
   getClientsByOrganizationId: async (organizationId: string) => {
     const response = await axiosInstance.get(
       `/project/clients/${organizationId}`
+    );
+    return response.data;
+  },
+};
+
+export const ProjectMemberApi = {
+  getProjectMembers: async (projectId: string, organizationId: string) => {
+    const response = await axiosInstance.get(
+      `/project/project-members/${projectId}/${organizationId}`
+    );
+    return response.data;
+  },
+
+  addProjectMember: async (
+    projectId: string,
+    organizationId: string,
+    data: {
+      memberId: string;
+      billableRate?: number;
+    }
+  ) => {
+    const response = await axiosInstance.post(
+      `/project/project-members/${projectId}/${organizationId}`,
+      data
+    );
+    return response.data;
+  },
+
+  updateProjectMember: async (
+    projectId: string,
+    organizationId: string,
+    memberId: string,
+    data: {
+      billableRate: number;
+    }
+  ) => {
+    const response = await axiosInstance.put(
+      `/project/project-members/${projectId}/${organizationId}/${memberId}`,
+      data
+    );
+    return response.data;
+  },
+
+  removeProjectMember: async (
+    projectId: string,
+    organizationId: string,
+    memberId: string
+  ) => {
+    const response = await axiosInstance.delete(
+      `/project/project-members/${projectId}/${organizationId}/${memberId}`
+    );
+    return response.data;
+  },
+
+  getOrganizationMembers: async (organizationId: string, projectId: string) => {
+    const response = await axiosInstance.get(
+      `/project/org-members/${organizationId}?projectId=${projectId}`
     );
     return response.data;
   },

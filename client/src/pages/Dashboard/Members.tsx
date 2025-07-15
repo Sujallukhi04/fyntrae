@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo, act } from "react";
-import { UserPlus, Search, AlertTriangle, Trash2 } from "lucide-react";
+import {
+  UserPlus,
+  Search,
+  AlertTriangle,
+  Trash2,
+  Users2Icon,
+  UsersIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -13,13 +20,13 @@ import {
 import useMember from "@/hooks/useMember";
 import { useAuth } from "@/providers/AuthProvider";
 import type { Member, Invitation } from "@/types/oraganization";
-
 import UpdateUser from "@/components/modals/member/UpdateUser";
 import MemberTable from "@/components/member/MemberTable";
 import InvitationTable from "@/components/member/InvitationTable";
 import GeneralModal from "@/components/modals/shared/Normalmodal";
 import { CustomAlertDialog } from "@/components/modals/shared/CustomAlertDialog";
 import { InviteMemberModal } from "@/components/modals/member/InviteMemberModal";
+import { Separator } from "@/components/ui/separator";
 
 type RoleType = "OWNER" | "ADMIN" | "MANAGER" | "EMPLOYEE" | "PLACEHOLDER";
 
@@ -45,6 +52,9 @@ const Members: React.FC = () => {
   const [invitationStatusFilter, setInvitationStatusFilter] = useState<
     "all" | "PENDING" | "EXPIRED"
   >("all");
+  const [membersLoaded, setMembersLoaded] = useState(false);
+  const [invitationsLoaded, setInvitationsLoaded] = useState(false);
+
   const [modalState, setModalState] = useState<{
     type:
       | "update"
@@ -148,6 +158,7 @@ const Members: React.FC = () => {
       page: membersCurrentPage,
       pageSize: membersPageSize,
     });
+    setMembersLoaded(true);
   }, [user?.currentTeamId, membersCurrentPage, membersPageSize, getMembers]);
 
   const fetchInvitations = useCallback(async () => {
@@ -156,6 +167,8 @@ const Members: React.FC = () => {
       page: invitationsCurrentPage,
       pageSize: invitationsPageSize,
     });
+
+    setInvitationsLoaded(true);
   }, [
     user?.currentTeamId,
     invitationsCurrentPage,
@@ -164,18 +177,39 @@ const Members: React.FC = () => {
   ]);
 
   useEffect(() => {
-    if (user?.currentTeamId) {
+    if (!user?.currentTeamId) return;
+
+    if (activeTab === "all" && !membersLoaded) {
       fetchMembers();
+    }
+    if (activeTab === "invitations" && !invitationsLoaded) {
       fetchInvitations();
+    }
+  }, [
+    user?.currentTeamId,
+    activeTab,
+    membersCurrentPage,
+    invitationsCurrentPage,
+    membersLoaded,
+    invitationsLoaded,
+  ]);
+
+  useEffect(() => {
+    if (user?.currentTeamId) {
+      setMembersLoaded(false);
+      setInvitationsLoaded(false);
     }
   }, [user?.currentTeamId]);
 
   useEffect(() => {
     if (user?.currentTeamId) {
-      if (activeTab === "all") fetchMembers();
-      if (activeTab === "invitations") fetchInvitations();
+      if (activeTab === "all") {
+        setMembersLoaded(false);
+      } else {
+        setInvitationsLoaded(false);
+      }
     }
-  }, [user?.currentTeamId, membersCurrentPage, invitationsCurrentPage]);
+  }, [membersCurrentPage, invitationsCurrentPage, user?.currentTeamId]);
 
   const handleFormChange = <K extends keyof FormState>(
     key: K,
@@ -297,23 +331,23 @@ const Members: React.FC = () => {
   }, [user?.currentTeamId, modalState, deleteMember]);
 
   return (
-    <div className="mx-auto max-w-6xl p-2 w-full space-y-4">
-      <div className="flex flex-col gap-3 pb-3 pt-2">
-        <div className="flex flex-col items-start md:flex-row md:items-center md:justify-between gap-2 w-full">
-          <div>
-            <h1 className="text-xl font-semibold">Members</h1>
-            <div className="text-sm text-muted-foreground">
-              Manage your team members and their permissions
-            </div>
+    <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
+      <div className="flex flex-col gap-3 pb-1 pt-2">
+        <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
+          <div className="flex items-center gap-2">
+            <UsersIcon className="h-5 w-5 text-muted-foreground" />
+            <h1 className="text-lg font-semibold">Members</h1>
           </div>
           <Button
             onClick={() => setIsInviteModalOpen(true)}
+            variant="outline"
             className="w-full md:w-auto"
           >
             <UserPlus className="mr-2 h-4 w-4" />
             Invite Member
           </Button>
         </div>
+        <Separator />
       </div>
 
       <InviteMemberModal
@@ -477,15 +511,11 @@ const Members: React.FC = () => {
       <Tabs
         value={activeTab}
         onValueChange={(tab) => setActiveTab(tab as "all" | "invitations")}
-        className="space-y-4"
+        className="space-y-4 px-5 pt-2"
       >
         <TabsList className="bg-muted/50">
-          <TabsTrigger value="all">
-            All ({membersPagination?.total || 0})
-          </TabsTrigger>
-          <TabsTrigger value="invitations">
-            Invitations ({invitationsPagination?.total || 0})
-          </TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="invitations">Invitations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">

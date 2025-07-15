@@ -4,7 +4,11 @@ import { protectRoute } from "../middleware/auth";
 
 const router = express.Router();
 
-// Create a new client
+// ─────────────────────────────
+// CLIENT ROUTES
+// ─────────────────────────────
+
+// Create a new client in an organization
 router.post(
   "/create/:organizationId",
   protectRoute,
@@ -14,21 +18,28 @@ router.post(
 // Get all clients for an organization
 router.get("/:organizationId", protectRoute, clientController.getClients);
 
-// update a client
+// Update a client
 router.put(
-  "/:clientId/organzation/:organizationId",
+  "/:clientId/organization/:organizationId",
   protectRoute,
   clientController.editClient
 );
 
-//archive a client
+// Archive a client
 router.put("/:clientId/archive", protectRoute, clientController.archiveClient);
 
-//unarchive a client
+// Unarchive a client
 router.put(
   "/:clientId/unarchive",
   protectRoute,
   clientController.unArchiveClient
+);
+
+// Delete a client
+router.delete(
+  "/:clientId/organization/:organizationId",
+  protectRoute,
+  clientController.deleteClient
 );
 
 export default router;

@@ -4,46 +4,54 @@ import * as memberController from "../controller/memberController";
 
 const router = express.Router();
 
-//send invite email
+// ─────────────────────────────
+// INVITATION MANAGEMENT
+// ─────────────────────────────
+
+// Invite a new member
 router.post(
   "/:organizationId/invite",
   protectRoute,
   memberController.inviteNewMember
 );
 
-//send reinvite email
+// Reinvite an inactive member
 router.post(
-  "/:organizationId/invite/:memberId/reinvite",
+  "/:organizationId/members/:memberId/reinvite",
   protectRoute,
   memberController.reinviteInactiveMember
 );
 
-//resend invitation email
+// Resend an invitation (pending)
 router.post(
   "/:organizationId/invitations/:invitationId/resend",
   protectRoute,
   memberController.resendInvite
 );
 
-//accept invitation request
+// Accept invitation via token
 router.put(
-  "/invitation/accept/:token",
+  "/invitations/accept/:token",
   protectRoute,
   memberController.acceptInvitation
 );
 
+// ─────────────────────────────
+// MEMBER MANAGEMENT
+// ─────────────────────────────
+
+// Update member (role, billable rate, etc.)
 router.put(
   "/:organizationId/members/:memberId",
   protectRoute,
   memberController.updateMember
 );
 
-//transfer ownership
+// Transfer ownership
 router.post(
   "/:organizationId/members/:memberId/transfer-ownership",
   protectRoute,
   memberController.transferOwnership
 );
-
 
 export default router;

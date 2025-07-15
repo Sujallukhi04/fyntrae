@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, Trash2, MoreVertical } from "lucide-react";
+import { RefreshCcw, Trash2, MoreVertical, Users } from "lucide-react";
 import type { Invitation } from "@/types/oraganization";
 import PaginationControls, {
   getStatusBadge,
@@ -55,26 +55,30 @@ const InvitationTable: React.FC<InvitationTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="border-muted/50 hover:bg-muted/30">
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[30%] min-w-[120px]">
                   Email
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[20%] min-w-[80px]">
                   Role
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[20%] min-w-[80px]">
                   Status
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
+                <TableHead className="text-muted-foreground font-medium w-[20%] min-w-[80px]">
                   Expires
                 </TableHead>
-                <TableHead className="w-[50px]" />
+                <TableHead className="w-[10%] min-w-[50px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {invitations.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5}>
-                    <NoData message="No invitations found" />
+                    <NoData
+                      icon={Users}
+                      title="No invitations found"
+                      description="You haven’t invited anyone yet. Send an invitation to add members to your team."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

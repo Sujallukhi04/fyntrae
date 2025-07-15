@@ -4,16 +4,21 @@ import { protectRoute } from "../middleware/auth";
 
 const router = express.Router();
 
-//get cuurent organization by organizationId
+// ─────────────────────────────
+// ORGANIZATION CRUD
+// ─────────────────────────────
+
+// Create a new organization
+router.post("/", protectRoute, organizationController.createOrganization);
+
+// Get current organization by ID
 router.get(
   "/:organizationId",
   protectRoute,
   organizationController.getCurrentOrganization
 );
 
-// Switch organization
-router.post("/switch", protectRoute, organizationController.switchOrganization);
-
+// Update organization
 router.put(
   "/:organizationId",
   protectRoute,
@@ -27,42 +32,50 @@ router.delete(
   organizationController.deleteOrganization
 );
 
-// Create new organization
-router.post("/", protectRoute, organizationController.createOrganization);
+// Switch organization
+router.post("/switch", protectRoute, organizationController.switchOrganization);
 
-// Get organization members
+// ─────────────────────────────
+// ORGANIZATION MEMBERS
+// ─────────────────────────────
+
+// Get members (supports pagination or all via query)
 router.get(
   "/:organizationId/members",
   protectRoute,
   organizationController.getOrganizationMembers
 );
 
-//Get organization invitations
-router.get(
-  "/:organizationId/invitations",
-  protectRoute,
-  organizationController.getOrganizationInvitations
-);
-
-//deactivate member
+// Deactivate member
 router.patch(
   "/:organizationId/members/:memberId/deactivate",
   protectRoute,
   organizationController.deactiveMember
 );
 
-// Delete member from organization
+// Delete member
 router.delete(
   "/:organizationId/members/:memberId",
   protectRoute,
   organizationController.deleteMember
 );
 
+// ─────────────────────────────
+// INVITATIONS
+// ─────────────────────────────
+
+// Get all invitations
+router.get(
+  "/:organizationId/invitations",
+  protectRoute,
+  organizationController.getOrganizationInvitations
+);
+
+// Delete invitation
 router.delete(
   "/:organizationId/invitations/:invitationId",
   protectRoute,
   organizationController.deleteInvitation
 );
-
 
 export default router;
