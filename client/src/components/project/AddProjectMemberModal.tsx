@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Minus, Plus, User } from "lucide-react";
+import { Loader2, Minus, Plus, User } from "lucide-react";
 import { type OrganizationMember } from "@/types/project";
 
 interface AddProjectMemberModalProps {
@@ -186,13 +186,8 @@ const AddProjectMemberModal: React.FC<AddProjectMemberModalProps> = ({
             disabled={!selectedMemberId || loading}
             className="bg-primary hover:bg-primary/90"
           >
-            {loading
-              ? mode === "edit"
-                ? "Saving..."
-                : "Adding..."
-              : mode === "edit"
-              ? "Save Changes"
-              : "Add Project Member"}
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {mode === "add" ? "Save Changes" : "Add Project Member"}
           </Button>
         </DialogFooter>
       </DialogContent>

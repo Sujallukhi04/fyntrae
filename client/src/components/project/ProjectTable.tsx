@@ -14,7 +14,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Edit, Archive, Undo2, MoreVertical, FolderOpen } from "lucide-react";
+import {
+  Edit,
+  Archive,
+  Undo2,
+  MoreVertical,
+  FolderOpen,
+  Trash2,
+} from "lucide-react";
 import type { Project } from "@/types/project";
 import PaginationControls, {
   getStatusBadge,
@@ -33,6 +40,8 @@ interface ProjectTableProps {
   onEdit: (project: Project) => void;
   onArchive?: (project: Project) => void;
   onUnarchive?: (project: Project) => void;
+  onDelete: (projectId: string) => void;
+  isDeleteLoading?: boolean;
   isEditLoading?: boolean;
   isArchiveLoading?: boolean;
   isUnarchiveLoading?: boolean;
@@ -53,6 +62,8 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
   onEdit,
   onArchive,
   onUnarchive,
+  onDelete,
+  isDeleteLoading,
   isEditLoading,
   isArchiveLoading,
   isUnarchiveLoading,
@@ -236,7 +247,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                             {archived && onUnarchive && (
                               <DropdownMenuItem
                                 onClick={(e) => {
-                                  e.stopPropagation(); // Prevent row click
+                                  e.stopPropagation(); 
                                   onUnarchive(project);
                                 }}
                                 disabled={isUnarchiveLoading}
@@ -245,6 +256,17 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                                 Unarchive
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(project?.id);
+                              }}
+                              className="text-red-500 hover:text-red-500 focus:text-red-500"
+                              disabled={isDeleteLoading}
+                            >
+                              <Trash2 className="mr-2 size-4 text-red-500" />
+                              Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

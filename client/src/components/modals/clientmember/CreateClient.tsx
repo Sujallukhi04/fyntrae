@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface AddEditClientModalProps {
   isOpen: boolean;
@@ -77,13 +78,8 @@ const AddEditClientModal: React.FC<AddEditClientModalProps> = ({
             onClick={handleSubmit}
             disabled={!clientName.trim() || loading}
           >
-            {loading
-              ? mode === "edit"
-                ? "Saving..."
-                : "Creating..."
-              : mode === "edit"
-              ? "Save Changes"
-              : "Create Client"}
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {mode === "edit" ? "Save Changes" : "Create Client"}
           </Button>
         </div>
       </DialogContent>

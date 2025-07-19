@@ -66,12 +66,13 @@ model Organizations {
   createdAt                    DateTime @default(now())
   updatedAt                    DateTime @updatedAt
 
-  currentTeamUsers User[]                   @relation("UserCurrentTeam")
+  currentTeamUsers User[]                    @relation("UserCurrentTeam")
   owner            User                     @relation("OrganizationOwner", fields: [userId], references: [id], onDelete: Restrict)
   members          Member[]
   invitations      OrganizationInvitation[]
   clients          Client[]
   projects         Project[]
+  tasks            Task[]
 }
 
 model Member {
@@ -140,7 +141,7 @@ model Project {
   estimatedTime  Int?
   isActive       Boolean   @default(true)
   isArchived     Boolean   @default(false)
-  spentTime      Int    @default(0)
+  spentTime      Int       @default(0)
   organizationId String
   clientId       String?
   archivedAt     DateTime?
@@ -150,6 +151,7 @@ model Project {
   organization Organizations   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   client       Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
   members      ProjectMember[]
+  tasks        Task[]
 
   @@unique([organizationId, name])
 }
@@ -168,4 +170,24 @@ model ProjectMember {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, memberId])
+}
+
+model Task {
+  id             String    @id @default(cuid())
+  name           String
+  projectId      String
+  organizationId String
+  estimatedTime  Int?
+  spentTime      Int       @default(0)
+  status        Status
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+}
+
+enum Status {
+  ACTIVE
+  DONE
 }

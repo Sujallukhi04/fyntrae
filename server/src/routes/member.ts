@@ -31,7 +31,7 @@ router.post(
 
 // Accept invitation via token
 router.put(
-  "/invitations/accept/:token",
+  "/invitation/accept/:token",
   protectRoute,
   memberController.acceptInvitation
 );

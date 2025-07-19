@@ -8,6 +8,7 @@ import {
 } from "../utils";
 import { ErrorHandler } from "../utils/errorHandler";
 import {
+  assertAPIPermission,
   getOrganization,
   hasPermission,
   isUserActiveMember,
@@ -31,22 +32,11 @@ export const switchOrganization = async (
     });
 
     if (!validatedData.success) {
-      const messages = validatedData.error.errors.map((err) => err.message);
+      const messages = validatedData.error.errors[0].message;
       throw new ErrorHandler(messages, 400);
     }
 
-    // Check if user is an active member of the organization
-    const membership = await isUserActiveMember(
-      userId,
-      validatedData.data.organizationId
-    );
-
-    if (!membership) {
-      throw new ErrorHandler(
-        "You are not an active member of this organization",
-        403
-      );
-    }
+    await assertAPIPermission(userId, organizationId, "ORGANIZATION", "VIEW");
 
     // Update user's current team
     const updatedUser = await db.user.update({
@@ -80,35 +70,22 @@ export const getCurrentOrganization = async (
       throw new ErrorHandler("User not authenticated", 401);
     }
 
-    if (organizationId) {
-      const membership = await db.member.findFirst({
-        where: {
-          userId,
-          organizationId,
-          isActive: true,
-        },
-      });
+    if (!organizationId) throw new ErrorHandler("OrgId is required", 403);
 
-      if (!membership) {
-        throw new ErrorHandler(
-          "You are not an active member of this organization",
-          403
-        );
-      }
+    await assertAPIPermission(userId, organizationId, "ORGANIZATION", "VIEW");
 
-      const organization = await db.organizations.findUnique({
-        where: { id: organizationId },
-      });
+    const organization = await db.organizations.findUnique({
+      where: { id: organizationId },
+    });
 
-      if (!organization) {
-        throw new ErrorHandler("Organization not found", 404);
-      }
-
-      res.status(200).json({
-        message: "Organization data retrieved successfully",
-        organization,
-      });
+    if (!organization) {
+      throw new ErrorHandler("Organization not found", 404);
     }
+
+    res.status(200).json({
+      message: "Organization data retrieved successfully",
+      organization,
+    });
   } catch (error) {
     throw new ErrorHandler(
       error instanceof Error ? error.message : "Internal Server Error",
@@ -134,25 +111,11 @@ export const updateOrganization = async (
     const validatedData = updateOrganizationSchema.safeParse(data);
 
     if (!validatedData.success) {
-      const messages = validatedData.error.errors.map((err) => err.message);
+      const messages = validatedData.error.errors[0].message;
       throw new ErrorHandler(messages, 400);
     }
 
-    const membership = await isUserActiveMember(userId, organizationId);
-
-    if (!membership) {
-      throw new ErrorHandler(
-        "You are not an active member of this organization",
-        403
-      );
-    }
-
-    if (!hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler(
-        "You don't have permission to update this organization",
-        403
-      );
-    }
+    await assertAPIPermission(userId, organizationId, "ORGANIZATION", "UPDATE");
 
     const existingOrganization = await getOrganization(organizationId);
 
@@ -201,19 +164,13 @@ export const deleteOrganization = async (
     if (!userId) {
       throw new ErrorHandler("User not authenticated", 401);
     }
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership) {
-      throw new ErrorHandler(
-        "You are not an active member of this organization",
-        403
-      );
+
+    if (!organizationId) {
+      throw new ErrorHandler("Organization ID is required", 400);
     }
-    if (!hasPermission(membership.role, ["OWNER"])) {
-      throw new ErrorHandler(
-        "You don't have permission to delete this organization",
-        403
-      );
-    }
+
+    await assertAPIPermission(userId, organizationId, "ORGANIZATION", "DELETE");
+
     const organization = await db.organizations.findUnique({
       where: { id: organizationId },
     });
@@ -393,13 +350,12 @@ export const getOrganizationMembers = async (
       throw new ErrorHandler("User not authenticated", 401);
     }
 
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership) {
-      throw new ErrorHandler(
-        "You are not an active member of this organization",
-        403
-      );
-    }
+    const membership = await assertAPIPermission(
+      userId,
+      organizationId,
+      "ORGANIZATION",
+      "VIEW_MEMBERS"
+    );
 
     const hasOwnerAdmin = hasPermission(membership.role, ["OWNER", "ADMIN"]);
 
@@ -466,13 +422,12 @@ export const getOrganizationInvitations = async (
       throw new ErrorHandler("User not authenticated", 401);
     }
 
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership) {
-      throw new ErrorHandler(
-        "You are not an active member of this organization",
-        403
-      );
-    }
+    await assertAPIPermission(
+      userId,
+      organizationId,
+      "ORGANIZATION",
+      "MANAGE_MEMBERS"
+    );
 
     await db.organizationInvitation.updateMany({
       where: {
@@ -546,28 +501,17 @@ export const deactiveMember = async (
       throw new ErrorHandler("Organization ID and Member ID are required", 400);
     }
 
-    const [membership, member] = await Promise.all([
-      isUserActiveMember(userId, organizationId),
-      db.member.findUnique({
-        where: { id: memberId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      }),
-    ]);
+    // Use helper function for permission check
+    await assertAPIPermission(userId, organizationId, "MEMBER", "DEACTIVATE");
 
-    if (!membership || !hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler(
-        "You don't have permission to deactivate members",
-        403
-      );
-    }
+    const member = await db.member.findUnique({
+      where: { id: memberId },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
 
     if (!member || member.organizationId !== organizationId) {
       throw new ErrorHandler("Member not found in this organization", 404);
@@ -682,28 +626,16 @@ export const deleteMember = async (
     if (!organizationId || !memberId)
       throw new ErrorHandler("Organization ID and Member ID are required", 400);
 
-    const [membership, member] = await Promise.all([
-      isUserActiveMember(userId, organizationId),
-      db.member.findUnique({
-        where: { id: memberId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      }),
-    ]);
+    await assertAPIPermission(userId, organizationId, "MEMBER", "DELETE");
 
-    if (!membership || !hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler(
-        "You don't have permission to delete members",
-        403
-      );
-    }
+    const member = await db.member.findUnique({
+      where: { id: memberId },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
 
     if (!member || member.organizationId !== organizationId) {
       throw new ErrorHandler("Member not found in this organization", 404);
@@ -818,13 +750,12 @@ export const deleteInvitation = async (
       );
     }
 
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership || !hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler(
-        "You don't have permission to delete invitations",
-        403
-      );
-    }
+    await assertAPIPermission(
+      userId,
+      organizationId,
+      "ORGANIZATION",
+      "MANAGE_MEMBERS"
+    );
 
     const invitation = await db.organizationInvitation.findUnique({
       where: { id: invitationId },

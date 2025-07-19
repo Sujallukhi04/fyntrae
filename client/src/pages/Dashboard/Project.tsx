@@ -10,8 +10,6 @@ import AddEditProjectModal from "@/components/project/AddEditProjectModal";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { Separator } from "@/components/ui/separator";
 
-
-
 interface ProjectState {
   type: "add" | "edit" | null;
   data: Project | null;
@@ -37,6 +35,7 @@ const ProjectPage = () => {
     createProject,
     updateProject,
     archiveProject,
+    deleteProject,
     unarchiveProject,
     getClientsByOrganizationId,
     getClientsLoading,
@@ -46,6 +45,7 @@ const ProjectPage = () => {
     editProjectLoading,
     sendArchiveProjectLoading,
     unarchiveProjectLoading,
+    deleteProjectLoading,
   } = useProject();
 
   const [modalState, setModalState] = useState<ProjectState>({
@@ -142,6 +142,11 @@ const ProjectPage = () => {
     [user?.currentTeamId, unarchiveProject]
   );
 
+  const handleDeleteProject = useCallback(async (projectId: string) => {
+    if (!user?.currentTeamId) return;
+    await deleteProject(projectId, user.currentTeamId);
+  }, []);
+
   console.log(modalState);
 
   return (
@@ -208,6 +213,8 @@ const ProjectPage = () => {
             onPageChange={setActiveCurrentPage}
             onEdit={(project) => setModalState({ type: "edit", data: project })}
             onArchive={(project) => handleArchiveProject(project.id)}
+            onDelete={handleDeleteProject}
+            isDeleteLoading={deleteProjectLoading}
             isEditLoading={editProjectLoading}
             isArchiveLoading={sendArchiveProjectLoading}
           />
@@ -223,6 +230,8 @@ const ProjectPage = () => {
             onEdit={(project) => setModalState({ type: "edit", data: project })}
             onUnarchive={(project) => handleUnarchiveProject(project.id)}
             isEditLoading={editProjectLoading}
+            onDelete={handleDeleteProject}
+            isDeleteLoading={deleteProjectLoading}
             isUnarchiveLoading={unarchiveProjectLoading}
             archived={true}
           />

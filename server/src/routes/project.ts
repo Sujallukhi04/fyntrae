@@ -36,6 +36,12 @@ router.put(
   projectController.unarchiveProject
 );
 
+router.delete(
+  "/:projectId/:organizationId",
+  protectRoute,
+  projectController.deleteProject
+);
+
 // ─────────────────────────────
 // CLIENTS
 // ─────────────────────────────
@@ -82,6 +88,40 @@ router.delete(
   "/project-members/:projectId/:organizationId/:memberId",
   protectRoute,
   projectController.removeProjectMember
+);
+
+// ─────────────────────────────
+// TASKS
+// ─────────────────────────────
+
+router.post(
+  "/tasks/:projectId/:organizationId",
+  protectRoute,
+  projectController.createProjectTask
+);
+
+router.put(
+  "/tasks/:taskId/:projectId/:organizationId",
+  protectRoute,
+  projectController.updateProjectTask
+);
+
+router.put(
+  "/tasks/status/:taskId/:projectId/:organizationId",
+  protectRoute,
+  projectController.updateTaskStatus
+);
+
+router.delete(
+  "/tasks/:taskId/:projectId/:organizationId",
+  protectRoute,
+  projectController.deleteTask
+);
+
+router.get(
+  "/tasks/:projectId/:organizationId",
+  protectRoute,
+  projectController.getProjectTasks
 );
 
 export default router;

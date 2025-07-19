@@ -3,13 +3,19 @@ import { ErrorHandler } from "../utils/errorHandler";
 import {
   addProjectMemberSchema,
   createProjectSchema,
+  createProjectTaskSchema,
   updateProjectMemberSchema,
+  updateTaskSchema,
+  updateTaskStatusSchema,
 } from "../utils/index";
 import { db } from "../prismaClient";
-import { assertActivePermissionedMember } from "../helper/organization";
+import {
+  assertActivePermissionedMember,
+  assertAPIPermission,
+  assertProjectAccess,
+  validateTaskInProject,
+} from "../helper/organization";
 import { Role } from "@prisma/client";
-
-const PERMISSIONED_ROLES: Role[] = [Role.OWNER, Role.ADMIN, Role.MANAGER];
 
 export const createProject = async (
   req: Request,
@@ -22,7 +28,8 @@ export const createProject = async (
     if (!userId) throw new ErrorHandler("User not authenticated", 401);
     if (!orgId) throw new ErrorHandler("Organization ID is required", 400);
 
-    await assertActivePermissionedMember(userId, orgId, PERMISSIONED_ROLES);
+    // Check permissions
+    await assertAPIPermission(userId, orgId, "PROJECT", "CREATE");
 
     const validated = createProjectSchema.safeParse(req.body);
     if (!validated.success) {
@@ -38,6 +45,19 @@ export const createProject = async (
 
     if (existingProject)
       throw new ErrorHandler("Project with this name already exists", 400);
+
+    if (data.clientId) {
+      const client = await db.client.findFirst({
+        where: {
+          id: data.clientId,
+          organizationId: orgId,
+        },
+      });
+
+      if (!client) {
+        throw new ErrorHandler("Invalid client ID for this organization", 400);
+      }
+    }
 
     const project = await db.project.create({
       data: {
@@ -79,18 +99,8 @@ export const getAllProjects = async (
     const size = Number(pageSize);
     const isArchived = type === "archived";
 
-    const member = await db.member.findUnique({
-      where: {
-        userId_organizationId: {
-          userId,
-          organizationId: orgId,
-        },
-      },
-    });
-
-    if (!member || !member.isActive) {
-      throw new ErrorHandler("Access denied. Not a valid member", 403);
-    }
+    // Check permissions
+    const member = await assertAPIPermission(userId, orgId, "PROJECT", "VIEW");
 
     const whereFilter: any = {
       organizationId: orgId,
@@ -151,12 +161,7 @@ export const getProjectsByOrgId = async (
       );
     if (!userId) throw new ErrorHandler("User not authenticated", 401);
 
-    await assertActivePermissionedMember(userId, orgId, [
-      Role.OWNER,
-      Role.ADMIN,
-      Role.MANAGER,
-      Role.EMPLOYEE,
-    ]);
+    await assertProjectAccess(userId, orgId, projectId, "VIEW");
 
     const project = await db.project.findUnique({
       where: { id: projectId },
@@ -189,11 +194,7 @@ export const updateProject = async (
       throw new ErrorHandler("Project ID or oraganization is required", 400);
 
     // Check permissions
-    await assertActivePermissionedMember(
-      userId,
-      organizationId,
-      PERMISSIONED_ROLES
-    );
+    await assertProjectAccess(userId, organizationId, projectId, "UPDATE");
 
     const validated = createProjectSchema.safeParse(req.body);
     if (!validated.success) {
@@ -201,15 +202,34 @@ export const updateProject = async (
       throw new ErrorHandler(message, 400);
     }
 
-    const existingProject = await db.project.findUnique({
-      where: { id: projectId },
-    });
+    const data = validated.data;
 
-    if (!existingProject) {
-      throw new ErrorHandler("Project not found", 404);
+    if (data.name) {
+      const nameConflict = await db.project.findFirst({
+        where: {
+          name: data.name,
+          organizationId,
+          id: { not: projectId },
+        },
+      });
+
+      if (nameConflict) {
+        throw new ErrorHandler("Project with this name already exists", 400);
+      }
     }
 
-    const data = validated.data;
+    if (data.clientId) {
+      const client = await db.client.findFirst({
+        where: {
+          id: data.clientId,
+          organizationId,
+        },
+      });
+
+      if (!client) {
+        throw new ErrorHandler("Invalid client ID for this organization", 400);
+      }
+    }
 
     const updatedProject = await db.project.update({
       where: { id: projectId },
@@ -251,19 +271,7 @@ export const archiveProject = async (
       throw new ErrorHandler("Project ID or Organization ID is required", 400);
 
     // Check permissions
-    await assertActivePermissionedMember(
-      userId,
-      organizationId,
-      PERMISSIONED_ROLES
-    );
-
-    const existingProject = await db.project.findUnique({
-      where: { id: projectId },
-    });
-
-    if (!existingProject) {
-      throw new ErrorHandler("Project not found", 404);
-    }
+    await assertProjectAccess(userId, organizationId, projectId, "ARCHIVE");
 
     const project = await db.project.update({
       where: { id: projectId },
@@ -295,19 +303,7 @@ export const unarchiveProject = async (
       throw new ErrorHandler("Project ID or Organization ID is required", 400);
 
     // Check permissions
-    await assertActivePermissionedMember(
-      userId,
-      organizationId,
-      PERMISSIONED_ROLES
-    );
-
-    const existingProject = await db.project.findUnique({
-      where: { id: projectId },
-    });
-
-    if (!existingProject) {
-      throw new ErrorHandler("Project not found", 404);
-    }
+    await assertProjectAccess(userId, organizationId, projectId, "ARCHIVE");
 
     const project = await db.project.update({
       where: { id: projectId },
@@ -328,6 +324,51 @@ export const unarchiveProject = async (
   }
 };
 
+export const deleteProject = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { projectId, organizationId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
+    if (!projectId || !organizationId)
+      throw new ErrorHandler("Project ID or Organization ID is required", 400);
+
+    // Check permissions
+    await assertProjectAccess(userId, organizationId, projectId, "DELETE");
+
+    // Check if project is used in any task
+    const taskExists = await db.task.findFirst({
+      where: { projectId },
+    });
+
+    if (taskExists) {
+      throw new ErrorHandler("Project cannot be deleted as it has tasks", 400);
+    }
+
+    await db.$transaction(async (tx) => {
+      await tx.projectMember.deleteMany({
+        where: { projectId },
+      });
+
+      await tx.project.delete({
+        where: { id: projectId },
+      });
+    });
+
+    res.status(200).json({
+      message: "Project deleted successfully",
+    });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
 export const getClientsByOrganizationId = async (
   req: Request,
   res: Response
@@ -339,11 +380,7 @@ export const getClientsByOrganizationId = async (
     throw new ErrorHandler("Organization ID is required", 400);
   if (!userId) throw new ErrorHandler("User not authenticated", 401);
 
-  await assertActivePermissionedMember(
-    userId,
-    organizationId,
-    PERMISSIONED_ROLES
-  );
+  await assertAPIPermission(userId, organizationId, "CLIENT", "VIEW");
 
   const clients = await db.client.findMany({
     where: { organizationId: organizationId },
@@ -373,11 +410,12 @@ export const addProjectMember = async (
         400
       );
 
-    // Check permissions
-    await assertActivePermissionedMember(
+    // Centralized project access check
+    await assertProjectAccess(
       userId,
       organizationId,
-      PERMISSIONED_ROLES
+      projectId,
+      "MANAGE_MEMBERS"
     );
 
     const validated = addProjectMemberSchema.safeParse(req.body);
@@ -386,14 +424,6 @@ export const addProjectMember = async (
     }
 
     const { memberId, billableRate } = validated.data;
-
-    const project = await db.project.findUnique({
-      where: { id: projectId },
-    });
-
-    if (!project) {
-      throw new ErrorHandler("Project not found", 404);
-    }
 
     const member = await db.member.findFirst({
       where: {
@@ -471,25 +501,13 @@ export const getProjectMembers = async (
         400
       );
 
-    await assertActivePermissionedMember(
+    // Centralized project access check
+    await assertProjectAccess(
       userId,
       organizationId,
-      PERMISSIONED_ROLES
+      projectId,
+      "VIEW_MEMBERS"
     );
-
-    // Check if user is member of organization
-    const member = await db.member.findUnique({
-      where: {
-        userId_organizationId: {
-          userId,
-          organizationId,
-        },
-      },
-    });
-
-    if (!member || !member.isActive) {
-      throw new ErrorHandler("Access denied", 403);
-    }
 
     const projectMembers = await db.projectMember.findMany({
       where: {
@@ -539,11 +557,12 @@ export const updateProjectMember = async (
         400
       );
 
-    // Check permissions
-    await assertActivePermissionedMember(
+    // Centralized project access check
+    await assertProjectAccess(
       userId,
       organizationId,
-      PERMISSIONED_ROLES
+      projectId,
+      "MANAGE_MEMBERS"
     );
 
     const validated = updateProjectMemberSchema.safeParse(req.body);
@@ -608,12 +627,27 @@ export const removeProjectMember = async (
         400
       );
 
-    // Check permissions
-    await assertActivePermissionedMember(
+    // Centralized project access check
+    await assertProjectAccess(
       userId,
       organizationId,
-      PERMISSIONED_ROLES
+      projectId,
+      "MANAGE_MEMBERS"
     );
+
+    // Check if member exists in project
+    const existingProjectMember = await db.projectMember.findUnique({
+      where: {
+        projectId_memberId: {
+          projectId,
+          memberId,
+        },
+      },
+    });
+
+    if (!existingProjectMember) {
+      throw new ErrorHandler("Member not found in this project", 404);
+    }
 
     // Remove member from project
     await db.projectMember.delete({
@@ -646,13 +680,14 @@ export const getMembersByOrganizationId = async (
     const userId = req.user?.id;
 
     if (!userId) throw new ErrorHandler("User not authenticated", 401);
-    if (!organizationId)
-      throw new ErrorHandler("organizationId is required", 400);
+    if (!organizationId || !projectId)
+      throw new ErrorHandler("organizationId or ProjectId is required", 400);
 
-    await assertActivePermissionedMember(
+    await assertProjectAccess(
       userId,
       organizationId,
-      PERMISSIONED_ROLES
+      projectId as string,
+      "MANAGE_MEMBERS"
     );
 
     const existingProjectMemberIds = projectId
@@ -683,9 +718,258 @@ export const getMembersByOrganizationId = async (
           },
         },
       },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
     res.status(200).json({ members });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const getProjectTasks = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { projectId, organizationId } = req.params;
+    const { status } = req.query;
+
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
+    if (!projectId || !organizationId)
+      throw new ErrorHandler(
+        "Project ID and Organization ID are required",
+        400
+      );
+
+    // Centralized project access check
+    await assertProjectAccess(userId, organizationId, projectId, "VIEW");
+
+    const whereFilter: any = {
+      projectId,
+      organizationId,
+    };
+
+    if (status && ["ACTIVE", "DONE"].includes(status as string)) {
+      whereFilter.status = status;
+    }
+
+    const tasks = await db.task.findMany({
+      where: whereFilter,
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({ tasks });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const createProjectTask = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { projectId, organizationId } = req.params;
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
+    if (!projectId || !organizationId)
+      throw new ErrorHandler(
+        "Project ID and Organization ID are required",
+        400
+      );
+
+    // Centralized project access check
+    await assertProjectAccess(userId, organizationId, projectId, "ADD_TASKS");
+
+    const validated = createProjectTaskSchema.safeParse(req.body);
+    if (!validated.success) {
+      const message = validated.error.errors[0].message;
+      throw new ErrorHandler(message, 400);
+    }
+
+    const { name, estimatedTime } = validated.data;
+
+    const existingTask = await db.task.findFirst({
+      where: {
+        name,
+        projectId,
+        organizationId,
+      },
+    });
+
+    if (existingTask) {
+      throw new ErrorHandler("Task with this name already exists", 400);
+    }
+
+    const task = await db.task.create({
+      data: {
+        name,
+        projectId,
+        organizationId,
+        estimatedTime: estimatedTime || null,
+        status: "ACTIVE",
+      },
+    });
+
+    res.status(201).json({
+      message: "Task created successfully",
+      task,
+    });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const updateProjectTask = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { projectId, organizationId, taskId } = req.params;
+
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
+    if (!projectId || !organizationId || !taskId)
+      throw new ErrorHandler(
+        "Project ID, Organization ID and Task ID are required",
+        400
+      );
+
+    const validated = updateTaskSchema.safeParse(req.body);
+    if (!validated.success) {
+      throw new ErrorHandler(validated.error.errors[0].message, 400);
+    }
+
+    const { name, estimatedTime } = validated.data;
+
+    await assertProjectAccess(userId, organizationId, projectId, "ADD_TASKS");
+
+    await validateTaskInProject(taskId, projectId, organizationId);
+
+    if (name) {
+      const nameConflict = await db.task.findFirst({
+        where: {
+          name,
+          projectId,
+          organizationId,
+          id: { not: taskId },
+        },
+      });
+
+      if (nameConflict) {
+        throw new ErrorHandler(
+          "Task with this name already exists in project",
+          400
+        );
+      }
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (estimatedTime !== undefined) updateData.estimatedTime = estimatedTime;
+
+    const updatedTask = await db.task.update({
+      where: { id: taskId },
+      data: updateData,
+    });
+
+    res.status(200).json({
+      message: "Task updated successfully",
+      task: updatedTask,
+    });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const updateTaskStatus = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { projectId, organizationId, taskId } = req.params;
+
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
+
+    if (!projectId || !organizationId || !taskId)
+      throw new ErrorHandler(
+        "Project ID, Organization ID and Task ID are required",
+        400
+      );
+
+    const validated = updateTaskStatusSchema.safeParse(req.body);
+    if (!validated.success) {
+      throw new ErrorHandler(validated.error.errors[0].message, 400);
+    }
+
+    const { status } = validated.data;
+
+    await assertProjectAccess(userId, organizationId, projectId, "ADD_TASKS");
+
+    await validateTaskInProject(taskId, projectId, organizationId);
+
+    const updatedTask = await db.task.update({
+      where: { id: taskId },
+      data: { status },
+    });
+
+    res.status(200).json({
+      message: `Task marked as ${status.toLowerCase()}`,
+      task: updatedTask,
+    });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const deleteTask = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { taskId, projectId, organizationId } = req.params;
+
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
+    if (!taskId || !projectId || !organizationId)
+      throw new ErrorHandler(
+        "Task ID, Project ID and Organization ID are required",
+        400
+      );
+
+    // Use project access for deleting tasks
+    await assertProjectAccess(userId, organizationId, projectId, "ADD_TASKS");
+
+    // Validate task belongs to project
+    await validateTaskInProject(taskId, projectId, organizationId);
+
+    await db.task.delete({
+      where: { id: taskId },
+    });
+
+    res.status(200).json({
+      message: "Task deleted successfully",
+    });
   } catch (error) {
     throw new ErrorHandler(
       error instanceof Error ? error.message : "Internal Server Error",

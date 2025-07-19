@@ -3,14 +3,13 @@ import { ErrorHandler } from "../utils/errorHandler";
 import { db } from "../prismaClient";
 import {
   assertActivePermissionedMember,
+  assertAPIPermission,
+  assertClientAccess,
   hasPermission,
   isUserActiveMember,
 } from "../helper/organization";
 import { Role } from "@prisma/client";
 
-const PERMISSIONED_ROLES: Role[] = [Role.OWNER, Role.ADMIN, Role.MANAGER];
-
-const EDIT_ROLES: Role[] = [Role.OWNER, Role.ADMIN];
 
 export const createClient = async (req: Request, res: Response) => {
   try {
@@ -18,11 +17,12 @@ export const createClient = async (req: Request, res: Response) => {
     const { name } = req.body;
     const userId = req.user?.id;
 
-    await assertActivePermissionedMember(userId, organizationId, EDIT_ROLES);
-
     if (!organizationId || !name) {
       throw new ErrorHandler("Organization ID and name are required", 400);
     }
+
+    // Centralized permission check
+    await assertAPIPermission(userId, organizationId, "CLIENT", "CREATE");
 
     const organization = await db.organizations.findUnique({
       where: { id: organizationId },
@@ -62,11 +62,8 @@ export const getClients = async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
     const type = (req.query.type as "archived" | "active") || "active";
 
-    await assertActivePermissionedMember(
-      userId,
-      organizationId,
-      PERMISSIONED_ROLES
-    );
+    // Centralized permission check
+    await assertAPIPermission(userId, organizationId, "CLIENT", "VIEW");
 
     const isArchived = type === "archived";
 
@@ -114,26 +111,30 @@ export const editClient = async (req: Request, res: Response) => {
     const { name } = req.body;
     const userId = req.user?.id;
 
-    await assertActivePermissionedMember(userId, organizationId, EDIT_ROLES);
+    if (!userId) throw new ErrorHandler("User ID is required", 400);
 
     if (!clientId || !name) {
       throw new ErrorHandler("Client ID and name are required", 400);
     }
 
-    const client = await db.client.findUnique({
-      where: { id: clientId },
-      select: { id: true, name: true, organizationId: true },
+    // Centralized client access check
+    const { client } = await assertClientAccess(
+      userId,
+      organizationId,
+      clientId,
+      "UPDATE"
+    );
+
+    const nameConflict = await db.client.findFirst({
+      where: {
+        name,
+        organizationId,
+        id: { not: clientId },
+      },
     });
 
-    if (!client) {
-      throw new ErrorHandler("Client not found", 404);
-    }
-
-    if (client.organizationId !== organizationId) {
-      throw new ErrorHandler(
-        "Client does not belong to this organization",
-        403
-      );
+    if (nameConflict) {
+      throw new ErrorHandler("Client with this name already exists", 400);
     }
 
     const updatedClient = await db.client.update({
@@ -159,27 +160,21 @@ export const archiveClient = async (req: Request, res: Response) => {
     const { organizationId } = req.body;
     const userId = req.user?.id;
 
-    await assertActivePermissionedMember(userId, organizationId, EDIT_ROLES);
+    if (!userId) {
+      throw new ErrorHandler("User ID is required", 400);
+    }
 
     if (!clientId || !organizationId) {
       throw new ErrorHandler("Client ID and organization ID are required", 400);
     }
 
-    const client = await db.client.findUnique({
-      where: { id: clientId },
-      select: { id: true, organizationId: true, archivedAt: true },
-    });
-
-    if (!client) {
-      throw new ErrorHandler("Client not found", 404);
-    }
-
-    if (client.organizationId !== organizationId) {
-      throw new ErrorHandler(
-        "Client does not belong to this organization",
-        403
-      );
-    }
+    // Centralized client access check
+    const { client } = await assertClientAccess(
+      userId,
+      organizationId,
+      clientId,
+      "ARCHIVE"
+    );
 
     if (client?.archivedAt) {
       throw new ErrorHandler("Client is already archived", 400);
@@ -208,27 +203,21 @@ export const unArchiveClient = async (req: Request, res: Response) => {
     const { organizationId } = req.body;
     const userId = req.user?.id;
 
-    await assertActivePermissionedMember(userId, organizationId, EDIT_ROLES);
+    if (!userId) {
+      throw new ErrorHandler("User ID is required", 400);
+    }
 
     if (!clientId || !organizationId) {
       throw new ErrorHandler("Client ID and organization ID are required", 400);
     }
 
-    const client = await db.client.findUnique({
-      where: { id: clientId },
-      select: { id: true, organizationId: true, archivedAt: true },
-    });
-
-    if (!client) {
-      throw new ErrorHandler("Client not found", 404);
-    }
-
-    if (client.organizationId !== organizationId) {
-      throw new ErrorHandler(
-        "Client does not belong to this organization",
-        403
-      );
-    }
+    // Centralized client access check
+    const { client } = await assertClientAccess(
+      userId,
+      organizationId,
+      clientId,
+      "ARCHIVE"
+    );
 
     if (!client.archivedAt) {
       throw new ErrorHandler("Client is not archived", 400);
@@ -259,28 +248,16 @@ export const deleteClient = async (
     const userId = req.user?.id;
     const { clientId, organizationId } = req.params;
 
-    await assertActivePermissionedMember(userId, organizationId, EDIT_ROLES);
+    if (!userId) {
+      throw new ErrorHandler("User ID is required", 400);
+    }
 
     if (!clientId || !organizationId) {
       throw new ErrorHandler("Client ID and organization ID are required", 400);
     }
 
-    // Check if client exists and belongs to organization
-    const client = await db.client.findUnique({
-      where: { id: clientId },
-      select: { id: true, organizationId: true },
-    });
-
-    if (!client) {
-      throw new ErrorHandler("Client not found", 404);
-    }
-
-    if (client.organizationId !== organizationId) {
-      throw new ErrorHandler(
-        "Client does not belong to this organization",
-        403
-      );
-    }
+    // Centralized client access check
+    await assertClientAccess(userId, organizationId, clientId, "DELETE");
 
     // Check if client is used in any project
     const usedInProject = await db.project.findFirst({

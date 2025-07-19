@@ -1,7 +1,7 @@
 import { LoaderMain } from "@/components/Loader";
 import useProject from "@/hooks/useProject";
 import { useAuth } from "@/providers/AuthProvider";
-import type { Project, ProjectData } from "@/types/project";
+import type { Project, ProjectData, Tasks } from "@/types/project";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,20 @@ import AddProjectMemberModal from "@/components/project/AddProjectMemberModal";
 
 import TasksTable from "@/components/project/TaskTable";
 import ProjectMembersTable from "@/components/project/ProjectMembersTable";
+import useTaks from "@/hooks/useTaks";
+import AddEditTaskModal from "@/components/project/AddEditTaskModal";
 
 interface EditMemberState {
   isOpen: boolean;
   memberId: string;
   memberName: string;
   billableRate: number | null;
+}
+
+interface TaskModalState {
+  isOpen: boolean;
+  mode: "add" | "edit";
+  task: Tasks | null;
 }
 
 const ProjectIdPage = () => {
@@ -47,6 +55,13 @@ const ProjectIdPage = () => {
     memberName: "",
     billableRate: null,
   });
+
+  const [taskModalState, setTaskModalState] = useState<TaskModalState>({
+    isOpen: false,
+    mode: "add",
+    task: null,
+  });
+
   const {
     projectMembers,
     organizationMembers,
@@ -60,6 +75,20 @@ const ProjectIdPage = () => {
     removeProjectMember,
     removeMemberLoading,
   } = useProjectMember();
+
+  const {
+    getTasks,
+    createTask,
+    updateTask,
+    deleteTask,
+    updatetaskStatus,
+    tasks,
+    getTasksLoading,
+    createTaskLoading,
+    editTaskLoading,
+    deleteTaskLoading,
+    changeTaskStatusLoading,
+  } = useTaks();
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -87,6 +116,14 @@ const ProjectIdPage = () => {
       setClients(data || []);
     });
   }, [user?.currentTeamId]);
+
+  const closeTaskModal = () => {
+    setTaskModalState({
+      isOpen: false,
+      mode: "add",
+      task: null,
+    });
+  };
 
   const handleAddProjectMember = async (
     memberId: string,
@@ -179,10 +216,79 @@ const ProjectIdPage = () => {
     }
   };
 
-  const handleAddTask = () => {
-    // TODO: Implement add task functionality
-    console.log("Add task clicked");
+  const handleToggleTaskStatus = async (
+    taskId: string,
+    currentStatus: "ACTIVE" | "DONE"
+  ) => {
+    if (!user?.currentTeamId || !project?.id) return;
+
+    const newStatus = currentStatus === "ACTIVE" ? "DONE" : "ACTIVE";
+
+    try {
+      await updatetaskStatus(taskId, project.id, user.currentTeamId, newStatus);
+    } catch (error) {
+      console.error("Failed to update task status:", error);
+    }
   };
+
+  const handleAddTaskmodal = () => {
+    setTaskModalState({
+      isOpen: true,
+      mode: "add",
+      task: null,
+    });
+  };
+
+  const handleEditTaskmodal = (task: Tasks) => {
+    setTaskModalState({
+      isOpen: true,
+      mode: "edit",
+      task,
+    });
+  };
+
+  const handleTaskSubmit = async (data: {
+    name: string;
+    estimatedTime?: number;
+  }) => {
+    if (!user?.currentTeamId || !project?.id) return;
+
+    try {
+      if (taskModalState.mode === "add") {
+        await createTask(project.id, user.currentTeamId, data);
+      } else if (taskModalState.task) {
+        await updateTask(
+          taskModalState.task.id,
+          project.id,
+          user.currentTeamId,
+          data
+        );
+      }
+      setTaskModalState({
+        isOpen: false,
+        mode: "add",
+        task: null,
+      });
+    } catch (error) {
+      console.error("Failed to submit task:", error);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!user?.currentTeamId || !project?.id) return;
+    try {
+      await deleteTask(taskId, project.id, user.currentTeamId);
+    } catch (error) {}
+  };
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!user?.currentTeamId || !project?.id) return;
+      await getTasks(project.id, user.currentTeamId);
+    };
+
+    fetchTasks();
+  }, [project?.id, user?.currentTeamId]);
 
   if (getProjectLoading) {
     return <LoaderMain />;
@@ -253,6 +359,15 @@ const ProjectIdPage = () => {
         currency={organization?.currency}
       />
 
+      <AddEditTaskModal
+        isOpen={taskModalState.isOpen}
+        onClose={closeTaskModal}
+        onSubmit={handleTaskSubmit}
+        loading={createTaskLoading || editTaskLoading}
+        mode={taskModalState.mode}
+        initialData={taskModalState.task}
+      />
+
       {/* Add Member Modal */}
       <AddProjectMemberModal
         isOpen={isAddMemberModalOpen}
@@ -282,9 +397,14 @@ const ProjectIdPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-3 px-6">
         {/* Tasks Section - 1/2 width on large screens */}
         <TasksTable
-          tasks={[]} // Empty for now, you can add tasks data later
-          isLoading={isLoading}
-          onAddTask={handleAddTask}
+          tasks={tasks}
+          isLoading={getTasksLoading}
+          onAddTask={handleAddTaskmodal}
+          onEditTask={handleEditTaskmodal}
+          onDeleteTask={handleDeleteTask}
+          onToggleStatus={handleToggleTaskStatus}
+          deleteLoading={deleteTaskLoading}
+          statusLoading={changeTaskStatusLoading}
         />
 
         {/* Members Section - 1/2 width on large screens */}

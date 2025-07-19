@@ -1,9 +1,14 @@
 import { AlertDialogHeader } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@radix-ui/react-dialog";
 import { Label } from "@radix-ui/react-dropdown-menu";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface InviteMemberModalProps {
@@ -87,7 +92,8 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isInviting}>
-            {isInviting ? "Inviting..." : "Invite"}
+            {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Invite
           </Button>
         </div>
       </DialogContent>

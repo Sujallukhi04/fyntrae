@@ -18,7 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Circle, Minus, Plus } from "lucide-react";
+import { Circle, Loader2, Minus, Plus } from "lucide-react";
 import {
   Popover,
   PopoverTrigger,
@@ -329,6 +329,7 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
               </Button>
             </DialogClose>
             <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "add" ? "Create Project" : "Save Changes"}
             </Button>
           </DialogFooter>

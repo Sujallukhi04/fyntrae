@@ -135,7 +135,7 @@ export const organizationApi = {
   },
   reinviteInactiveMember: async (organizationId: string, memberId: string) => {
     const response = await axiosInstance.post(
-      `/member/${organizationId}/invite/${memberId}/reinvite`
+      `/member/${organizationId}/members/${memberId}/reinvite`
     );
     return response.data;
   },
@@ -289,6 +289,13 @@ export const projectApi = {
     );
     return response.data;
   },
+
+  deleteProject: async (projectId: string, organizationId: string) => {
+    const response = await axiosInstance.delete(
+      `/project/${projectId}/${organizationId}`
+    );
+    return response.data;
+  },
 };
 
 export const ProjectMemberApi = {
@@ -343,6 +350,66 @@ export const ProjectMemberApi = {
   getOrganizationMembers: async (organizationId: string, projectId: string) => {
     const response = await axiosInstance.get(
       `/project/org-members/${organizationId}?projectId=${projectId}`
+    );
+    return response.data;
+  },
+};
+
+export const TaskApi = {
+  createTask: async (
+    projectId: string,
+    organizationId: string,
+    data: {
+      name: string;
+      estimatedTime?: number;
+    }
+  ) => {
+    const response = await axiosInstance.post(
+      `/project/tasks/${projectId}/${organizationId}`,
+      data
+    );
+    return response.data;
+  },
+  updateTask: async (
+    taskId: string,
+    projectId: string,
+    organizationId: string,
+    data: {
+      name?: string;
+      estimatedTime?: number;
+    }
+  ) => {
+    const response = await axiosInstance.put(
+      `/project/tasks/${taskId}/${projectId}/${organizationId}`,
+      data
+    );
+    return response.data;
+  },
+  updateTaskStatus: async (
+    taskId: string,
+    projectId: string,
+    organizationId: string,
+    status: "ACTIVE" | "DONE"
+  ) => {
+    const response = await axiosInstance.put(
+      `/project/tasks/status/${taskId}/${projectId}/${organizationId}`,
+      { status }
+    );
+    return response.data;
+  },
+  deleteTask: async (
+    taskId: string,
+    projectId: string,
+    organizationId: string
+  ) => {
+    const response = await axiosInstance.delete(
+      `/project/tasks/${taskId}/${projectId}/${organizationId}`
+    );
+    return response.data;
+  },
+  getProjectTasks: async (projectId: string, organizationId: string) => {
+    const response = await axiosInstance.get(
+      `/project/tasks/${projectId}/${organizationId}`
     );
     return response.data;
   },

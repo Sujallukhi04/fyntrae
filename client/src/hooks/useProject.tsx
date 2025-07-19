@@ -16,6 +16,8 @@ const useProject = () => {
     useState<boolean>(false);
   const [getClientsLoading, setGetClientsLoading] = useState<boolean>(false);
   const [getProjectLoading, setGetProjectLoading] = useState<boolean>(false);
+  const [deleteProjectLoading, setDeleteProjectLoading] =
+    useState<boolean>(false);
 
   const [projectPagination, setProjectPagination] = useState<{
     total: number;
@@ -124,7 +126,7 @@ const useProject = () => {
         prev.map((proj) =>
           proj.id === projectId ? { ...proj, ...response.project } : proj
         )
-      ); 
+      );
 
       toast.success("Project updated successfully");
       return response.project;
@@ -256,6 +258,45 @@ const useProject = () => {
     }
   };
 
+  const deleteProject = async (projectId: string, organizationId: string) => {
+    try {
+      setDeleteProjectLoading(true);
+
+      const response = await projectApi.deleteProject(
+        projectId,
+        organizationId
+      );
+      setProjects((prev) => prev.filter((proj) => proj.id !== projectId));
+      setArchivedProjects((prev) =>
+        prev.filter((proj) => proj.id !== projectId)
+      );
+      setProjectPagination((prev) => {
+        if (!prev) return null;
+        const newTotal = Math.max(0, prev.total - 1);
+        return {
+          ...prev,
+          total: newTotal,
+          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
+        };
+      });
+      setArchivedProjectPagination((prev) => {
+        if (!prev) return null;
+        const newTotal = Math.max(0, prev.total - 1);
+        return {
+          ...prev,
+          total: newTotal,
+          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
+        };
+      });
+      toast.success("Project deleted successfully");
+      return response;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete project";
+      toast.error(errorMessage);
+    }
+  };
+
   return {
     getProjects,
     createProject,
@@ -265,6 +306,8 @@ const useProject = () => {
     getProjectById,
     getClientsByOrganizationId,
     setCreateProjectLoading,
+    deleteProject,
+    deleteProjectLoading,
     isLoading,
     createProjectLoading,
     editProjectLoading,

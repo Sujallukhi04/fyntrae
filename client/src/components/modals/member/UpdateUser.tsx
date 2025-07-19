@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { IndianRupee, Euro, DollarSign } from "lucide-react";
+import { IndianRupee, Euro, DollarSign, Loader2 } from "lucide-react";
 import type { Member } from "@/types/oraganization";
 
 // Types
@@ -195,7 +195,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
             Cancel
           </Button>
           <Button onClick={onSave} disabled={loading}>
-            {loading ? "Updating..." : "Update Member"}
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Update Member
           </Button>
         </div>
       </DialogContent>

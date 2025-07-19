@@ -1,4 +1,4 @@
-import { Ban, CircleCheck, Clock, XCircle } from "lucide-react";
+import { Ban, CheckCircle, CircleCheck, Clock, XCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
@@ -37,6 +37,13 @@ export const getStatusBadge = (status: string | boolean) => {
       <Badge variant="outline" className=" text-gray-600 ">
         <Ban className="w-3 h-3 mr-1" />
         Expired
+      </Badge>
+    );
+  } else if (status === "Done") {
+    return (
+      <Badge variant="outline" className="text-green-600">
+        <CheckCircle className="w-4 h-4 mr-1" />
+        Done
       </Badge>
     );
   }

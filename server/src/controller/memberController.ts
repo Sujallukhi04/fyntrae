@@ -1,5 +1,6 @@
 import { emailTemplates, sendMail } from "../helper/mailer";
 import {
+  assertAPIPermission,
   hasPermission,
   isUserActiveMember,
   sendInvitationEmail,
@@ -12,6 +13,9 @@ import { ErrorHandler } from "../utils/errorHandler";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 
+const VALID_ROLES = ["OWNER", "ADMIN", "MANAGER", "EMPLOYEE"] as const;
+type ValidRole = (typeof VALID_ROLES)[number];
+
 export const inviteNewMember = async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const { organizationId } = req.params;
@@ -23,15 +27,21 @@ export const inviteNewMember = async (req: Request, res: Response) => {
   if (!validated.success)
     throw new ErrorHandler(validated.error.errors[0].message, 400);
 
+  if (role && !VALID_ROLES.includes(role as ValidRole)) {
+    throw new ErrorHandler(`Invalid role.`, 400);
+  }
+
   try {
+    await assertAPIPermission(
+      userId,
+      organizationId,
+      "ORGANIZATION",
+      "INVITE_MEMBERS"
+    );
+
     const invitee = await getUserByEmail(email);
     if (!invitee)
       throw new ErrorHandler("User with this email does not exist", 404);
-
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership || !hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler("You don't have permission to invite users", 403);
-    }
 
     const [organization, inviter] = await Promise.all([
       db.organizations.findUnique({
@@ -169,13 +179,12 @@ export const resendInvite = async (req: Request, res: Response) => {
   }
 
   try {
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership || !hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler(
-        "You don't have permission to resend invites",
-        403
-      );
-    }
+    await assertAPIPermission(
+      userId,
+      organizationId,
+      "ORGANIZATION",
+      "INVITE_MEMBERS"
+    );
 
     const organization = await db.organizations.findUnique({
       where: { id: organizationId },
@@ -274,22 +283,21 @@ export const resendInvite = async (req: Request, res: Response) => {
 };
 
 export const reinviteInactiveMember = async (req: Request, res: Response) => {
-  const { memberId, organizationId } = req.params;
-  const userId = req.user?.id;
-  if (!userId) throw new ErrorHandler("User not authenticated", 401);
-
-  if (!memberId || !organizationId) {
-    throw new ErrorHandler("Member ID and Organization ID are required", 400);
-  }
-
   try {
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership || !hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler(
-        "You don't have permission to reinvite members",
-        403
-      );
+    const { memberId, organizationId } = req.params;
+    const userId = req.user?.id;
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
+
+    if (!memberId || !organizationId) {
+      throw new ErrorHandler("Member ID and Organization ID are required", 400);
     }
+
+    await assertAPIPermission(
+      userId,
+      organizationId,
+      "ORGANIZATION",
+      "INVITE_MEMBERS"
+    );
 
     const member = await db.member.findUnique({
       where: { id: memberId },
@@ -588,30 +596,20 @@ export const updateMember = async (
       throw new ErrorHandler(messages, 400);
     }
 
-    // Get user membership and member data in parallel
-    const [membership, member] = await Promise.all([
-      isUserActiveMember(userId, organizationId),
-      db.member.findUnique({
-        where: { id: memberId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      }),
-    ]);
-
-    // Permission check
-    if (!membership || !hasPermission(membership.role, ["OWNER", "ADMIN"])) {
-      throw new ErrorHandler(
-        "You don't have permission to update members",
-        403
-      );
+    if (role && !VALID_ROLES.includes(role as ValidRole)) {
+      throw new ErrorHandler(`Invalid role.`, 400);
     }
+
+    await assertAPIPermission(userId, organizationId, "MEMBER", "UPDATE");
+
+    const member = await db.member.findUnique({
+      where: { id: memberId },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
 
     // Member existence and validation
     if (!member || member.organizationId !== organizationId) {
@@ -684,13 +682,7 @@ export const transferOwnership = async (
       );
     }
 
-    const membership = await isUserActiveMember(userId, organizationId);
-    if (!membership || !hasPermission(membership.role, ["OWNER"])) {
-      throw new ErrorHandler(
-        "You don't have permission to transfer ownership",
-        403
-      );
-    }
+    await assertAPIPermission(userId, organizationId, "MEMBER", "CHANGE_ROLE");
 
     const organization = await db.organizations.findUnique({
       where: { id: organizationId },

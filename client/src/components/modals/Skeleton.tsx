@@ -253,3 +253,51 @@ export const ProjectMembersSkeleton = () => (
     </Table>
   </div>
 );
+
+export const TasksSkeleton = () => (
+  <div className="rounded-md bg-muted/40 border border-muted">
+    <Table>
+      <TableHeader>
+        <TableRow className="border-muted/50 hover:bg-muted/30">
+          <TableHead className="text-muted-foreground font-medium w-[25%]">
+            Task Name
+          </TableHead>
+          <TableHead className="text-muted-foreground font-medium w-[20%]">
+            Total Time
+          </TableHead>
+          <TableHead className="text-muted-foreground font-medium w-[25%]">
+            Progress
+          </TableHead>
+          <TableHead className="text-muted-foreground font-medium w-[15%]">
+            Status
+          </TableHead>
+          <TableHead className="w-[10%]" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Array.from({ length: 6 }).map((_, index) => (
+          <TableRow key={index} className="border-muted/50">
+            <TableCell>
+              <Skeleton className="h-4 w-32" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-16" />
+            </TableCell>
+            <TableCell>
+              <div className="flex flex-col gap-1">
+                <Skeleton className="h-2 w-24 rounded" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-10 rounded-full" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-8 w-8 rounded-md" />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);

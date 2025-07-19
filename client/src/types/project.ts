@@ -54,3 +54,20 @@ export interface ProjectData {
   estimatedTime?: number;
   clientId?: string | null;
 }
+
+export interface Tasks {
+  id: string;
+  name: string;
+  projectId: string;
+  organizationId: string;
+  estimatedTime?: number;
+  spentTime: number;
+  status: string;
+  creaedAt: string;
+  updatedAt: string;
+}
+
+export interface TaskData {
+  name: string;
+  estimatedTime?: number;
+}
