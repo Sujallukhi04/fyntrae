@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { db } from "../prismaClient";
 import { ErrorHandler } from "../utils/errorHandler";
 import { assertAPIPermission } from "../helper/organization";
-import { calculateBillableRate } from "../helper/billableRate";
+import {
+  calculateBillableRate,
+  getLocalDateRangeInUTC,
+} from "../helper/billableRate";
 import {
   bulkDeleteTimeEntriesSchema,
   bulkUpdateTimeEntriesSchema,
@@ -990,20 +993,18 @@ export const getTimeEntries = async (
       userId,
       end: { not: null },
     };
-
     if (date) {
-      const selectedDate = new Date(date as string);
-      selectedDate.setUTCHours(0, 0, 0, 0);
-
-      const nextDay = new Date(selectedDate);
-      nextDay.setUTCDate(selectedDate.getUTCDate() + 1);
+      const userTimezoneOffset = new Date().getTimezoneOffset() * -1; // Dynamic offset in minutes
+      const { startUTC, endUTC } = getLocalDateRangeInUTC(
+        date as string,
+        userTimezoneOffset
+      );
 
       whereClause.start = {
-        gte: selectedDate,
-        lt: nextDay,
+        gte: startUTC,
+        lt: endUTC,
       };
     }
-
     const [entries, totalCount] = await Promise.all([
       db.timeEntry.findMany({
         where: whereClause,

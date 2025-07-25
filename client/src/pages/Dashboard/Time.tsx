@@ -588,7 +588,6 @@ const Time = () => {
             </Popover>
           </div>
 
-          {/* Right: Action Buttons */}
           {selectedEntries.length > 0 && (
             <div className="flex items-center gap-2">
               <Button

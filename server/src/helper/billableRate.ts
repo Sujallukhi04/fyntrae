@@ -252,3 +252,21 @@ export const updateBillableRate = async ({
     throw new ErrorHandler("Failed to update billable rate", 500);
   }
 };
+
+export function getLocalDateRangeInUTC(
+  date: string,
+  timezoneOffsetInMinutes: number
+) {
+  // Parse date and reset to midnight local time
+  const localMidnight = new Date(date);
+  localMidnight.setUTCHours(0, 0, 0, 0);
+
+  // Adjust to UTC
+  const startUTC = new Date(localMidnight);
+  startUTC.setUTCMinutes(startUTC.getUTCMinutes() - timezoneOffsetInMinutes);
+
+  const endUTC = new Date(startUTC);
+  endUTC.setUTCDate(endUTC.getUTCDate() + 1);
+
+  return { startUTC, endUTC };
+}
