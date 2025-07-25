@@ -1,11 +1,16 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
 // Theme types
-type Theme = "light" | "dark" ;
+type Theme = "dark";
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
 }
 
@@ -20,21 +25,21 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
-  defaultTheme = "light",
+  defaultTheme = "dark",
 }) => {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
 
   // Load theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as Theme;
-    if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
+    if (savedTheme && savedTheme === "dark") {
       setTheme(savedTheme);
     } else {
       // Check system preference
       const systemPrefersDark = window.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
-      setTheme(systemPrefersDark ? "dark" : "light");
+      setTheme("dark");
     }
   }, []);
 
@@ -46,13 +51,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-  };
-
   const value: ThemeContextType = {
     theme,
-    toggleTheme,
     setTheme,
   };
 

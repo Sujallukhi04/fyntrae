@@ -100,7 +100,7 @@ export const organizationApi = {
     memberId: string,
     data: {
       role?: string;
-      billableRate?: number;
+      billableRate: number | null;
     }
   ) => {
     const response = await axiosInstance.put(
@@ -210,7 +210,7 @@ export const projectApi = {
       name: string;
       color?: string;
       billable?: boolean;
-      billableRate?: number;
+      billableRate?: number | null;
       estimatedTime?: number;
       clientId?: string | null;
     }
@@ -256,7 +256,7 @@ export const projectApi = {
       name: string;
       color?: string;
       billable?: boolean;
-      billableRate?: number;
+      billableRate?: number | null;
       estimatedTime?: number;
       clientId?: string | null;
     }
@@ -411,6 +411,146 @@ export const TaskApi = {
     const response = await axiosInstance.get(
       `/project/tasks/${projectId}/${organizationId}`
     );
+    return response.data;
+  },
+};
+
+export const timeApi = {
+  getRunningTimer: async (organizationId: string) => {
+    const response = await axiosInstance.get(
+      `/time/${organizationId}/timer/running`
+    );
+    return response.data;
+  },
+
+  startTimer: async (
+    organizationId: string,
+    data: {
+      description?: string;
+      projectId?: string;
+      taskId?: string;
+      clientId?: string;
+      billable?: boolean;
+      tagIds?: string[];
+    }
+  ) => {
+    const response = await axiosInstance.post(
+      `/time/${organizationId}/timer/start`,
+      data
+    );
+    return response.data;
+  },
+
+  stopTimer: async (organizationId: string, timeEntryId: string) => {
+    const response = await axiosInstance.patch(
+      `/time/${organizationId}/timer/${timeEntryId}/stop`
+    );
+    return response.data;
+  },
+
+  getTimeEntries: async (
+    organizationId: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      date?: string;
+    }
+  ) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.date) queryParams.append("date", params.date);
+
+    const response = await axiosInstance.get(
+      `/time/${organizationId}?${queryParams.toString()}`
+    );
+
+    return response.data;
+  },
+
+  createTimeEntry: async (
+    organizationId: string,
+    data: {
+      description?: string;
+      start: Date;
+      end: Date;
+      projectId?: string;
+      taskId?: string;
+      billable: boolean;
+      tagIds?: string[];
+    }
+  ) => {
+    const response = await axiosInstance.post(`/time/${organizationId}`, data);
+    return response.data;
+  },
+
+  updateTimeEntry: async (
+    organizationId: string,
+    timeEntryId: string,
+    data: {
+      description?: string;
+      start: Date;
+      end: Date;
+      projectId?: string;
+      taskId?: string;
+      billable: boolean;
+      tagIds?: string[];
+    }
+  ) => {
+    const response = await axiosInstance.put(
+      `/time/${organizationId}/${timeEntryId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteTimeEntry: async (organizationId: string, timeEntryId: string) => {
+    const response = await axiosInstance.delete(
+      `/time/${organizationId}/${timeEntryId}`
+    );
+    return response.data;
+  },
+
+  bulkUpdateTimeEntries: async (
+    organizationId: string,
+    data: {
+      timeEntryIds: string[];
+      updates: {
+        description?: string;
+        projectId?: string;
+        taskId?: string;
+        billable: boolean;
+        tagIds?: string[];
+      };
+    }
+  ) => {
+    const response = await axiosInstance.put(
+      `/time/${organizationId}/bulk/update`,
+      data
+    );
+    return response.data;
+  },
+
+  bulkDeleteTimeEntries: async (
+    organizationId: string,
+    timeEntryIds: string[]
+  ) => {
+    const response = await axiosInstance.delete(
+      `/time/${organizationId}/bulk/delete`,
+      { data: { timeEntryIds } }
+    );
+    return response.data;
+  },
+
+  getAllProjectWithTasks: async (organizationId: string) => {
+    const response = await axiosInstance.get(
+      `/time/${organizationId}/projects-with-tasks`
+    );
+    return response.data;
+  },
+
+  getTags: async (organizationId: string) => {
+    const response = await axiosInstance.get(`/tag/${organizationId}`);
     return response.data;
   },
 };

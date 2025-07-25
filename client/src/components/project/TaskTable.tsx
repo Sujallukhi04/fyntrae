@@ -14,17 +14,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import {
   CircleCheckIcon,
   Inbox,
   Plus,
-  MoreHorizontal,
   Edit,
   Trash2,
   CheckCircle2,
   Circle,
-  Clock,
   MoreVertical,
 } from "lucide-react";
 import NoData from "@/components/NoData";
@@ -100,7 +97,7 @@ const TasksTable: React.FC<TasksTableProps> = ({
             filteredTasks.map((task) => {
               const progressPercent = getProgressPercent(
                 task.spentTime,
-                task?.estimatedTime
+                task?.estimatedTime || 0
               );
 
               return (
@@ -133,7 +130,7 @@ const TasksTable: React.FC<TasksTableProps> = ({
                           </div>
                           <span className="text-xs text-muted-foreground">
                             {progressPercent}% of{" "}
-                            {formatTimeInHours(task.estimatedTime)}
+                            {formatTimeInHours(task?.estimatedTime || 0)}
                           </span>
                         </>
                       )}

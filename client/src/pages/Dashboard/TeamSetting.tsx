@@ -80,14 +80,101 @@ interface LoaderState {
 
 interface FormData {
   name: string;
-  currency: string;
-  dateFormat: string;
-  timeFormat: string;
-  intervalFormat: string;
-  numberFormat: string;
+  currency: "INR" | "USD" | "EUR" | "GBP";
+  dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
+  timeFormat: "12h" | "24h";
+  intervalFormat: "12h" | "decimal";
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00";
   billableRates: number;
   employeesCanSeeBillableRates: boolean;
 }
+// Reusable components
+const SectionHeader = ({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) => (
+  <div className="md:w-[35%]">
+    <h1 className="text-lg font-bold">{title}</h1>
+    <h1 className="text-sm">{description}</h1>
+  </div>
+);
+
+const SectionCard = ({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <Card className={`md:w-[65%] pt-6 pb-5 ${className}`}>
+    <CardContent className="px-0">{children}</CardContent>
+  </Card>
+);
+
+const FormField = React.memo(
+  ({
+    label,
+    children,
+    className = "px-6",
+  }: {
+    label: string;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <div className={`space-y-2 ${className}`}>
+      <Label>{label}</Label>
+      {children}
+    </div>
+  )
+);
+
+const SelectField = ({
+  label,
+  value,
+  options,
+  onChange,
+  className = "px-6",
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  className?: string;
+}) => (
+  <FormField label={label} className={className}>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </FormField>
+);
+
+const SaveButton = ({
+  isLoading,
+  onClick,
+  label = "Save",
+}: {
+  isLoading: boolean;
+  onClick: () => void;
+  label?: string;
+}) => (
+  <div className="flex justify-end px-6">
+    <Button disabled={isLoading} onClick={onClick} className="w-fit">
+      {isLoading ? "Saving..." : label}
+    </Button>
+  </div>
+);
 
 const TeamSetting = () => {
   const { orgId } = useParams();
@@ -111,30 +198,33 @@ const TeamSetting = () => {
     dateFormatLoading: false,
   });
 
-  // Initialize form data with useMemo to prevent unnecessary re-renders
-  const initialFormData = useMemo<FormData>(
-    () => ({
-      name: organization?.name || "",
-      currency: organization?.currency || "INR",
-      dateFormat: organization?.dateFormat || "MM/DD/YYYY",
-      timeFormat: organization?.timeFormat || "12h",
-      intervalFormat: organization?.intervalFormat || "12h",
-      numberFormat: organization?.numberFormat || "1,000.00",
-      billableRates: organization?.billableRates ?? 0,
-      employeesCanSeeBillableRates:
-        organization?.employeesCanSeeBillableRates || false,
-    }),
-    [organization]
-  );
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    currency: "INR",
+    dateFormat: "MM/DD/YYYY",
+    timeFormat: "12h",
+    intervalFormat: "12h",
+    numberFormat: "1,000.00",
+    billableRates: 0,
+    employeesCanSeeBillableRates: false,
+  });
 
-  const [formData, setFormData] = useState<FormData>(initialFormData);
-
-  // Update form data when organization changes
   useEffect(() => {
-    setFormData(initialFormData);
-  }, [initialFormData]);
+    if (organization) {
+      setFormData({
+        name: organization.name || "",
+        currency: organization.currency || "INR",
+        dateFormat: organization.dateFormat || "MM/DD/YYYY",
+        timeFormat: organization.timeFormat || "12h",
+        intervalFormat: organization.intervalFormat || "12h",
+        numberFormat: organization.numberFormat || "1,000.00",
+        billableRates: organization.billableRates ?? 0,
+        employeesCanSeeBillableRates:
+          organization.employeesCanSeeBillableRates || false,
+      });
+    }
+  }, [organization]);
 
-  // Memoized helper functions
   const handleInputChange = useCallback(
     (field: keyof FormData, value: string | number | boolean) => {
       setFormData((prev) => ({
@@ -186,6 +276,43 @@ const TeamSetting = () => {
     []
   );
 
+  const validateSectionData = (section: SectionType): string | null => {
+    const allowedCurrencies = ["INR", "USD", "EUR", "GBP"];
+    const allowedDateFormats = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"];
+    const allowedTimeFormats = ["12h", "24h"];
+    const allowedIntervalFormats = ["12h", "decimal"];
+    const allowedNumberFormats = ["1,000.00", "1.000,00", "1 000.00"];
+
+    switch (section) {
+      case SECTION_TYPES.MAIN:
+        if (!formData.name?.trim()) return "Organization name is required.";
+        if (!allowedCurrencies.includes(formData.currency))
+          return "Invalid currency format.";
+        break;
+
+      case SECTION_TYPES.FORMAT:
+        if (!allowedDateFormats.includes(formData.dateFormat))
+          return "Invalid date format.";
+        if (!allowedTimeFormats.includes(formData.timeFormat))
+          return "Invalid time format.";
+        if (!allowedIntervalFormats.includes(formData.intervalFormat))
+          return "Invalid interval format.";
+        if (!allowedNumberFormats.includes(formData.numberFormat))
+          return "Invalid number format.";
+        break;
+
+      case SECTION_TYPES.BILLABLE:
+        const rate = Number(formData.billableRates);
+        if (isNaN(rate)) return "Billable rate must be a number.";
+        if (rate < 0) return "Billable rate cannot be negative.";
+        if (typeof formData.employeesCanSeeBillableRates !== "boolean")
+          return "Invalid value for 'employeesCanSeeBillableRates'.";
+        break;
+    }
+
+    return null;
+  };
+
   const buildUpdateData = useCallback(
     (section: SectionType): OrganizationUpdateData => {
       if (!organization) throw new Error("Organization not found");
@@ -236,6 +363,12 @@ const TeamSetting = () => {
         return;
       }
 
+      const validationError = validateSectionData(section);
+      if (validationError) {
+        toast.error(validationError);
+        return;
+      }
+
       setLoaderState(section, true);
 
       try {
@@ -283,14 +416,12 @@ const TeamSetting = () => {
     });
   }, []);
 
-  // Redirect if organization is invalid
   useEffect(() => {
     if ((organization && orgId !== organization.id) || organizationError) {
       navigate("/", { replace: true });
     }
   }, [orgId, organization, navigate, organizationError]);
 
-  // Early returns for loading and invalid states
   if (isLoadingOrganization) {
     return <LoaderMain />;
   }
@@ -298,92 +429,6 @@ const TeamSetting = () => {
   if (!organization || orgId !== organization.id) {
     return null;
   }
-
-  // Reusable components
-  const SectionHeader = ({
-    title,
-    description,
-  }: {
-    title: string;
-    description: string;
-  }) => (
-    <div className="md:w-[35%]">
-      <h1 className="text-lg font-bold">{title}</h1>
-      <h1 className="text-sm">{description}</h1>
-    </div>
-  );
-
-  const SectionCard = ({
-    children,
-    className = "",
-  }: {
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <Card className={`md:w-[65%] pt-6 pb-5 ${className}`}>
-      <CardContent className="px-0">{children}</CardContent>
-    </Card>
-  );
-
-  const FormField = ({
-    label,
-    children,
-    className = "px-6",
-  }: {
-    label: string;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <div className={`space-y-2 ${className}`}>
-      <Label>{label}</Label>
-      {children}
-    </div>
-  );
-
-  const SelectField = ({
-    label,
-    value,
-    options,
-    onChange,
-    className = "px-6",
-  }: {
-    label: string;
-    value: string;
-    options: { value: string; label: string }[];
-    onChange: (value: string) => void;
-    className?: string;
-  }) => (
-    <FormField label={label} className={className}>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </FormField>
-  );
-
-  const SaveButton = ({
-    isLoading,
-    onClick,
-    label = "Save",
-  }: {
-    isLoading: boolean;
-    onClick: () => void;
-    label?: string;
-  }) => (
-    <div className="flex justify-end px-6">
-      <Button disabled={isLoading} onClick={onClick} className="w-fit">
-        {isLoading ? "Saving..." : label}
-      </Button>
-    </div>
-  );
 
   return (
     <div className="max-w-6xl w-full mx-auto p-3 space-y-8">

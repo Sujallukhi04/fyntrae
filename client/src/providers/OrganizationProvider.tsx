@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { organizationApi } from "@/lib/api";
+import { organizationApi, timeApi } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
 import type {
   Invitation,
@@ -15,6 +15,7 @@ import type {
   PaginatedResponse,
 } from "@/types/oraganization";
 import { toast } from "sonner";
+import type { TimeEntry } from "@/types/project";
 
 interface OrganizationContextType {
   organization: Organization | null;
@@ -25,6 +26,11 @@ interface OrganizationContextType {
   isSwitching: boolean;
   isDeleting: boolean;
   isCreating?: boolean;
+  isLoadingTimer: boolean;
+  runningTimer: TimeEntry | null;
+  updateRunningTimer: (timer: TimeEntry | null) => void;
+  clearRunningTimer: () => void;
+  setRunningTimer: (timer: TimeEntry | null) => void;
 
   switchOrganization: (organizationId: string) => Promise<void>;
   updateOrganization: (
@@ -59,11 +65,38 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [runningTimer, setRunningTimer] = useState<TimeEntry | null>(null);
+  const [isLoadingTimer, setIsLoadingTimer] = useState(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  const updateRunningTimer = useCallback((timer: TimeEntry | null) => {
+    setRunningTimer(timer);
+  }, []);
+
+  const clearRunningTimer = useCallback(() => {
+    setRunningTimer(null);
+  }, []);
+
+  const fetchRunningTimer = useCallback(async (organizationId: string) => {
+    if (!organizationId) return;
+
+    try {
+      setIsLoadingTimer(true);
+      const response = await timeApi.getRunningTimer(organizationId);
+      const timer = response.data || null;
+      setRunningTimer(timer);
+    } catch (error: any) {
+      console.error("Error fetching running timer:", error);
+      // Don't show toast error for timer fetch failures as it's not critical
+      // and might be noisy for users
+    } finally {
+      setIsLoadingTimer(false);
+    }
+  }, []);
 
   const fetchOrganization = useCallback(async (organizationId: string) => {
     if (!organizationId) {
@@ -218,24 +251,34 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   const refetch = useCallback(async () => {
     if (user?.currentTeamId) {
       await fetchOrganization(user.currentTeamId);
+      await fetchRunningTimer(user.currentTeamId);
     }
-  }, [user?.currentTeamId, fetchOrganization]);
+  }, [user?.currentTeamId, fetchOrganization, fetchRunningTimer]);
 
   useEffect(() => {
     if (user?.currentTeamId) {
       fetchOrganization(user.currentTeamId);
+      fetchRunningTimer(user.currentTeamId);
     } else {
       setOrganization(null);
       setIsLoading(false);
+      clearRunningTimer();
     }
-  }, [user?.currentTeamId, fetchOrganization]);
+  }, [
+    user?.currentTeamId,
+    fetchOrganization,
+    fetchRunningTimer,
+    clearRunningTimer,
+  ]);
 
   const value = {
     organization,
+    runningTimer,
     isLoading,
     error,
     isUpdating,
     isSwitching,
+    isLoadingTimer,
     isDeleting,
     isCreating,
     switchOrganization,
@@ -244,6 +287,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     refetch,
     fetchOrganization,
     createOrganization,
+    updateRunningTimer,
+    clearRunningTimer,
+    setRunningTimer,
   };
 
   return (

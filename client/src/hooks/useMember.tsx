@@ -231,7 +231,7 @@ const useMember = () => {
       memberId: string,
       data: {
         role?: string;
-        billableRate?: number;
+        billableRate: number | null;
       }
     ) => {
       try {

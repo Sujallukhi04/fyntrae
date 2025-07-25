@@ -25,6 +25,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { formatNumber } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface AddEditProjectModalProps {
   isOpen: boolean;
@@ -32,8 +33,8 @@ interface AddEditProjectModalProps {
   onSubmit: (data: {
     name: string;
     color?: string;
-    billable?: boolean;
-    billableRate?: number;
+    billable: boolean;
+    billableRate: number | null;
     estimatedTime?: number;
     clientId?: string | null;
   }) => void;
@@ -43,7 +44,7 @@ interface AddEditProjectModalProps {
     name: string;
     color?: string;
     billable?: boolean;
-    billableRate?: number;
+    billableRate?: number | null;
     estimatedTime?: number;
     clientId?: string | null;
   };
@@ -94,9 +95,17 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
   const [color, setColor] = useState(initialData?.color || COLORS[0]);
   const [clientId, setClientId] = useState(initialData?.clientId || "");
   const [billable, setBillable] = useState(initialData?.billable ?? false);
-  const [billableRate, setBillableRate] = useState(
-    initialData?.billableRate !== undefined ? initialData.billableRate : 0
-  );
+  const [billableRate, setBillableRate] = useState<number | null>(() => {
+    if (initialData?.billableRate === null) return null;
+    if (typeof initialData?.billableRate === "number")
+      return initialData.billableRate;
+    return 0;
+  });
+  const [errors, setErrors] = useState<{
+    name?: string;
+    billableRate?: string;
+    estimatedTime?: string;
+  }>({});
   const [estimatedTime, setEstimatedTime] = useState(
     initialData?.estimatedTime !== undefined ? initialData.estimatedTime : 0
   );
@@ -125,17 +134,48 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
     }
   }, [isOpen, initialData]);
 
-  const incrementRate = () => setBillableRate((prev) => prev + 100);
+  const incrementRate = () =>
+    setBillableRate((prev) => (typeof prev === "number" ? prev + 100 : 100));
+
   const decrementRate = () =>
-    setBillableRate((prev) => Math.max(0, prev - 100));
+    setBillableRate((prev) =>
+      typeof prev === "number" ? Math.max(0, prev - 100) : 0
+    );
+
+  const validateForm = () => {
+    if (!name.trim()) {
+      toast.error("Project name is required");
+      return false;
+    }
+
+    if (name.length > 255) {
+      toast.error("Project name must be less than 255 characters");
+      return false;
+    }
+
+    if (billable && billableRate !== null && billableRate < 0) {
+      toast.error("Rate must be 0 or more");
+      return false;
+    }
+
+    if (estimatedTime !== undefined && estimatedTime < 0) {
+      toast.error("Estimated time cannot be negative");
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) return;
+
     onSubmit({
       name,
       color,
       billable,
-      billableRate: billable ? billableRate : undefined,
+      billableRate: billable ? billableRate ?? null : null,
       estimatedTime,
       clientId: clientId || null,
     });
@@ -214,7 +254,6 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="The next big thing"
-                  required
                   className="py-4 w-full"
                 />
               </div>
@@ -245,8 +284,25 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
               <div className="flex flex-col gap-1">
                 <Label htmlFor="billable">Billable Default</Label>
                 <Select
-                  value={billable ? "billable" : "non-billable"}
-                  onValueChange={(val) => setBillable(val === "billable")}
+                  value={
+                    !billable
+                      ? "non-billable"
+                      : billable && billableRate === null
+                      ? "default"
+                      : "billable"
+                  }
+                  onValueChange={(val) => {
+                    if (val === "non-billable") {
+                      setBillable(false);
+                      setBillableRate(null);
+                    } else if (val === "default") {
+                      setBillable(true);
+                      setBillableRate(null);
+                    } else if (val === "billable") {
+                      setBillable(true);
+                      setBillableRate(0); // or retain existing value if you want
+                    }
+                  }}
                 >
                   <SelectTrigger className="w-40 h-10 py-4.5 bg-background border rounded-md border-border mt-1">
                     <SelectValue placeholder="Select billing type" />
@@ -254,11 +310,12 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
                   <SelectContent>
                     <SelectItem value="non-billable">Non-billable</SelectItem>
                     <SelectItem value="billable">Billable</SelectItem>
+                    <SelectItem value="default">Default Rate</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {/* Billable Rate */}
-              {billable && (
+              {billable && billableRate !== null && (
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="billable-rate">Billable Rate</Label>
                   <div className="relative w-[160px] h-10">
@@ -266,7 +323,7 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
                     <button
                       type="button"
                       onClick={decrementRate}
-                      disabled={billableRate <= 0}
+                      disabled={billableRate ? billableRate <= 0 : true}
                       className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
                     >
                       <Minus className="h-4 w-4" />
@@ -276,7 +333,7 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
                     <Input
                       id="billable-rate"
                       type="text"
-                      value={`${billableRate.toFixed(2)} ${currency}`}
+                      value={`${billableRate} ${currency}`}
                       onChange={(e) => {
                         const numericValue = parseFloat(
                           e.target.value.replace(/[^\d.]/g, "")

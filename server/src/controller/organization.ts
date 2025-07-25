@@ -134,7 +134,7 @@ export const updateOrganization = async (
         timeFormat: validatedData.data.timeFormat,
         intervalFormat: validatedData.data.intervalFormat,
         numberFormat: validatedData.data.numberFormat,
-        billableRates: validatedData.data.billableRates?.toFixed(2),
+        billableRates: validatedData.data.billableRates,
         employeesCanSeeBillableRates:
           validatedData.data.employeesCanSeeBillableRates,
         updatedAt: new Date(),

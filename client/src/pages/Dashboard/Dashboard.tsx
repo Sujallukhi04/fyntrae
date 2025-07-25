@@ -5,7 +5,7 @@ import React from "react";
 import { Outlet } from "react-router";
 
 const Dashboard: React.FC = () => {
-  const { organization, isLoading, error } = useOrganization();
+  const { isLoading, error } = useOrganization();
 
   if (isLoading) {
     return <LoaderMain />;

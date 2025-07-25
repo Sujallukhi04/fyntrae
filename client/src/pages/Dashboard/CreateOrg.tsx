@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import useAuthUser from "@/hooks/useAuthUser";
-import { organizationApi } from "@/lib/api";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { Avatar, AvatarFallback } from "@radix-ui/react-avatar";
 import { Label } from "@radix-ui/react-label";

@@ -8,8 +8,9 @@ import useClient from "@/hooks/useClient";
 import ActiveClient from "@/components/clientsOrganation/ActiveClient";
 import ArchivedClient from "@/components/clientsOrganation/ArchivedClient";
 import type { Client } from "@/types/oraganization";
-import AddEditClientModal from "@/components/modals/clientmember/CreateClient";
+import AddEditClientModal from "@/components/clientsOrganation/CreateClient";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 const Client = () => {
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
@@ -50,8 +51,6 @@ const Client = () => {
     });
     setActiveLoaded(true);
   }, [user?.currentTeamId, activeCurrentPage, getClients]);
-
-  console.log(activeCurrentPage);
 
   const fetchArchivedClients = useCallback(async () => {
     if (!user?.currentTeamId) return;
@@ -99,6 +98,15 @@ const Client = () => {
 
   const createclient = useCallback(async (name: string) => {
     if (!user?.currentTeamId) return;
+    if (!name.trim()) {
+      toast.error("Client name is required.");
+      return;
+    }
+
+    if (name.trim().length < 3) {
+      toast.error("Client name must be at least 3 characters.");
+      return;
+    }
     try {
       setModalState({ type: "add", data: null });
       await createClient(user?.currentTeamId, name);
@@ -107,7 +115,8 @@ const Client = () => {
 
   const handleDeleteClient = useCallback(
     async (clientId: string) => {
-      if (!user?.currentTeamId) return;
+      if (!user?.currentTeamId || !clientId) return;
+
       try {
         await deleteClient(clientId, user.currentTeamId);
       } catch (error) {}
@@ -118,6 +127,17 @@ const Client = () => {
   const handleEditClient = useCallback(
     async (name: string) => {
       if (!user?.currentTeamId || !modalState.data) return;
+
+      if (!name.trim()) {
+        toast.error("Client name is required.");
+        return;
+      }
+
+      if (name.trim().length < 3) {
+        toast.error("Client name must be at least 3 characters.");
+        return;
+      }
+
       await editClient(user.currentTeamId, modalState.data.id, name);
       setModalState({ type: null, data: null });
     },
@@ -126,7 +146,7 @@ const Client = () => {
 
   const handlesendArchiveClient = useCallback(
     async (clientId: string) => {
-      if (!user?.currentTeamId) return;
+      if (!user?.currentTeamId || !clientId) return;
 
       try {
         await sendArchiveClient(clientId, user.currentTeamId);
@@ -137,7 +157,7 @@ const Client = () => {
 
   const handleUnarchiveClient = useCallback(
     async (clientId: string) => {
-      if (!user?.currentTeamId) return;
+      if (!user?.currentTeamId || !clientId) return;
 
       try {
         await unarchiveClient(clientId, user.currentTeamId);

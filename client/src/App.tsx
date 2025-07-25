@@ -17,6 +17,7 @@ import { TeamInvite } from "./pages/AcceptInvite";
 import Client from "./pages/Dashboard/Client";
 import ProjectPage from "./pages/Dashboard/Project";
 import ProjectIdPage from "./pages/Dashboard/ProjectPage";
+import Time from "./pages/Dashboard/Time";
 
 const App = () => {
   const { isLoading, isAuthenticated, user } = useAuthUser();
@@ -40,6 +41,7 @@ const App = () => {
           {isAuthenticated && (
             <>
               <Route index element={<DashMain />} />
+              <Route path="time" element={<Time />} />
               <Route path="teams/:orgId" element={<TeamSetting />} />
               <Route path="teams/create" element={<CreateOrg />} />
               <Route path="members" element={<Members />} />

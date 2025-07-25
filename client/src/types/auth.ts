@@ -12,13 +12,11 @@ export interface User {
     id: string;
     name: string;
   };
-  organizations: [
-    {
-      id: string;
-      name: string;
-      role: string;
-    }
-  ];
+  organizations: {
+    id: string;
+    name: string;
+    role: string;
+  }[];
 }
 
 export interface LoginCredentials {

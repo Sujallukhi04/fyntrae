@@ -31,6 +31,7 @@ model User {
   members            Member[]
   invitations        OrganizationInvitation[]
   projectMembers     ProjectMember[]
+  timeEntries        TimeEntry[]
 }
 
 enum WeekStart {
@@ -59,27 +60,29 @@ model Organizations {
   dateFormat                   String
   currency                     String
   employeesCanSeeBillableRates Boolean  @default(false)
-  billableRates                Decimal?
+  billableRates                Int?
   intervalFormat               String
   timeFormat                   String
   numberFormat                 String
   createdAt                    DateTime @default(now())
   updatedAt                    DateTime @updatedAt
 
-  currentTeamUsers User[]                    @relation("UserCurrentTeam")
+  currentTeamUsers User[]                   @relation("UserCurrentTeam")
   owner            User                     @relation("OrganizationOwner", fields: [userId], references: [id], onDelete: Restrict)
   members          Member[]
   invitations      OrganizationInvitation[]
   clients          Client[]
   projects         Project[]
   tasks            Task[]
+  tags             Tag[]
+  timeEntries      TimeEntry[]
 }
 
 model Member {
   id             String   @id @default(cuid())
   userId         String
   organizationId String
-  billableRate   Decimal?
+  billableRate   Int?
   role           Role     @default(EMPLOYEE)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
@@ -88,6 +91,7 @@ model Member {
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization   Organizations   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   projectMembers ProjectMember[]
+  timeEntries    TimeEntry[]
 
   @@unique([userId, organizationId])
 }
@@ -152,6 +156,7 @@ model Project {
   client       Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
   members      ProjectMember[]
   tasks        Task[]
+  timeEntries  TimeEntry[]
 
   @@unique([organizationId, name])
 }
@@ -173,21 +178,69 @@ model ProjectMember {
 }
 
 model Task {
-  id             String    @id @default(cuid())
+  id             String   @id @default(cuid())
   name           String
   projectId      String
   organizationId String
   estimatedTime  Int?
-  spentTime      Int       @default(0)
-  status        Status
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  spentTime      Int      @default(0)
+  status         Status
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   project      Project       @relation(fields: [projectId], references: [id], onDelete: Restrict)
   organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  timeEntries  TimeEntry[]
 }
 
 enum Status {
   ACTIVE
   DONE
+}
+
+model Tag {
+  id             String    @id @default(cuid())
+  name           String
+  organizationId String
+  createdAt      DateTime? @default(now())
+  updatedAt      DateTime? @updatedAt
+
+  organization Organizations  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  timeEntries  TimeEntryTag[]
+}
+
+model TimeEntry {
+  id             String    @id @default(cuid())
+  description    String
+  start          DateTime
+  end            DateTime?
+  duration       Int
+  billableRate   Int?
+  billable       Boolean
+  isImported     Boolean   @default(false)
+  userId         String
+  organizationId String
+  projectId      String?
+  taskId         String?
+  memberId       String
+  createdAt      DateTime? @default(now())
+  updatedAt      DateTime? @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task         Task?         @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  member       Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  tags TimeEntryTag[]
+}
+
+model TimeEntryTag {
+  timeEntryId String
+  tagId       String
+
+  timeEntry TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+  tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@id([timeEntryId, tagId])
 }

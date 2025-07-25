@@ -2,18 +2,18 @@ export interface Organization {
   id: string;
   name: string;
   personalTeam: boolean;
-  dateFormat: string;
-  currency: string;
+  dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
+  currency: "INR" | "USD" | "EUR" | "GBP";
   employeesCanSeeBillableRates: boolean;
   billableRates: number | null;
-  intervalFormat: string;
-  timeFormat: string;
-  numberFormat: string;
+  intervalFormat: "12h" | "decimal";
+  timeFormat: "12h" | "24h";
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00";
   createdAt: string;
   updatedAt: string;
 }
 
-export interface OrganizationUpdateData {
+export interface  OrganizationUpdateData {
   name: string;
   currency: "INR" | "USD" | "EUR" | "GBP";
   dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
@@ -62,7 +62,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface PaginationType  {
+export interface PaginationType {
   total: number;
   page: number;
   pageSize: number;
@@ -70,10 +70,10 @@ export interface PaginationType  {
 }
 
 export interface Client {
-    id : string;
-    name : string;
-    organizationId : string;
-    archivedAt? : Date;
-    createdAt : Date;
-    updatedAt : Date;
+  id: string;
+  name: string;
+  organizationId: string;
+  archivedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -20,19 +20,20 @@ import {
 import useMember from "@/hooks/useMember";
 import { useAuth } from "@/providers/AuthProvider";
 import type { Member, Invitation } from "@/types/oraganization";
-import UpdateUser from "@/components/modals/member/UpdateUser";
+import UpdateUser from "@/components/member/UpdateUser";
 import MemberTable from "@/components/member/MemberTable";
 import InvitationTable from "@/components/member/InvitationTable";
 import GeneralModal from "@/components/modals/shared/Normalmodal";
 import { CustomAlertDialog } from "@/components/modals/shared/CustomAlertDialog";
-import { InviteMemberModal } from "@/components/modals/member/InviteMemberModal";
+import { InviteMemberModal } from "@/components/member/InviteMemberModal";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 type RoleType = "OWNER" | "ADMIN" | "MANAGER" | "EMPLOYEE" | "PLACEHOLDER";
 
 interface FormState {
   role: RoleType;
-  billableRate: string;
+  billableRate: number | null;
   isBillableRateDefault: boolean;
 }
 
@@ -68,16 +69,18 @@ const Members: React.FC = () => {
   }>({ type: null, data: null });
   const [formState, setFormState] = useState<FormState>({
     role: "EMPLOYEE",
-    billableRate: "0",
+    billableRate: 0,
     isBillableRateDefault: true,
   });
+
+  console.log(formState);
 
   useEffect(() => {
     if (modalState.type === "update" && modalState.data) {
       const member = modalState.data as Member;
       setFormState({
         role: member.role,
-        billableRate: member.billableRate?.toString() || "0",
+        billableRate: member?.billableRate ? Number(member.billableRate) : null,
         isBillableRateDefault: member.billableRate == null,
       });
     }
@@ -221,6 +224,17 @@ const Members: React.FC = () => {
   const handleInviteMember = useCallback(
     async (email: string, role: string) => {
       if (!user?.currentTeamId) return;
+
+      if (!email || !email.includes("@")) {
+        toast.error("Please enter a valid email address.");
+        return;
+      }
+
+      const validRoles = ["OWNER", "ADMIN", "MANAGER", "EMPLOYEE"];
+      if (!validRoles.includes(role)) {
+        toast.error("Please select a valid role.");
+        return;
+      }
       try {
         await inviteUser(user.currentTeamId, { email, role });
         setIsInviteModalOpen(false);
@@ -231,11 +245,19 @@ const Members: React.FC = () => {
     [user?.currentTeamId, inviteUser]
   );
 
-  console.log(modalState);
-
   const handleUpdateMember = useCallback(
-    async (memberId: string, role: string, billableRate: number) => {
+    async (memberId: string, role: string, billableRate: number | null) => {
       if (!user?.currentTeamId) return;
+      if (!role) {
+        toast.error("Please select a valid role.");
+        return;
+      }
+
+      if (billableRate !== null && (isNaN(billableRate) || billableRate < 0)) {
+        toast.error("Billable rate must be a non-negative number.");
+        return;
+      }
+
       try {
         await updateMember(user.currentTeamId, memberId, {
           role,
@@ -366,7 +388,7 @@ const Members: React.FC = () => {
             const billable = formState.isBillableRateDefault
               ? null
               : Number(formState.billableRate || 0);
-            handleUpdateMember(memberId, formState.role, billable ?? 0);
+            handleUpdateMember(memberId, formState.role, billable);
           }}
           selectedMember={modalState.data as Member}
           formState={formState}

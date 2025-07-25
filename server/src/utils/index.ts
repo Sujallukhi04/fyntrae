@@ -59,7 +59,7 @@ export const updateMemberRoleSchema = z.object({
   role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE", "OWNER", "PLACEHOLDER"], {
     errorMap: () => ({ message: "Invalid member role" }),
   }),
-  billableRate: z.number().optional(),
+  billableRate: z.number().nullable(),
 });
 
 export const createOrganizationSchema = z.object({
@@ -84,7 +84,7 @@ export const updateOrganizationSchema = z.object({
   intervalFormat: z.enum(["12h", "decimal"], {
     errorMap: () => ({ message: "Invalid interval format" }),
   }),
-  numberFormat: z.enum(["1,000.00", "1.000,00", "1000.00", "1000,00"], {
+  numberFormat: z.enum(["1,000.00", "1.000,00", "1 000. 00"], {
     errorMap: () => ({ message: "Invalid number format" }),
   }),
   billableRates: z.number().optional(),
@@ -106,7 +106,7 @@ export const createProjectSchema = z
     }),
     billableRate: z
       .number({ invalid_type_error: "Billable rate must be a number" })
-      .optional(),
+      .nullable(),
     estimatedTime: z
       .number({ invalid_type_error: "Estimated time must be a number" })
       .optional(),
@@ -118,10 +118,11 @@ export const createProjectSchema = z
   .refine(
     (data) =>
       !data.billable ||
-      (data.billableRate !== undefined && data.billableRate !== null),
+      data.billableRate === null ||
+      (typeof data.billableRate === "number" && data.billableRate >= 0),
     {
       message:
-        "Please enter a billable rate when the project is marked as billable.",
+        "When billable, the rate must be null or a number greater than or equal to 0.",
       path: ["billableRate"],
     }
   );
@@ -160,4 +161,121 @@ export const updateTaskStatusSchema = z.object({
   status: z.enum(["ACTIVE", "DONE"], {
     errorMap: () => ({ message: "Status must be either Active or Done" }),
   }),
+});
+
+export const createTimeEntrySchema = z
+  .object({
+    description: z
+      .string()
+      .max(500, "Description must be less than 500 characters")
+      .default(""),
+    start: z
+      .string({ required_error: "Start time is required" })
+      .nonempty("Start time cannot be empty")
+      .refine(
+        (val) => val.endsWith("Z"),
+        "Start time must be in UTC (ends with 'Z')"
+      )
+      .refine(
+        (val) => !isNaN(Date.parse(val)),
+        "Start time must be a valid ISO date"
+      )
+      .transform((val) => new Date(val)),
+
+    end: z
+      .string({ required_error: "End time is required" })
+      .nonempty("End time cannot be empty")
+      .refine(
+        (val) => val.endsWith("Z"),
+        "End time must be in UTC (ends with 'Z')"
+      )
+      .refine(
+        (val) => !isNaN(Date.parse(val)),
+        "End time must be a valid ISO date"
+      )
+      .transform((val) => new Date(val)),
+
+    billable: z.boolean().default(false),
+    projectId: z.string().cuid().nullable().optional(),
+    taskId: z.string().cuid().nullable().optional(),
+    tagIds: z.array(z.string().cuid()).optional().default([]),
+  })
+  .refine((data) => data.end > data.start, {
+    message: "End time must be after start time",
+    path: ["end"],
+  })
+  .refine((data) => data.start <= new Date(Date.now() + 5 * 60 * 1000), {
+    message: "Start time cannot be more than 5 minutes in the future",
+    path: ["start"],
+  });
+
+export const updateTimeEntrySchema = z.object({
+  startTime: z
+    .date()
+    .optional()
+    .refine((date) => date === undefined || date <= new Date(), {
+      message: "Start time cannot be in the future",
+    }),
+  endTime: z
+    .date()
+    .optional()
+    .refine((date) => date === undefined || date > new Date(), {
+      message: "End time must be after start time",
+    }),
+  description: z.string().optional(),
+});
+
+export const startTimerSchema = z.object({
+  description: z
+    .string()
+    .max(500, "Description must be less than 500 characters")
+    .default(""),
+
+  projectId: z.string().cuid().optional().nullable(),
+
+  taskId: z.string().cuid().optional().nullable(),
+
+  tagIds: z.array(z.string().cuid()).optional().default([]),
+
+  billable: z.boolean().optional().default(false),
+});
+
+export const bulkUpdateTimeEntriesSchema = z.object({
+  timeEntryIds: z
+    .array(z.string().cuid())
+    .min(1, "At least one time entry ID is required"),
+  updates: z.object({
+    description: z
+      .string()
+      .max(500, "Description must be less than 500 characters")
+      .default(""),
+    billable: z.boolean().default(false),
+    projectId: z.string().cuid().optional().nullable(),
+    taskId: z.string().cuid().nullable().optional(),
+    tagIds: z.array(z.string().cuid()).optional().default([]),
+  }),
+});
+
+export const bulkDeleteTimeEntriesSchema = z.object({
+  timeEntryIds: z
+    .array(z.string().cuid())
+    .min(1, "At least one time entry ID is required"),
+});
+
+export const getTimeEntriesSchema = z.object({
+  page: z.string().optional().default("1"),
+  limit: z.string().optional().default("50"),
+  projectId: z.string().cuid().optional(),
+  taskId: z.string().cuid().optional(),
+  clientId: z.string().cuid().optional(),
+  userId: z.string().cuid().optional(),
+  billable: z.enum(["true", "false"]).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  search: z.string().optional(),
+  sortBy: z
+    .enum(["start", "end", "description", "createdAt"])
+    .optional()
+    .default("start"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });

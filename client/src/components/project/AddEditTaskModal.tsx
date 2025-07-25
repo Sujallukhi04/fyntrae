@@ -85,7 +85,10 @@ const AddEditTaskModal: React.FC<AddEditTaskModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof TaskData, value: string | number) => {
+  const handleInputChange = <K extends keyof TaskData>(
+    field: K,
+    value: TaskData[K]
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -144,7 +147,7 @@ const AddEditTaskModal: React.FC<AddEditTaskModalProps> = ({
                     e.target.value ? Number(e.target.value) : undefined
                   )
                 }
-                className={errors.estimatedTime ? "border-red-500" : ""}    
+                className={errors.estimatedTime ? "border-red-500" : ""}
               />
               {errors.estimatedTime && (
                 <p className="text-sm text-red-500">{errors.estimatedTime}</p>

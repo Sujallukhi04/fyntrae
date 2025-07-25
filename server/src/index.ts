@@ -5,6 +5,8 @@ import organizationRoutes from "./routes/organization";
 import memberRoutes from "./routes/member";
 import clientRoutes from "./routes/client";
 import projectRoutes from "./routes/project";
+import timeRoutes from "./routes/time";
+import tagRoutes from "./routes/tag";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
@@ -35,6 +37,8 @@ app.use("/api/organization", organizationRoutes);
 app.use("/api/member", memberRoutes);
 app.use("/api/client", clientRoutes);
 app.use("/api/project", projectRoutes);
+app.use("/api/time", timeRoutes);
+app.use("/api/tag", tagRoutes);
 
 app.use(errorHandler);
 

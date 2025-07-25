@@ -67,7 +67,7 @@ const useProject = () => {
       name: string;
       color?: string;
       billable?: boolean;
-      billableRate?: number;
+      billableRate?: number | null;
       estimatedTime?: number;
       clientId?: string | null;
     }
@@ -104,7 +104,7 @@ const useProject = () => {
       name: string;
       color?: string;
       billable?: boolean;
-      billableRate?: number;
+      billableRate?: number | null;
       estimatedTime?: number;
       clientId?: string | null;
     }

@@ -16,6 +16,7 @@ import TasksTable from "@/components/project/TaskTable";
 import ProjectMembersTable from "@/components/project/ProjectMembersTable";
 import useTaks from "@/hooks/useTaks";
 import AddEditTaskModal from "@/components/project/AddEditTaskModal";
+import { toast } from "sonner";
 
 interface EditMemberState {
   isOpen: boolean;
@@ -129,7 +130,12 @@ const ProjectIdPage = () => {
     memberId: string,
     billableRate: number
   ) => {
-    if (!user?.currentTeamId || !project?.id) return;
+    if (!user?.currentTeamId || !project?.id)
+      return toast.error("Missing team or project info");
+
+    if (!memberId) return toast.error("Member is required");
+    if (isNaN(billableRate) || billableRate < 0)
+      return toast.error("Invalid billable rate");
 
     try {
       await addProjectMember(
@@ -148,7 +154,12 @@ const ProjectIdPage = () => {
     memberId: string,
     billableRate: number
   ) => {
-    if (!user?.currentTeamId || !project?.id) return;
+    if (!user?.currentTeamId || !project?.id)
+      return toast.error("Missing team or project info");
+
+    if (!memberId) return toast.error("Member is required");
+    if (isNaN(billableRate) || billableRate < 0)
+      return toast.error("Invalid billable rate");
 
     try {
       await updateProjectMember(
@@ -187,7 +198,8 @@ const ProjectIdPage = () => {
   };
 
   const handleEditProject = async (data: ProjectData) => {
-    if (!user?.currentTeamId || !project?.id) return;
+    if (!user?.currentTeamId || !project?.id)
+      return toast.error("Missing team or project info");
 
     try {
       const updatedProject = await updateProject(
@@ -220,7 +232,10 @@ const ProjectIdPage = () => {
     taskId: string,
     currentStatus: "ACTIVE" | "DONE"
   ) => {
-    if (!user?.currentTeamId || !project?.id) return;
+    if (!user?.currentTeamId || !project?.id)
+      return toast.error("Missing team or project info");
+
+    if (!taskId) return toast.error("Task ID is required");
 
     const newStatus = currentStatus === "ACTIVE" ? "DONE" : "ACTIVE";
 
@@ -251,7 +266,21 @@ const ProjectIdPage = () => {
     name: string;
     estimatedTime?: number;
   }) => {
-    if (!user?.currentTeamId || !project?.id) return;
+    if (!user?.currentTeamId || !project?.id) {
+      toast.error("Missing team or project info");
+      return;
+    }
+
+    if (!data.name?.trim()) {
+      toast.error("Task name is required");
+      return;
+    }
+    if (typeof data.estimatedTime !== "undefined") {
+      if (isNaN(data.estimatedTime) || data.estimatedTime < 0) {
+        toast.error("Estimated time must be a positive number");
+        return;
+      }
+    }
 
     try {
       if (taskModalState.mode === "add") {
@@ -275,7 +304,9 @@ const ProjectIdPage = () => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if (!user?.currentTeamId || !project?.id) return;
+    if (!user?.currentTeamId || !project?.id)
+      return toast.error("Missing team or project info");
+    if (!taskId) return toast.error("Task ID is required");
     try {
       await deleteTask(taskId, project.id, user.currentTeamId);
     } catch (error) {}

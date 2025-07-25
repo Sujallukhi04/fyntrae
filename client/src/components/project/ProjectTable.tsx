@@ -139,7 +139,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {/* Color Dot with Light Outer Circle */}
-                          <div className="relative w-6 h-6">
+                          <div className="relative w-5 h-5">
                             <span
                               className="absolute inset-0 rounded-full"
                               style={{
@@ -159,18 +159,13 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                             <span className="font-medium max-w-[150px] truncate text-sm text-foreground">
                               {project.name}
                             </span>
-                            {project.taskCount ? (
-                              <span className="text-xs text-muted-foreground">
-                                {project.taskCount} Tasks
-                              </span>
-                            ) : null}
                           </div>
                         </div>
                       </TableCell>
 
                       {/* Client */}
                       <TableCell className="max-w-[50px] truncate font-medium">
-                        {project.client?.name || "--"}
+                        {project?.client?.name || "--"}
                       </TableCell>
                       {/* Total Time */}
                       <TableCell>
@@ -197,7 +192,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                       </TableCell>
                       {/* Billable Rate */}
                       <TableCell>
-                        {project.billable
+                        {project.billable && project.billableRate !== null
                           ? formatNumber(
                               project.billableRate ?? 0,
                               organization?.numberFormat || "1,000.00",
@@ -247,7 +242,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                             {archived && onUnarchive && (
                               <DropdownMenuItem
                                 onClick={(e) => {
-                                  e.stopPropagation(); 
+                                  e.stopPropagation();
                                   onUnarchive(project);
                                 }}
                                 disabled={isUnarchiveLoading}

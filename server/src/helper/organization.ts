@@ -39,7 +39,7 @@ export const API_PERMISSIONS = {
     DELETE: [Role.OWNER, Role.ADMIN],
     MANAGE_MEMBERS: [Role.OWNER, Role.ADMIN],
     INVITE_MEMBERS: [Role.OWNER, Role.ADMIN],
-    VIEW_MEMBERS: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
+    VIEW_MEMBERS: [Role.OWNER, Role.ADMIN, Role.MANAGER],
   },
 
   MEMBER: {
@@ -48,6 +48,15 @@ export const API_PERMISSIONS = {
     DEACTIVATE: [Role.OWNER, Role.ADMIN],
     DELETE: [Role.OWNER, Role.ADMIN],
     CHANGE_ROLE: [Role.OWNER, Role.ADMIN],
+  },
+
+  TIME: {
+    CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
+  },
+
+  TAG: {
+    CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER],
+    VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
   },
 };
 

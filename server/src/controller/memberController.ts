@@ -588,7 +588,7 @@ export const updateMember = async (
     // Schema validation
     const validatedData = updateMemberRoleSchema.safeParse({
       role,
-      billableRate: billableRate || 0,
+      billableRate: billableRate,
     });
 
     if (!validatedData.success) {
@@ -633,9 +633,11 @@ export const updateMember = async (
     if (role !== undefined) {
       updateData.role = role;
     }
+    console.log(Number(billableRate));
 
     if (billableRate !== undefined) {
-      updateData.billableRate = Number(billableRate);
+      updateData.billableRate =
+        billableRate === null ? null : Number(billableRate);
     }
 
     // Update member

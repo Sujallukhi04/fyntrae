@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Minus, Plus, User } from "lucide-react";
 import { type OrganizationMember } from "@/types/project";
+import { toast } from "sonner";
 
 interface AddProjectMemberModalProps {
   isOpen: boolean;
@@ -64,7 +65,15 @@ const AddProjectMemberModal: React.FC<AddProjectMemberModalProps> = ({
   }, [isOpen, mode, initialMemberId, initialBillableRate]);
 
   const handleSubmit = () => {
-    if (!selectedMemberId) return;
+    if (!selectedMemberId) {
+      toast.error("Please select a member.");
+      return;
+    }
+
+    if (isNaN(billableRate) || billableRate < 0) {
+      toast.error("Billable rate must be a non-negative number.");
+      return;
+    }
     onSubmit(selectedMemberId, billableRate);
     handleClose();
   };

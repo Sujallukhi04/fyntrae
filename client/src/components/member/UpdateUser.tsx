@@ -33,7 +33,7 @@ interface RoleOption {
 
 interface FormState {
   role: RoleType;
-  billableRate: string;
+  billableRate: number | null;
   isBillableRateDefault: boolean;
 }
 
@@ -154,7 +154,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
               onValueChange={(val) => {
                 const isDefault = val === "default";
                 handleChange("isBillableRateDefault", isDefault);
-                if (isDefault) handleChange("billableRate", "");
+                if (isDefault) handleChange("billableRate", null);
+                else handleChange("billableRate", 0);
               }}
             >
               <SelectTrigger className="w-full">
@@ -174,10 +175,14 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
                     id="rate"
                     type="number"
                     placeholder="0.00"
-                    value={formState.billableRate}
-                    onChange={(e) =>
-                      handleChange("billableRate", e.target.value)
-                    }
+                    value={formState.billableRate ?? 0}
+                    onChange={(e) => {
+                      const parsed = parseFloat(e.target.value);
+                      handleChange(
+                        "billableRate",
+                        isNaN(parsed) ? null : parsed
+                      );
+                    }}
                     className="w-full pr-16"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground flex items-center gap-1 pointer-events-none">
