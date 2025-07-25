@@ -367,6 +367,17 @@ const Time = () => {
     }
   };
 
+  const handleDeleteBulkEntries = async () => {
+    if (!user?.currentTeamId || selectedEntries.length === 0) return;
+
+    try {
+      await bulkDeleteTimeEntries(user.currentTeamId, selectedEntries);
+      setSelectedEntries([]);
+    } catch (error) {
+      console.error("Failed to delete time entries:", error);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <div className="flex flex-col gap-2 pb-1 pt-2">
@@ -584,13 +595,16 @@ const Time = () => {
                 onClick={() => setModalState({ type: "edit-bulk", data: null })}
                 variant="outline"
                 className="h-8 px-3 text-sm"
+                disabled={selectedEntries.length === 0 || bulkUpdateLoading}
               >
                 <Pencil className="w-4 h-4 mr-1" />
                 Update
               </Button>
               <Button
                 variant="outline"
+                onClick={handleDeleteBulkEntries}
                 className=" cursor-pointer  text-white h-8 px-3 text-sm"
+                disabled={selectedEntries.length === 0 || bulkDeleteLoading}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 Delete
