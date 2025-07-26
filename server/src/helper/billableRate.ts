@@ -12,31 +12,27 @@ export const calculateBillableRate = async ({
 }): Promise<number | null> => {
   try {
     if (projectId) {
-      const projectMember = await db.projectMember.findFirst({
-        where: {
-          userId,
-          projectId,
-        },
-        select: {
-          billableRate: true,
-        },
-      });
-
-      if (projectMember?.billableRate)
-        return Number(projectMember.billableRate);
-    }
-
-    if (projectId) {
       const project = await db.project.findUnique({
-        where: {
-          id: projectId,
-        },
-        select: {
-          billableRate: true,
-        },
+        where: { id: projectId },
+        select: { billable: true, billableRate: true },
       });
 
-      if (project?.billableRate) return Number(project.billableRate);
+      if (project && !project.billable) {
+        return null;
+      }
+
+      const projectMember = await db.projectMember.findFirst({
+        where: { userId, projectId },
+        select: { billableRate: true },
+      });
+
+      if (projectMember?.billableRate != null) {
+        return Number(projectMember.billableRate);
+      }
+
+      if (project?.billableRate != null) {
+        return Number(project.billableRate);
+      }
     }
 
     const organizationMember = await db.member.findFirst({
@@ -84,7 +80,7 @@ export const updateBillableRate = async ({
   newRate: number | null;
   applyToExisting?: boolean;
   organizationId: string;
-  userId?: string;
+  userId?: string | null;
   projectId?: string;
 }): Promise<void> => {
   try {
@@ -92,16 +88,41 @@ export const updateBillableRate = async ({
       let oldRate: number | null = null;
 
       switch (source) {
-        case "project_member":
+        case "project_member": {
           const oldPM = await tx.projectMember.findUnique({
             where: { id: sourceId },
             select: { billableRate: true },
           });
           oldRate = oldPM?.billableRate ?? null;
 
+          let effectiveRate = newRate;
+          if (newRate === null && userId && projectId) {
+            const project = await tx.project.findUnique({
+              where: { id: projectId },
+              select: { billable: true, billableRate: true },
+            });
+
+            const orgMember = await tx.member.findFirst({
+              where: { organizationId, userId },
+              select: { billableRate: true },
+            });
+
+            const org = await tx.organizations.findUnique({
+              where: { id: organizationId },
+              select: { billableRates: true },
+            });
+
+            effectiveRate =
+              project?.billable && project?.billableRate != null
+                ? project.billableRate
+                : orgMember?.billableRate != null
+                ? orgMember.billableRate
+                : org?.billableRates ?? null;
+          }
+
           await tx.projectMember.update({
             where: { id: sourceId },
-            data: { billableRate: newRate },
+            data: { billableRate: effectiveRate },
           });
 
           if (applyToExisting && userId && projectId) {
@@ -110,20 +131,23 @@ export const updateBillableRate = async ({
                 organizationId,
                 userId,
                 projectId,
-                billableRate: oldRate, // only entries that had this PM rate
+                billableRate: oldRate,
               },
               data: {
-                billableRate: newRate,
+                billableRate: effectiveRate,
               },
             });
           }
-          break;
 
-        case "project":
+          break;
+        }
+
+        case "project": {
           const oldProject = await tx.project.findUnique({
             where: { id: sourceId },
-            select: { billableRate: true },
+            select: { billableRate: true, billable: true },
           });
+
           oldRate = oldProject?.billableRate ?? null;
 
           await tx.project.update({
@@ -132,78 +156,138 @@ export const updateBillableRate = async ({
           });
 
           if (applyToExisting && projectId) {
-            await tx.timeEntry.updateMany({
-              where: {
-                organizationId,
-                projectId,
-                billableRate: oldRate,
-                // exclude ones with matching ProjectMember billableRate
-                NOT: {
-                  userId: {
-                    in: (
-                      await tx.projectMember.findMany({
-                        where: {
-                          projectId,
-                          billableRate: {
-                            not: null,
-                          },
-                        },
-                        select: { userId: true },
-                      })
-                    ).map((m) => m.userId),
-                  },
-                },
-              },
-              data: {
-                billableRate: newRate,
-              },
+            const updatedProject = await tx.project.findUnique({
+              where: { id: sourceId },
+              select: { billable: true },
             });
-          }
-          break;
 
-        case "organization_member":
+            const projectMembers = await tx.projectMember.findMany({
+              where: { projectId },
+              select: { userId: true },
+            });
+
+            // ✅ CASE: project is now not billable → set all associated time entries to null
+            if (updatedProject?.billable === false) {
+              await tx.timeEntry.updateMany({
+                where: {
+                  organizationId,
+                  projectId,
+                },
+                data: {
+                  billableRate: null,
+                },
+              });
+            } else {
+              // ✅ CASE: project is still billable → apply fallback logic
+              for (const { userId } of projectMembers) {
+                let fallbackRate: number | null = null;
+
+                if (newRate !== null) {
+                  fallbackRate = newRate;
+                } else {
+                  const projectMember = await tx.projectMember.findFirst({
+                    where: { userId, projectId },
+                    select: { billableRate: true },
+                  });
+
+                  if (projectMember?.billableRate != null) {
+                    fallbackRate = projectMember.billableRate;
+                  } else {
+                    const orgMember = await tx.member.findFirst({
+                      where: { userId, organizationId },
+                      select: { billableRate: true },
+                    });
+
+                    if (orgMember?.billableRate != null) {
+                      fallbackRate = orgMember.billableRate;
+                    } else {
+                      const org = await tx.organizations.findUnique({
+                        where: { id: organizationId },
+                        select: { billableRates: true },
+                      });
+
+                      fallbackRate = org?.billableRates ?? null;
+                    }
+                  }
+                }
+
+                await tx.timeEntry.updateMany({
+                  where: {
+                    organizationId,
+                    projectId,
+                    userId,
+                    billableRate: oldRate, // only if time entry was previously using project rate
+                  },
+                  data: {
+                    billableRate: fallbackRate,
+                  },
+                });
+              }
+            }
+          }
+
+          break;
+        }
+
+        case "organization_member": {
           const oldMember = await tx.member.findUnique({
             where: { id: sourceId },
-            select: { billableRate: true },
+            select: { billableRate: true, userId: true },
           });
           oldRate = oldMember?.billableRate ?? null;
 
+          // Update the member’s billable rate
           await tx.member.update({
             where: { id: sourceId },
             data: { billableRate: newRate },
           });
 
           if (applyToExisting && userId) {
+            // Determine fallback rate if newRate is null
+            let fallbackRate: number | null;
+
+            if (newRate !== null) {
+              fallbackRate = newRate;
+            } else {
+              const org = await tx.organizations.findUnique({
+                where: { id: organizationId },
+                select: { billableRates: true },
+              });
+              fallbackRate = org?.billableRates ?? null;
+            }
+
+            // Get projects with their own override
+            const projectsWithOverride = (
+              await tx.project.findMany({
+                where: {
+                  billableRate: { not: null },
+                },
+                select: { id: true },
+              })
+            ).map((p) => p.id);
+
             await tx.timeEntry.updateMany({
               where: {
                 organizationId,
-                userId,
+                userId: oldMember?.userId || userId,
                 billableRate: oldRate,
-                // exclude ones with project or project_member rate
                 OR: [
                   { projectId: null },
                   {
                     projectId: {
-                      notIn: (
-                        await tx.project.findMany({
-                          where: {
-                            billableRate: {
-                              not: null,
-                            },
-                          },
-                          select: { id: true },
-                        })
-                      ).map((p) => p.id),
+                      notIn: projectsWithOverride,
                     },
                   },
                 ],
               },
               data: {
-                billableRate: newRate,
+                billableRate: fallbackRate,
               },
             });
           }
+
           break;
+        }
 
         case "organization":
           const oldOrg = await tx.organizations.findUnique({
@@ -269,4 +353,28 @@ export function getLocalDateRangeInUTC(
   endUTC.setUTCDate(endUTC.getUTCDate() + 1);
 
   return { startUTC, endUTC };
+}
+
+export async function recalculateProjectSpentTime(projectId: string) {
+  const total = await db.timeEntry.aggregate({
+    where: { projectId },
+    _sum: { duration: true },
+  });
+
+  await db.project.update({
+    where: { id: projectId },
+    data: { spentTime: total._sum.duration ?? 0 },
+  });
+}
+
+export async function recalculateTaskSpentTime(taskId: string) {
+  const total = await db.timeEntry.aggregate({
+    where: { taskId },
+    _sum: { duration: true },
+  });
+
+  await db.task.update({
+    where: { id: taskId },
+    data: { spentTime: total._sum.duration ?? 0 },
+  });
 }

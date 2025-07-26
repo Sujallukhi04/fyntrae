@@ -1,3 +1,4 @@
+import { updateBillableRate } from "../helper/billableRate";
 import { emailTemplates, sendMail } from "../helper/mailer";
 import {
   assertAPIPermission,
@@ -633,12 +634,6 @@ export const updateMember = async (
     if (role !== undefined) {
       updateData.role = role;
     }
-    console.log(Number(billableRate));
-
-    if (billableRate !== undefined) {
-      updateData.billableRate =
-        billableRate === null ? null : Number(billableRate);
-    }
 
     // Update member
     const updatedMember = await db.member.update({
@@ -655,9 +650,33 @@ export const updateMember = async (
       },
     });
 
+    if (billableRate !== undefined ) {
+      await updateBillableRate({
+        source: "organization_member",
+        sourceId: memberId,
+        newRate: billableRate === null ? null : Number(billableRate),
+        applyToExisting: true,
+        organizationId,
+        userId: member.user.id,
+      });
+    }
+
+    const getMember = await db.member.findUnique({
+      where: { id: memberId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
     res.status(200).json({
       message: "Member updated successfully",
-      member: updatedMember,
+      member: getMember,
     });
   } catch (error) {
     throw new ErrorHandler(

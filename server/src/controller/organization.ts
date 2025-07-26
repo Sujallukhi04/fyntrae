@@ -14,6 +14,7 @@ import {
   isUserActiveMember,
 } from "../helper/organization";
 import { getAuthUserData } from "../helper/user";
+import { updateBillableRate } from "../helper/billableRate";
 
 export const switchOrganization = async (
   req: Request,
@@ -134,16 +135,28 @@ export const updateOrganization = async (
         timeFormat: validatedData.data.timeFormat,
         intervalFormat: validatedData.data.intervalFormat,
         numberFormat: validatedData.data.numberFormat,
-        billableRates: validatedData.data.billableRates,
         employeesCanSeeBillableRates:
           validatedData.data.employeesCanSeeBillableRates,
         updatedAt: new Date(),
       },
     });
 
+    if (
+      validatedData.data.billableRates !== undefined &&
+      validatedData.data.billableRates !== null
+    ) {
+      await updateBillableRate({
+        source: "organization",
+        sourceId: organizationId,
+        newRate: validatedData.data.billableRates,
+        applyToExisting: true,
+        organizationId,
+      });
+    }
+
     res.status(200).json({
       message: "Organization updated successfully",
-      organization: updatedOrganization,
+      organization: await getOrganization(organizationId),
     });
   } catch (error) {
     throw new ErrorHandler(
@@ -711,6 +724,19 @@ export const deleteMember = async (
         where: {
           email: member.user.email,
           organizationId,
+        },
+      });
+
+      await tx.timeEntry.deleteMany({
+        where: {
+          userId: member.userId,
+          organizationId,
+        },
+      });
+
+      await db.projectMember.deleteMany({
+        where: {
+          memberId: memberId,
         },
       });
     });

@@ -326,7 +326,7 @@ export const ProjectMemberApi = {
     organizationId: string,
     memberId: string,
     data: {
-      billableRate: number;
+      billableRate: number | null;
     }
   ) => {
     const response = await axiosInstance.put(

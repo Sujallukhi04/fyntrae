@@ -169,11 +169,13 @@ export const createTimeEntry = async (
       if (!task) throw new ErrorHandler("Task not found", 404);
     }
 
-    const billableRate = await calculateBillableRate({
-      userId,
-      projectId: data.projectId,
-      organizationId,
-    });
+    const billableRate = data.billable
+      ? await calculateBillableRate({
+          userId,
+          projectId: data.projectId,
+          organizationId,
+        })
+      : null;
 
     const duration = calculateDuration(data.start, data.end);
 
@@ -321,7 +323,7 @@ export const startTimer = async (
     const billableRate = data.billable
       ? await calculateBillableRate({
           userId,
-          projectId: data.projectId,
+          projectId: data?.projectId || null,
           organizationId,
         })
       : null;
@@ -645,7 +647,13 @@ export const updateTimeEntry = async (
       }
     }
 
-    let billableRate = existingEntry.billableRate;
+    let billableRate = !existingEntry.billable
+      ? await calculateBillableRate({
+          userId,
+          projectId: data.projectId,
+          organizationId,
+        })
+      : existingEntry.billableRate;
 
     const newDuration = finalEnd
       ? calculateDuration(finalStart, finalEnd)

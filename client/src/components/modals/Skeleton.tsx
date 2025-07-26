@@ -8,6 +8,7 @@ import {
   TableRow,
 } from "../ui/table";
 import { Skeleton } from "../ui/skeleton";
+import { Checkbox } from "../ui/checkbox";
 
 export const MembersSkeleton = () => (
   <div className="rounded-md bg-muted/40 border border-muted ">
@@ -211,6 +212,77 @@ export const ProjectsSkeleton = () => (
     </Table>
   </div>
 );
+
+export const TimeEntriesTableSkeleton = () => {
+  return (
+    <div className="rounded-md bg-muted/40 border border-muted">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12">
+              <Checkbox disabled />
+            </TableHead>
+            <TableHead className="w-[25%] text-muted-foreground font-medium">
+              Description
+            </TableHead>
+            <TableHead className="w-[25%] text-muted-foreground font-medium">
+              Project
+            </TableHead>
+            <TableHead className="w-[15%] text-muted-foreground font-medium">
+              Tags
+            </TableHead>
+            <TableHead className="w-[12%] text-muted-foreground font-medium">
+              Time
+            </TableHead>
+            <TableHead className="w-[10%] text-muted-foreground font-medium">
+              Billable
+            </TableHead>
+            <TableHead className="w-[10%] text-muted-foreground font-medium">
+              Duration
+            </TableHead>
+            <TableHead className="w-[5%]" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <Checkbox disabled />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-40 rounded" />
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="w-5 h-5 rounded-full" />
+                  <Skeleton className="h-4 w-32 rounded" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-2 flex-wrap">
+                  <Skeleton className="h-5 w-12 rounded" />
+                  <Skeleton className="h-5 w-8 rounded" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-24 rounded" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-6 rounded-md" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-14 rounded" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
 
 export const ProjectMembersSkeleton = () => (
   <div className="rounded-md bg-muted/40 border border-muted">

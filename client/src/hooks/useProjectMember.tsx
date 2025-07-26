@@ -82,7 +82,7 @@ const useProjectMember = () => {
         setOrganizationMembers((prev) =>
           prev.filter((member) => member.id !== memberId)
         );
-        
+
         toast.success("Member added to project successfully");
         return response;
       } catch (error: any) {
@@ -103,7 +103,7 @@ const useProjectMember = () => {
       projectId: string,
       organizationId: string,
       memberId: string,
-      billableRate: number
+      billableRate: number | null
     ) => {
       try {
         setUpdateMemberLoading(true);

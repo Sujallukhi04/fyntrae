@@ -147,8 +147,6 @@ const ProjectPage = () => {
     await deleteProject(projectId, user.currentTeamId);
   }, []);
 
-  console.log(modalState);
-
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <div className="flex flex-col gap-3  pt-2">

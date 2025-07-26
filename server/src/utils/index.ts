@@ -147,7 +147,7 @@ export const createProjectTaskSchema = z.object({
 });
 
 export const updateProjectMemberSchema = z.object({
-  billableRate: z.number().nullable().optional(),
+  billableRate: z.number().nonnegative().nullable(),
 });
 
 export const updateTaskSchema = z.object({

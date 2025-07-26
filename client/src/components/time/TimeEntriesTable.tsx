@@ -23,6 +23,7 @@ import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";
 import { Checkbox } from "../ui/checkbox";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import PaginationControls from "../PaginationControl";
+import { TimeEntriesTableSkeleton } from "../modals/Skeleton";
 
 interface TimeEntriesTableProps {
   timeEntries: TimeEntry[];
@@ -80,19 +81,7 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
   return (
     <>
       {isLoading ? (
-        <div className="rounded-md bg-muted/40 border border-muted">
-          <Table>
-            <TableBody>
-              <TableRow>
-                <TableCell colSpan={8}>
-                  <div className="flex items-center justify-center py-12">
-                    Loading...
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+        <TimeEntriesTableSkeleton />
       ) : (
         <div className="rounded-md bg-muted/40 border border-muted">
           <Table>
@@ -154,9 +143,6 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                     entry?.projectId || "",
                     entry?.taskId || ""
                   );
-
-                  console.log(task);
-
                   return (
                     <TableRow
                       key={entry.id}

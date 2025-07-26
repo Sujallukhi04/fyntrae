@@ -161,12 +161,14 @@ const ProjectIdPage = () => {
     if (isNaN(billableRate) || billableRate < 0)
       return toast.error("Invalid billable rate");
 
+    const sanitizedRate = billableRate === 0 ? null : billableRate;
+
     try {
       await updateProjectMember(
         project.id,
         user.currentTeamId,
         memberId,
-        billableRate
+        sanitizedRate
       );
       setEditMemberState({
         isOpen: false,

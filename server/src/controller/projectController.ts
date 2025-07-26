@@ -16,6 +16,7 @@ import {
   validateTaskInProject,
 } from "../helper/organization";
 import { Role } from "@prisma/client";
+import { updateBillableRate } from "../helper/billableRate";
 
 export const createProject = async (
   req: Request,
@@ -237,7 +238,6 @@ export const updateProject = async (
         name: data.name,
         color: data.color,
         billable: data.billable,
-        billableRate: data.billable ? data.billableRate : null,
         estimatedTime: data.estimatedTime,
         clientId: data.clientId || null,
       },
@@ -246,9 +246,28 @@ export const updateProject = async (
       },
     });
 
+    if (data.billableRate !== undefined) {
+      await updateBillableRate({
+        source: "project",
+        sourceId: projectId,
+        newRate: data.billable ? data.billableRate : null,
+        applyToExisting: true,
+        organizationId,
+        userId: null,
+        projectId,
+      });
+    }
+
+    const getproject = await db.project.findUnique({
+      where: { id: projectId },
+      include: {
+        client: { select: { id: true, name: true, archivedAt: true } },
+      },
+    });
+
     res.status(200).json({
       message: "Project updated successfully",
-      project: updatedProject,
+      project: getproject,
     });
   } catch (error) {
     throw new ErrorHandler(
@@ -346,6 +365,17 @@ export const deleteProject = async (
 
     if (taskExists) {
       throw new ErrorHandler("Project cannot be deleted as it has tasks", 400);
+    }
+
+    const existingTime = await db.timeEntry.findFirst({
+      where: { projectId },
+    });
+
+    if (existingTime) {
+      throw new ErrorHandler(
+        "Project cannot be deleted as it has time entries",
+        400
+      );
     }
 
     await db.$transaction(async (tx) => {
@@ -580,8 +610,43 @@ export const updateProjectMember = async (
         },
       },
       data: {
-        billableRate,
         updatedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        member: {
+          select: {
+            role: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (projectMember.user?.id) {
+      await updateBillableRate({
+        source: "project_member",
+        sourceId: projectMember.id,
+        newRate: billableRate,
+        applyToExisting: true,
+        organizationId,
+        userId: projectMember.user.id,
+        projectId,
+      });
+    }
+
+    const getMember = await db.projectMember.findUnique({
+      where: {
+        projectId_memberId: {
+          projectId,
+          memberId,
+        },
       },
       include: {
         user: {
@@ -602,7 +667,7 @@ export const updateProjectMember = async (
 
     res.status(200).json({
       message: "Project member updated successfully",
-      projectMember,
+      projectMember: getMember,
     });
   } catch (error) {
     throw new ErrorHandler(
