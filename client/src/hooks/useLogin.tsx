@@ -2,16 +2,15 @@ import { authApi } from "@/lib/api";
 import { useAuth } from "@/providers/AuthProvider";
 import type { LoginCredentials } from "@/types/auth";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const useLogin = () => {
   const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
 
   const loginMutation = async (credentials: LoginCredentials) => {
     try {
       setIsPending(true);
-      setError(null);
 
       const response = await authApi.login(credentials);
 
@@ -20,8 +19,7 @@ const useLogin = () => {
       return response;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Login failed";
-      setError(errorMessage);
-      throw err;
+      toast.error(errorMessage);
     } finally {
       setIsPending(false);
     }
@@ -30,7 +28,6 @@ const useLogin = () => {
   return {
     loginMutation,
     isPending,
-    error,
   };
 };
 

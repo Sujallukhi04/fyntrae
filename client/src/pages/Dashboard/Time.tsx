@@ -108,7 +108,6 @@ const formatDuration = (seconds: number) => {
 const Time = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
-  const [bulkProject, setBulkProject] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [description, setDescription] = useState("");
   const [selectedProject, setSelectedProject] = useState<string>("");
@@ -293,12 +292,7 @@ const Time = () => {
     } catch (error) {}
   };
 
-  // Bulk delete function
-  const handleBulkDelete = () => {
-    console.log("Bulk deleting entries:", selectedEntries);
-    // API call would go here
-    setSelectedEntries([]);
-  };
+
 
   const formatEntryDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);

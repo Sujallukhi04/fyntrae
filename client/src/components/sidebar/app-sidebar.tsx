@@ -8,6 +8,7 @@ import {
   FolderOpen,
   Frame,
   GalleryVerticalEnd,
+  LayoutDashboard,
   Map,
   PieChart,
   Settings,
@@ -28,6 +29,7 @@ import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import useAuthUser from "@/hooks/useAuthUser";
+import { TimerWidget } from "../TimerWeight";
 
 const formatRole = (role: string) => {
   return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
@@ -65,7 +67,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {
         title: "Dashboard",
         url: "/",
-        icon: SquareTerminal,
+        icon: LayoutDashboard,
       },
       {
         title: "Time",
@@ -130,6 +132,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
+      <TimerWidget />
       <SidebarContent className="gap-0">
         <NavMain items={data.navMain} name="Platform" />
         <NavMain items={data.manage} name="Manage" />

@@ -119,7 +119,8 @@ const TasksTable: React.FC<TasksTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      {task.estimatedTime === 0 ? (
+                      {task.estimatedTime === 0 ||
+                      task.estimatedTime === null ? (
                         "--"
                       ) : (
                         <>

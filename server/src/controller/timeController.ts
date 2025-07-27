@@ -128,30 +128,30 @@ export const createTimeEntry = async (
       "CREATE"
     );
 
-    const overlappingEntries = await checkOverlappingEntries(
-      userId,
-      organizationId,
-      data.start,
-      data.end
-    );
-    if (overlappingEntries.length > 0) {
-      res.status(409).json({
-        success: false,
-        message: `Time entry overlaps with ${
-          overlappingEntries.length
-        } existing ${
-          overlappingEntries.length === 1 ? "entry" : "entries"
-        }. Please choose a different time slot.`,
-        overlappingEntries: overlappingEntries.map((entry) => ({
-          id: entry.id,
-          description: entry.description,
-          start: entry.start,
-          end: entry.end,
-          project: entry.project,
-        })),
-      });
-      return;
-    }
+    // const overlappingEntries = await checkOverlappingEntries(
+    //   userId,
+    //   organizationId,
+    //   data.start,
+    //   data.end
+    // );
+    // if (overlappingEntries.length > 0) {
+    //   res.status(409).json({
+    //     success: false,
+    //     message: `Time entry overlaps with ${
+    //       overlappingEntries.length
+    //     } existing ${
+    //       overlappingEntries.length === 1 ? "entry" : "entries"
+    //     }. Please choose a different time slot.`,
+    //     overlappingEntries: overlappingEntries.map((entry) => ({
+    //       id: entry.id,
+    //       description: entry.description,
+    //       start: entry.start,
+    //       end: entry.end,
+    //       project: entry.project,
+    //     })),
+    //   });
+    //   return;
+    // }
 
     if (data.projectId) {
       const project = await db.project.findUnique({
@@ -606,34 +606,34 @@ export const updateTimeEntry = async (
     const finalStart = data.start || existingEntry.start;
     const finalEnd = data.end !== undefined ? data.end : existingEntry.end;
 
-    if (finalEnd && finalStart) {
-      const overlappingEntries = await checkOverlappingEntries(
-        userId,
-        organizationId,
-        finalStart,
-        finalEnd,
-        timeEntryId
-      );
+    // if (finalEnd && finalStart) {
+    //   const overlappingEntries = await checkOverlappingEntries(
+    //     userId,
+    //     organizationId,
+    //     finalStart,
+    //     finalEnd,
+    //     timeEntryId
+    //   );
 
-      if (overlappingEntries.length > 0) {
-        res.status(409).json({
-          success: false,
-          message: `Time entry overlaps with ${
-            overlappingEntries.length
-          } existing ${
-            overlappingEntries.length === 1 ? "entry" : "entries"
-          }. Please choose a different time slot.`,
-          overlappingEntries: overlappingEntries.map((entry) => ({
-            id: entry.id,
-            description: entry.description,
-            start: entry.start,
-            end: entry.end,
-            project: entry.project,
-          })),
-        });
-        return;
-      }
-    }
+    //   if (overlappingEntries.length > 0) {
+    //     res.status(409).json({
+    //       success: false,
+    //       message: `Time entry overlaps with ${
+    //         overlappingEntries.length
+    //       } existing ${
+    //         overlappingEntries.length === 1 ? "entry" : "entries"
+    //       }. Please choose a different time slot.`,
+    //       overlappingEntries: overlappingEntries.map((entry) => ({
+    //         id: entry.id,
+    //         description: entry.description,
+    //         start: entry.start,
+    //         end: entry.end,
+    //         project: entry.project,
+    //       })),
+    //     });
+    //     return;
+    //   }
+    // }
 
     if (data.projectId) {
       const project = await db.project.findFirst({

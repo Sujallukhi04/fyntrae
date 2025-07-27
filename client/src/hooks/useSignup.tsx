@@ -2,16 +2,16 @@ import { useState } from "react";
 import { authApi } from "@/lib/api";
 import { useAuth } from "@/providers/AuthProvider";
 import type { SignupData } from "@/types/auth";
+import { toast } from "sonner";
 
 const useSignup = () => {
   const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const { login } = useAuth();
 
   const signupMutation = async (data: SignupData) => {
     try {
       setIsPending(true);
-      setError(null);
 
       const response = await authApi.signup(data);
 
@@ -20,8 +20,7 @@ const useSignup = () => {
       return response;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Signup failed";
-      setError(errorMessage);
-      throw err;
+      toast.error(errorMessage);
     } finally {
       setIsPending(false);
     }
@@ -30,7 +29,6 @@ const useSignup = () => {
   return {
     signupMutation,
     isPending,
-    error,
   };
 };
 
