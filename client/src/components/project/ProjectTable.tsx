@@ -51,7 +51,7 @@ interface ProjectTableProps {
 const formatTime = (minutes: number) => {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return `${h}:${m < 10 ? "0" : ""}${m}`;
+  return `${h}:${m < 10 ? "0" : ""}${m}h`;
 };
 
 const ProjectTable: React.FC<ProjectTableProps> = ({
@@ -115,7 +115,9 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
               ) : (
                 projects.map((project) => {
                   // Example calculations
-                  const totalMinutes = project.spentTime ?? 0;
+                  const totalMinutes = project.spentTime
+                    ? Math.floor(project.spentTime / 60)
+                    : 0;
                   const estimatedMinutes = (project.estimatedTime ?? 0) * 60;
                   const progressPercent = estimatedMinutes
                     ? Math.round((totalMinutes / estimatedMinutes) * 100)
@@ -174,20 +176,29 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                       {/* Progress bar and percent */}
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <div className="w-28 h-1.5 bg-muted rounded overflow-hidden">
-                            <div
-                              className="h-2"
-                              style={{
-                                width: `${Math.min(progressPercent, 100)}%`,
-                                background:
-                                  progressPercent > 100 ? "#e53e3e" : "#38a169",
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {progressPercent}% of{" "}
-                            {project.estimatedTime ?? "--"}h
-                          </span>
+                          {project.estimatedTime ? (
+                            <>
+                              <div className="w-28 h-1.5 bg-muted rounded overflow-hidden">
+                                <div
+                                  className="h-2"
+                                  style={{
+                                    width: `${Math.min(progressPercent, 100)}%`,
+                                    background:
+                                      progressPercent > 100
+                                        ? "#e53e3e"
+                                        : "#6B7280",
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {progressPercent}% of {project.estimatedTime}h
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              --
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       {/* Billable Rate */}

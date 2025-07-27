@@ -53,17 +53,22 @@ const TasksTable: React.FC<TasksTableProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"active" | "done">("active");
 
-  const formatTimeInHours = (hours: number | null) => {
-    if (!hours) return "--";
-    return `${hours.toFixed(1)}h`;
+  const formatTimeInHours = (seconds: number | null) => {
+    if (!seconds) return "--";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h}:${m < 10 ? "0" : ""}${m}h`;
   };
 
   const getProgressPercent = (
     spentTime: number | null,
     estimatedTime: number | null
   ) => {
-    if (!spentTime || !estimatedTime || estimatedTime === 0) return 0;
-    return Math.round((spentTime / estimatedTime) * 100);
+    const totalMinutes = spentTime ? Math.floor(spentTime / 60) : 0;
+    const estimatedMinutes = (estimatedTime ?? 0) * 60;
+    return estimatedMinutes
+      ? Math.round((totalMinutes / estimatedMinutes) * 100)
+      : 0;
   };
 
   // Filter tasks based on status
@@ -114,7 +119,7 @@ const TasksTable: React.FC<TasksTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      {task.estimatedTime === null ? (
+                      {task.estimatedTime === 0 ? (
                         "--"
                       ) : (
                         <>
@@ -122,15 +127,29 @@ const TasksTable: React.FC<TasksTableProps> = ({
                             <div
                               className="h-full transition-all duration-300"
                               style={{
-                                width: `${Math.min(progressPercent, 100)}%`,
+                                width: `${Math.min(
+                                  getProgressPercent(
+                                    task.spentTime,
+                                    task?.estimatedTime || 0
+                                  ),
+                                  100
+                                )}%`,
                                 background:
-                                  progressPercent > 100 ? "#e53e3e" : "#38a169",
+                                  getProgressPercent(
+                                    task.spentTime,
+                                    task?.estimatedTime || 0
+                                  ) > 100
+                                    ? "#e53e3e"
+                                    : "#6B7280",
                               }}
                             />
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {progressPercent}% of{" "}
-                            {formatTimeInHours(task?.estimatedTime || 0)}
+                            {getProgressPercent(
+                              task.spentTime,
+                              task?.estimatedTime || 0
+                            )}
+                            % of {task.estimatedTime ?? "--"}h
                           </span>
                         </>
                       )}

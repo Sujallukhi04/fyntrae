@@ -80,7 +80,11 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
 }) => {
   const [projectId, setProjectId] = useState("");
   const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(() => {
+    const date = new Date();
+    date.setHours(date.getHours() + 1);
+    return date;
+  });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [billable, setBillable] = useState(initialData?.billable ?? false);
   const [description, setDescription] = useState("");
@@ -100,7 +104,9 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
       setDescription("");
       setProjectId("");
       setStartTime(new Date());
-      setEndTime(new Date());
+      const date = new Date();
+      date.setHours(date.getHours() + 1);
+      setEndTime(date);
       setSelectedTags([]);
       setBillable(false);
     }
@@ -185,6 +191,7 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
               />
               <Select
                 value={billable ? "billable" : "Non-Billable"}
+                disabled={runningTimer}
                 onValueChange={(value) => setBillable(value === "billable")}
               >
                 <SelectTrigger className="h-8 px-2 border border-muted rounded-md bg-muted/10 text-sm font-medium w-[140px]">
@@ -325,11 +332,16 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
           </div>
           <DialogFooter className="mt-4">
             <DialogClose asChild>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={runningTimer}
+                onClick={onClose}
+              >
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || runningTimer}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "add" ? "Create Time Entry" : "Save Changes"}
             </Button>

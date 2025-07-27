@@ -5,6 +5,8 @@ import { assertAPIPermission } from "../helper/organization";
 import {
   calculateBillableRate,
   getLocalDateRangeInUTC,
+  recalculateProjectSpentTime,
+  recalculateTaskSpentTime,
 } from "../helper/billableRate";
 import {
   bulkDeleteTimeEntriesSchema,
@@ -232,6 +234,14 @@ export const createTimeEntry = async (
       return entryWithRelations;
     });
 
+    if (timeEntry.projectId) {
+      await recalculateProjectSpentTime(timeEntry.projectId);
+    }
+
+    if (timeEntry.taskId) {
+      await recalculateTaskSpentTime(timeEntry.taskId);
+    }
+
     res.status(201).json({
       success: true,
       data: {
@@ -457,6 +467,14 @@ export const stopTimer = async (req: Request, res: Response): Promise<void> => {
         },
       },
     });
+
+    if (updateTimeEntry.projectId) {
+      await recalculateProjectSpentTime(updateTimeEntry.projectId);
+    }
+
+    if (updateTimeEntry.taskId) {
+      await recalculateTaskSpentTime(updateTimeEntry.taskId);
+    }
 
     res.status(201).json({
       success: true,
@@ -735,6 +753,14 @@ export const updateTimeEntry = async (
       return entryWithRelations;
     });
 
+    if (updatedTimeEntry.projectId) {
+      await recalculateProjectSpentTime(updatedTimeEntry.projectId);
+    }
+
+    if (updatedTimeEntry.taskId) {
+      await recalculateTaskSpentTime(updatedTimeEntry.taskId);
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -793,6 +819,13 @@ export const deleteTimeEntry = async (
     await db.timeEntry.delete({
       where: { id: timeEntryId },
     });
+
+    if (existingEntry.projectId) {
+      await recalculateProjectSpentTime(existingEntry.projectId);
+    }
+    if (existingEntry.taskId) {
+      await recalculateTaskSpentTime(existingEntry.taskId);
+    }
 
     res.status(200).json({
       success: true,
@@ -912,6 +945,26 @@ export const bulkUpdateTimeEntries = async (
       }
     });
 
+    const affectedProjectIds = [
+      ...new Set([
+        ...timeEntries.map((e) => e.projectId).filter(Boolean),
+        ...(data.updates.projectId ? [data.updates.projectId] : []),
+      ]),
+    ];
+    const affectedTaskIds = [
+      ...new Set([
+        ...timeEntries.map((e) => e.taskId).filter(Boolean),
+        ...(data.updates.taskId ? [data.updates.taskId] : []),
+      ]),
+    ];
+
+    for (const projectId of affectedProjectIds) {
+      if (projectId) await recalculateProjectSpentTime(projectId);
+    }
+    for (const taskId of affectedTaskIds) {
+      if (taskId) await recalculateTaskSpentTime(taskId);
+    }
+
     res.status(200).json({
       success: true,
       message: `${data.timeEntryIds.length} time entries updated successfully`,
@@ -965,6 +1018,24 @@ export const bulkDeleteTimeEntries = async (
         id: { in: data.timeEntryIds },
       },
     });
+
+    const affectedProjectIds = [
+      ...new Set(timeEntries.map((e) => e.projectId).filter(Boolean)),
+    ];
+    const affectedTaskIds = [
+      ...new Set(timeEntries.map((e) => e.taskId).filter(Boolean)),
+    ];
+
+    for (const projectId of affectedProjectIds) {
+      if (projectId) {
+        await recalculateProjectSpentTime(projectId);
+      }
+    }
+    for (const taskId of affectedTaskIds) {
+      if (taskId) {
+        await recalculateTaskSpentTime(taskId);
+      }
+    }
 
     res.status(200).json({
       success: true,

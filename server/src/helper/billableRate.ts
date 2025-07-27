@@ -356,6 +356,7 @@ export function getLocalDateRangeInUTC(
 }
 
 export async function recalculateProjectSpentTime(projectId: string) {
+  
   const total = await db.timeEntry.aggregate({
     where: { projectId },
     _sum: { duration: true },

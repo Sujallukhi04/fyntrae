@@ -47,6 +47,7 @@ interface TimeEntriesTableProps {
     currency: string | undefined,
     className?: string
   ) => React.ReactNode;
+  runningTimer: boolean;
 }
 
 const formatEntryDuration = (seconds: number) => {
@@ -69,6 +70,7 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
   getCurrencyIcon,
   deleteLoading,
   tags = [],
+  runningTimer,
 }) => {
   const { organization } = useOrganization();
   // Helper to get project and task names
@@ -269,7 +271,10 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit(entry)}>
+                            <DropdownMenuItem
+                              onClick={() => onEdit(entry)}
+                              disabled={runningTimer}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>

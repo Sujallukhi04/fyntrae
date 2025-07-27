@@ -507,6 +507,7 @@ const Time = () => {
               <Button
                 variant="outline"
                 className="ml-2 text-sm"
+                disabled={startTimerLoading || !!runningTimer}
                 onClick={() => setModalState({ type: "add", data: null })}
               >
                 <Plus className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -628,6 +629,7 @@ const Time = () => {
           isLoading={getTimeEntriesLoading}
           pagination={timeEntriesPagination}
           onPageChange={setCurrentPage}
+          runningTimer={!!runningTimer}
         />
       </div>
     </div>
