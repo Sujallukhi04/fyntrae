@@ -7,7 +7,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import useClient from "@/hooks/useClient";
 import ActiveClient from "@/components/clientsOrganation/ActiveClient";
 import ArchivedClient from "@/components/clientsOrganation/ArchivedClient";
-import type { Client } from "@/types/oraganization";
+import type { Client as ClientType } from "@/types/oraganization";
 import AddEditClientModal from "@/components/clientsOrganation/CreateClient";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -40,7 +40,7 @@ const Client = () => {
   } = useClient();
   const [modalState, setModalState] = useState<{
     type: "add" | "edit" | null;
-    data: Client | null;
+    data: ClientType | null;
   }>({ type: null, data: null });
 
   const fetchActiveClients = useCallback(async () => {

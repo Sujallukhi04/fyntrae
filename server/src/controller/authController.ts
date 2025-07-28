@@ -11,8 +11,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    console.log(email, password);
-
     const validatedData = loginSchema.safeParse({ email, password });
     if (!validatedData.success) {
       const messages = validatedData.error.errors.map((err) => err.message);

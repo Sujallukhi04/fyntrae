@@ -163,6 +163,8 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
       return false;
     }
 
+
+
     return true;
   };
 

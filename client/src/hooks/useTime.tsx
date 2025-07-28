@@ -28,6 +28,8 @@ const useTime = () => {
   const [bulkUpdateLoading, setBulkUpdateLoading] = useState<boolean>(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState<boolean>(false);
   const [tagLoading, setTagLoading] = useState<boolean>(false);
+  const [createTagLoading, setCreateTagLoading] = useState<boolean>(false);
+  const [deleteTagLoading, setDeleteTagLoading] = useState<boolean>(false);
 
   const [timeEntriesPagination, setTimeEntriesPagination] = useState<{
     total: number;
@@ -366,6 +368,40 @@ const useTime = () => {
     }
   };
 
+  const createTag = async (organizationId: string, name: string) => {
+    try {
+      setCreateTagLoading(true);
+
+      const response = await timeApi.createTag(organizationId, name);
+      setTags((prev) => [...prev, response.tag]);
+      toast.success("Tag created successfully");
+
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to create tag";
+      toast.error(errorMessage);
+    } finally {
+      setCreateTagLoading(false);
+    }
+  };
+
+  const deleteTag = async (organizationId: string, tagId: string) => {
+    try {
+      setDeleteTagLoading(true);
+      const response = await timeApi.deleteTag(organizationId, tagId);
+      setTags((prev) => prev.filter((tag) => tag.id !== tagId));
+      toast.success("Tag deleted successfully");
+      return response;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete tag";
+      toast.error(errorMessage);
+    } finally {
+      setDeleteTagLoading(false);
+    }
+  };
+
   return {
     timeEntries,
     tags,
@@ -393,6 +429,10 @@ const useTime = () => {
     deleteTimeEntry,
     bulkUpdateTimeEntries,
     bulkDeleteTimeEntries,
+    createTag,
+    createTagLoading,
+    deleteTagLoading,
+    deleteTag,
   };
 };
 

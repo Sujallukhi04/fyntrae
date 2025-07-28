@@ -292,8 +292,6 @@ const Time = () => {
     } catch (error) {}
   };
 
-
-
   const formatEntryDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -575,7 +573,9 @@ const Time = () => {
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={setDate}
+                  onSelect={(selected) => {
+                    if (selected) setDate(selected);
+                  }}
                   initialFocus
                   required={false}
                 />

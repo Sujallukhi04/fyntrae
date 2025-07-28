@@ -33,7 +33,7 @@ export const API_PERMISSIONS = {
   },
 
   ORGANIZATION: {
-    CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE], // Anyone can create new org
+    CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE], 
     VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
     UPDATE: [Role.OWNER, Role.ADMIN],
     DELETE: [Role.OWNER, Role.ADMIN],

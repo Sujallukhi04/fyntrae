@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { v4 as uuidv4 } from "uuid";
 import { db } from "../prismaClient";
 import {
   createOrganizationSchema,
@@ -11,7 +10,6 @@ import {
   assertAPIPermission,
   getOrganization,
   hasPermission,
-  isUserActiveMember,
 } from "../helper/organization";
 import { getAuthUserData } from "../helper/user";
 import { updateBillableRate } from "../helper/billableRate";

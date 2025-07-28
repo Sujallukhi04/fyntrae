@@ -18,6 +18,7 @@ import Client from "./pages/Dashboard/Client";
 import ProjectPage from "./pages/Dashboard/Project";
 import ProjectIdPage from "./pages/Dashboard/ProjectPage";
 import Time from "./pages/Dashboard/Time";
+import Tag from "./pages/Dashboard/Tag";
 
 const App = () => {
   const { isLoading, isAuthenticated, user } = useAuthUser();
@@ -45,9 +46,10 @@ const App = () => {
               <Route path="teams/:orgId" element={<TeamSetting />} />
               <Route path="teams/create" element={<CreateOrg />} />
               <Route path="members" element={<Members />} />
-              <Route path="clients" element={<Client />} />
+              <Route path="clients" element={<Client />} />{" "}
               <Route path="projects" element={<ProjectPage />} />
               <Route path="project/:id" element={<ProjectIdPage />} />
+              <Route path="tags" element={<Tag />} />
             </>
           )}
         </Route>

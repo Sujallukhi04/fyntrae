@@ -553,4 +553,18 @@ export const timeApi = {
     const response = await axiosInstance.get(`/tag/${organizationId}`);
     return response.data;
   },
+
+  createTag: async (organizationId: string, name: string) => {
+    const response = await axiosInstance.post(`/tag/${organizationId}`, {
+      name,
+    });
+    return response.data;
+  },
+
+  deleteTag: async (organizationId: string, tagId: string) => {
+    const response = await axiosInstance.delete(
+      `/tag/${organizationId}/${tagId}`
+    );
+    return response.data;
+  },
 };

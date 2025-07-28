@@ -96,7 +96,52 @@ export const getAllTags = async (
 
 export const deleteTag = async (req: Request, res: Response): Promise<void> => {
   try {
-    
+    const { organizationId, tagId } = req.params;
+    const userId = req.user?.id;
+    if (!organizationId || !tagId || !userId) {
+      throw new Error("Organization ID and Tag ID are required");
+    }
+
+    const member = await assertAPIPermission(
+      userId,
+      organizationId,
+      "TAG",
+      "CREATE"
+    );
+
+    const tag = await db.tag.findUnique({
+      where: { id: tagId, organizationId },
+    });
+
+    if (!tag) {
+      throw new Error("Tag not found");
+    }
+
+    const existsIntimeEntry = await db.timeEntry.findFirst({
+      where: {
+        tags: {
+          some: {
+            tagId: tagId,
+          },
+        },
+        organizationId,
+      },
+    });
+
+    if (existsIntimeEntry) {
+      throw new Error(
+        "Cannot delete tag as it is associated with time entries"
+      );
+    }
+
+    await db.tag.delete({
+      where: { id: tagId },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Tag deleted successfully",
+    });
   } catch (error) {
     throw new ErrorHandler(
       error instanceof Error ? error.message : "Internal Server Error",

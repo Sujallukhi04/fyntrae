@@ -6,7 +6,7 @@ import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
 
 export function TimerWidget() {
-  const { organization, runningTimer } = useOrganization();
+  const { runningTimer } = useOrganization();
   const { user } = useAuth();
   const [elapsedTime, setElapsedTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -56,13 +56,6 @@ export function TimerWidget() {
       await stopTimer(user.currentTeamId, runningTimer.id, new Date());
     } catch (error) {}
   };
-
-  //   useEffect(() => {
-  //     const interval = setInterval(() => {
-  //       setSeconds((prev) => prev + 1);
-  //     }, 1000);
-  //     return () => clearInterval(interval);
-  //   }, []);
 
   const formatTime = (totalSeconds: number) => {
     const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
