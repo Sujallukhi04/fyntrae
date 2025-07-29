@@ -38,7 +38,7 @@ const useProjectMember = () => {
 
   // Get organization members (for adding to project)
   const getOrganizationMembers = useCallback(
-    async (organizationId: string, projectId: string) => {
+    async (organizationId: string, projectId?: string) => {
       try {
         const response = await ProjectMemberApi.getOrganizationMembers(
           organizationId,

@@ -19,7 +19,12 @@ import { Edit, Trash2, MoreVertical, ChevronRight, Clock } from "lucide-react";
 import NoData from "@/components/NoData";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";
+import type {
+  OrganizationMember,
+  ProjectWithTasks,
+  Tag,
+  TimeEntry,
+} from "@/types/project";
 import { Checkbox } from "../ui/checkbox";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import PaginationControls from "../PaginationControl";
@@ -36,6 +41,7 @@ interface TimeEntriesTableProps {
   onDelete: (id: string) => void;
   isLoading: boolean;
   deleteLoading: boolean;
+  members?: OrganizationMember[];
   pagination: {
     total: number;
     page: number;
@@ -48,6 +54,7 @@ interface TimeEntriesTableProps {
     className?: string
   ) => React.ReactNode;
   runningTimer: boolean;
+  showMember?: boolean;
 }
 
 const formatEntryDuration = (seconds: number) => {
@@ -71,6 +78,8 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
   deleteLoading,
   tags = [],
   runningTimer,
+  members = [],
+  showMember = false,
 }) => {
   const { organization } = useOrganization();
   // Helper to get project and task names
@@ -102,9 +111,11 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                 <TableHead className="w-[25%] text-muted-foreground font-medium">
                   Description
                 </TableHead>
+
                 <TableHead className="w-[25%] text-muted-foreground font-medium">
                   Project
                 </TableHead>
+
                 <TableHead className="w-[15%] text-muted-foreground font-medium">
                   Tags
                 </TableHead>
@@ -161,10 +172,18 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium max-w-[200px] truncate text-sm text-foreground">
+                        <div className="flex items-center gap-2 max-w-[200px]">
+                          <span className="font-medium truncate text-sm text-foreground">
                             {entry.description || "No description"}
                           </span>
+                          {showMember && (
+                            <Badge variant="secondary" className="text-xs">
+                              {
+                                members.find((m) => m.user.id === entry.userId)
+                                  ?.user.name
+                              }
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -199,6 +218,7 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                           </div>
                         )}
                       </TableCell>
+
                       <TableCell>
                         <div className="flex items-center gap-2 flex-wrap">
                           {entry.tags && entry.tags.length > 0 ? (

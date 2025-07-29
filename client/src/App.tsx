@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -19,11 +19,17 @@ import ProjectPage from "./pages/Dashboard/Project";
 import ProjectIdPage from "./pages/Dashboard/ProjectPage";
 import Time from "./pages/Dashboard/Time";
 import Tag from "./pages/Dashboard/Tag";
+import Detailed from "./pages/Dashboard/Detailed";
+import Overview from "./pages/Dashboard/Overview";
+import PermissionRoute from "./components/PermissionRoute";
+import { useOrganization } from "./providers/OrganizationProvider";
 
 const App = () => {
   const { isLoading, isAuthenticated, user } = useAuthUser();
-  console.log(user);
-  if (isLoading) return <LoaderMain />;
+  const { isLoading: orgLoading } = useOrganization();
+
+  if (isLoading || orgLoading) return <LoaderMain />;
+
   return (
     <div>
       <Routes>
@@ -41,15 +47,94 @@ const App = () => {
         >
           {isAuthenticated && (
             <>
-              <Route index element={<DashMain />} />
-              <Route path="time" element={<Time />} />
-              <Route path="teams/:orgId" element={<TeamSetting />} />
-              <Route path="teams/create" element={<CreateOrg />} />
-              <Route path="members" element={<Members />} />
-              <Route path="clients" element={<Client />} />{" "}
-              <Route path="projects" element={<ProjectPage />} />
-              <Route path="project/:id" element={<ProjectIdPage />} />
-              <Route path="tags" element={<Tag />} />
+              <Route
+                index
+                element={
+                  <PermissionRoute>
+                    <DashMain />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="time"
+                element={
+                  <PermissionRoute>
+                    <Time />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="teams/:orgId"
+                element={
+                  <PermissionRoute>
+                    <TeamSetting />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="teams/create"
+                element={
+                  <PermissionRoute>
+                    <CreateOrg />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="members"
+                element={
+                  <PermissionRoute>
+                    <Members />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="clients"
+                element={
+                  <PermissionRoute>
+                    <Client />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="projects"
+                element={
+                  <PermissionRoute>
+                    <ProjectPage />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="project/:id"
+                element={
+                  <PermissionRoute>
+                    <ProjectIdPage />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="tags"
+                element={
+                  <PermissionRoute>
+                    <Tag />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="reporting/detailed"
+                element={
+                  <PermissionRoute>
+                    <Detailed />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="reporting/overview"
+                element={
+                  <PermissionRoute>
+                    <Overview />
+                  </PermissionRoute>
+                }
+              />
             </>
           )}
         </Route>

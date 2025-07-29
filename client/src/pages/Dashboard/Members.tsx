@@ -354,11 +354,11 @@ const Members: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
-      <div className="flex flex-col gap-3 pb-1 pt-2">
+      <div className="flex flex-col gap-3 pb-1 pt-1">
         <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
           <div className="flex items-center gap-2">
             <UsersIcon className="h-5 w-5 text-muted-foreground" />
-            <h1 className="text-lg font-semibold">Members</h1>
+            <h1 className="font-semibold">Members</h1>
           </div>
           <Button
             onClick={() => setIsInviteModalOpen(true)}

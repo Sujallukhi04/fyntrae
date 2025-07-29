@@ -344,7 +344,7 @@ const ProjectIdPage = () => {
   return (
     <div className="mx-auto max-w-7xl py-2 w-full space-y-6">
       {/* Project Header */}
-      <div className="flex flex-col gap-3 pt-2 ">
+      <div className="flex flex-col gap-3 pt-1 ">
         <div className="flex flex-col items-start px-6 md:flex-row md:items-center md:justify-between gap-2 w-full">
           {/* Left Section: Title + Breadcrumb */}
           <div>

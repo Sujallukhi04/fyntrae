@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Minus, Plus, CreditCard, TriangleAlert } from "lucide-react";
+import { Minus, Plus, CreditCard, TriangleAlert, Settings } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -431,20 +431,19 @@ const TeamSetting = () => {
   }
 
   return (
-    <div className="max-w-6xl w-full mx-auto p-3 space-y-8">
-      {/* Header */}
-      <div className="flex gap-3 flex-col">
-        <div className="flex items-center pt-2 justify-between">
-          <h1 className="text-xl font-bold">Organization Settings</h1>
-          <Badge variant="outline">
-            {organization.personalTeam ? "Personal Team" : "Team"}
-          </Badge>
+    <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
+      <div className="flex flex-col gap-3 py-2">
+        <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+            <h1 className="font-semibold">Organization Settings</h1>
+          </div>
         </div>
         <Separator />
       </div>
 
       {/* Organization Name Section */}
-      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col">
+      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col px-5">
         <SectionHeader
           title="Organization Name"
           description="The organization's name and owner information."
@@ -505,7 +504,7 @@ const TeamSetting = () => {
       <Separator />
 
       {/* Billable Rate Section */}
-      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col">
+      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col px-5">
         <SectionHeader
           title="Billable Rate"
           description="Configure the default billable rate for the organization."
@@ -584,7 +583,7 @@ const TeamSetting = () => {
       <Separator />
 
       {/* Format Settings Section */}
-      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col">
+      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col px-5">
         <SectionHeader
           title="Format Settings"
           description="Configure the default format settings for the organization."
@@ -637,7 +636,7 @@ const TeamSetting = () => {
       <Separator />
 
       {/* Delete Organization Section */}
-      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col">
+      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col px-5">
         <SectionHeader
           title="Delete Organization"
           description="Permanently delete this organization."

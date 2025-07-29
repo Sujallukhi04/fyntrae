@@ -208,6 +208,51 @@ export const createTimeEntrySchema = z
     message: "Start time cannot be more than 5 minutes in the future",
     path: ["start"],
   });
+export const updatesTimeEntrySchema = z
+  .object({
+    description: z
+      .string()
+      .max(500, "Description must be less than 500 characters")
+      .default(""),
+    start: z
+      .string({ required_error: "Start time is required" })
+      .nonempty("Start time cannot be empty")
+      .refine(
+        (val) => val.endsWith("Z"),
+        "Start time must be in UTC (ends with 'Z')"
+      )
+      .refine(
+        (val) => !isNaN(Date.parse(val)),
+        "Start time must be a valid ISO date"
+      )
+      .transform((val) => new Date(val)),
+
+    end: z
+      .string({ required_error: "End time is required" })
+      .nonempty("End time cannot be empty")
+      .refine(
+        (val) => val.endsWith("Z"),
+        "End time must be in UTC (ends with 'Z')"
+      )
+      .refine(
+        (val) => !isNaN(Date.parse(val)),
+        "End time must be a valid ISO date"
+      )
+      .transform((val) => new Date(val)),
+
+    billable: z.boolean().default(false),
+    projectId: z.string().cuid().nullable().optional(),
+    taskId: z.string().cuid().nullable().optional(),
+    tagIds: z.array(z.string().cuid()).optional().default([]),
+  })
+  .refine((data) => data.end > data.start, {
+    message: "End time must be after start time",
+    path: ["end"],
+  })
+  .refine((data) => data.start <= new Date(Date.now() + 5 * 60 * 1000), {
+    message: "Start time cannot be more than 5 minutes in the future",
+    path: ["start"],
+  });
 
 export const updateTimeEntrySchema = z.object({
   startTime: z

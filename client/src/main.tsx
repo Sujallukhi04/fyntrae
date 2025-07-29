@@ -5,13 +5,16 @@ import { BrowserRouter } from "react-router";
 import { ThemeProvider } from "./providers/ThemeProvider.tsx";
 import { AuthProvider } from "./providers/AuthProvider.tsx";
 import { OrganizationProvider } from "./providers/OrganizationProvider.tsx";
+import { OrgAccessProvider } from "./providers/OrgAccessProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <ThemeProvider>
       <AuthProvider>
         <OrganizationProvider>
-          <App />
+          <OrgAccessProvider>
+            <App />
+          </OrgAccessProvider>
         </OrganizationProvider>
       </AuthProvider>
     </ThemeProvider>

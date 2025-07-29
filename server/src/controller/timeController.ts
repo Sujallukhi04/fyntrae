@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../prismaClient";
 import { ErrorHandler } from "../utils/errorHandler";
-import { assertAPIPermission } from "../helper/organization";
+import { assertAPIPermission, getOrganization } from "../helper/organization";
 import {
   calculateBillableRate,
   getLocalDateRangeInUTC,
@@ -13,6 +13,7 @@ import {
   bulkUpdateTimeEntriesSchema,
   createTimeEntrySchema,
   startTimerSchema,
+  updatesTimeEntrySchema,
 } from "../utils";
 
 const calculateDuration = (start: Date, end: Date | null) => {
@@ -581,26 +582,28 @@ export const updateTimeEntry = async (
       );
     }
 
-    const parsed = createTimeEntrySchema.safeParse(req.body);
+    const parsed = updatesTimeEntrySchema.safeParse(req.body);
     if (!parsed.success) {
       throw new ErrorHandler(parsed.error.errors[0].message, 400);
     }
 
     const data = parsed.data;
 
-    const member = await assertAPIPermission(
-      userId,
-      organizationId,
-      "TIME",
-      "CREATE"
-    );
+    const org = await getOrganization(organizationId);
+    if (!org) throw new ErrorHandler("Organization not found", 404);
 
     const existingEntry = await db.timeEntry.findUnique({
-      where: { id: timeEntryId, organizationId, userId },
+      where: { id: timeEntryId, organizationId },
     });
 
-    if (!existingEntry) {
+    if (!existingEntry || existingEntry.organizationId !== organizationId) {
       throw new ErrorHandler("Time entry not found", 404);
+    }
+
+    if (existingEntry.userId !== userId) {
+      await assertAPIPermission(userId, organizationId, "TIME", "UPDATE");
+    } else {
+      await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
     }
 
     const finalStart = data.start || existingEntry.start;
@@ -667,7 +670,7 @@ export const updateTimeEntry = async (
 
     let billableRate = !existingEntry.billable
       ? await calculateBillableRate({
-          userId,
+          userId: existingEntry.userId,
           projectId: data.projectId,
           organizationId,
         })
@@ -801,19 +804,21 @@ export const deleteTimeEntry = async (
       );
     }
 
-    const member = await assertAPIPermission(
-      userId,
-      organizationId,
-      "TIME",
-      "CREATE"
-    );
+    const org = await getOrganization(organizationId);
+    if (!org) throw new ErrorHandler("Organization not found", 404);
 
     const existingEntry = await db.timeEntry.findUnique({
-      where: { id: timeEntryId, organizationId, userId },
+      where: { id: timeEntryId, organizationId },
     });
 
     if (!existingEntry) {
       throw new ErrorHandler("Time entry not found", 404);
+    }
+
+    if (existingEntry.userId !== userId) {
+      await assertAPIPermission(userId, organizationId, "TIME", "UPDATE");
+    } else {
+      await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
     }
 
     await db.timeEntry.delete({
@@ -858,18 +863,13 @@ export const bulkUpdateTimeEntries = async (
 
     const data = parsed.data;
 
-    const member = await assertAPIPermission(
-      userId,
-      organizationId,
-      "TIME",
-      "CREATE"
-    );
+    const org = await getOrganization(organizationId);
+    if (!org) throw new ErrorHandler("Organization not found", 404);
 
     const timeEntries = await db.timeEntry.findMany({
       where: {
         id: { in: data.timeEntryIds },
         organizationId,
-        userId,
       },
     });
 
@@ -878,6 +878,14 @@ export const bulkUpdateTimeEntries = async (
         "Some time entries not found or access denied",
         404
       );
+    }
+
+    const userOwnsAllEntries = timeEntries.every((e) => e.userId === userId);
+
+    if (!userOwnsAllEntries) {
+      await assertAPIPermission(userId, organizationId, "TIME", "UPDATE");
+    } else {
+      await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
     }
 
     if (data.updates.projectId) {
@@ -996,13 +1004,13 @@ export const bulkDeleteTimeEntries = async (
 
     const data = parsed.data;
 
-    await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
+    const org = await getOrganization(organizationId);
+    if (!org) throw new ErrorHandler("Organization not found", 404);
 
     const timeEntries = await db.timeEntry.findMany({
       where: {
         id: { in: data.timeEntryIds },
         organizationId,
-        userId,
       },
     });
 
@@ -1011,6 +1019,14 @@ export const bulkDeleteTimeEntries = async (
         "Some time entries not found or access denied",
         404
       );
+    }
+
+    const userOwnsAllEntries = timeEntries.every((e) => e.userId === userId);
+
+    if (!userOwnsAllEntries) {
+      await assertAPIPermission(userId, organizationId, "TIME", "UPDATE");
+    } else {
+      await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
     }
 
     await db.timeEntry.deleteMany({
@@ -1056,7 +1072,7 @@ export const getTimeEntries = async (
   try {
     const { organizationId } = req.params;
     const userId = req.user?.id;
-    const { page = "1", limit = "10", date } = req.query;
+    const { page = "1", limit = "10", date, memberId } = req.query;
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
@@ -1069,9 +1085,13 @@ export const getTimeEntries = async (
 
     const whereClause: any = {
       organizationId,
-      userId,
       end: { not: null },
     };
+
+    if (memberId && typeof memberId === "string") {
+      whereClause.memberId = memberId;
+    }
+
     if (date) {
       const userTimezoneOffset = new Date().getTimezoneOffset() * -1; // Dynamic offset in minutes
       const { startUTC, endUTC } = getLocalDateRangeInUTC(

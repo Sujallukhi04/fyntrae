@@ -149,11 +149,11 @@ const ProjectPage = () => {
 
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
-      <div className="flex flex-col gap-3  pt-2">
+      <div className="flex flex-col gap-3  pt-1 ">
         <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
           <div className="flex items-center gap-2">
-            <FolderOpen className="h-6 w-6 text-muted-foreground" />
-            <span className="text-lg font-semibold ">Projects</span>
+            <FolderOpen className="h-5 w-5 text-muted-foreground" />
+            <span className="font-semibold ">Projects</span>
           </div>
           <Button
             className="w-full md:w-auto"

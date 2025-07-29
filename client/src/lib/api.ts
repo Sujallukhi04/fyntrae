@@ -347,10 +347,15 @@ export const ProjectMemberApi = {
     return response.data;
   },
 
-  getOrganizationMembers: async (organizationId: string, projectId: string) => {
-    const response = await axiosInstance.get(
-      `/project/org-members/${organizationId}?projectId=${projectId}`
-    );
+  getOrganizationMembers: async (
+    organizationId: string,
+    projectId?: string
+  ) => {
+    const url = projectId
+      ? `/project/org-members/${organizationId}?projectId=${projectId}`
+      : `/project/org-members/${organizationId}`;
+
+    const response = await axiosInstance.get(url);
     return response.data;
   },
 };
@@ -454,12 +459,14 @@ export const timeApi = {
       page?: number;
       limit?: number;
       date?: string;
+      memberId?: string;
     }
   ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.date) queryParams.append("date", params.date);
+    if (params?.memberId) queryParams.append("memberId", params.memberId);
 
     const response = await axiosInstance.get(
       `/time/${organizationId}?${queryParams.toString()}`

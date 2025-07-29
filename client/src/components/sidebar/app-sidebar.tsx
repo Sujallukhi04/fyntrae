@@ -30,6 +30,7 @@ import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import useAuthUser from "@/hooks/useAuthUser";
 import { TimerWidget } from "../TimerWeight";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 const formatRole = (role: string) => {
   return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
@@ -37,6 +38,7 @@ const formatRole = (role: string) => {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthUser();
+  const { canAccessPage } = useOrgAccess();
   const userOrganization =
     user?.organizations?.map((org) => ({
       name: org.name,
@@ -84,7 +86,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/reporting/overview",
           },
           {
-            title: "Detailed Reports",
+            title: "Detailed",
             url: "/reporting/detailed",
           },
         ],

@@ -33,7 +33,7 @@ export const API_PERMISSIONS = {
   },
 
   ORGANIZATION: {
-    CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE], 
+    CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
     VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
     UPDATE: [Role.OWNER, Role.ADMIN],
     DELETE: [Role.OWNER, Role.ADMIN],
@@ -52,6 +52,7 @@ export const API_PERMISSIONS = {
 
   TIME: {
     CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
+    UPDATE: [Role.OWNER, Role.ADMIN, Role.MANAGER],
   },
 
   TAG: {
@@ -160,6 +161,7 @@ export const assertActivePermissionedMember = async (
   });
 
   if (!organization) {
+    console.log("dsdsf");
     throw new ErrorHandler("Organization not found", 404);
   }
 

@@ -256,9 +256,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user?.currentTeamId, fetchOrganization, fetchRunningTimer]);
 
   useEffect(() => {
+    if (user === undefined) return;
     if (user?.currentTeamId) {
-      fetchOrganization(user.currentTeamId);
-      fetchRunningTimer(user.currentTeamId);
+      Promise.all([
+        fetchOrganization(user.currentTeamId),
+        fetchRunningTimer(user.currentTeamId),
+      ]).finally(() => setIsLoading(false));
     } else {
       setOrganization(null);
       setIsLoading(false);

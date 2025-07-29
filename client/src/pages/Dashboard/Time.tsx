@@ -62,7 +62,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { format, set } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
@@ -74,6 +74,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import TimeEntriesTable from "@/components/time/TimeEntriesTable";
 import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
+import useProjectMember from "@/hooks/useProjectMember";
 
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
@@ -117,6 +118,7 @@ const Time = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { organization, runningTimer } = useOrganization();
   const { user } = useAuth();
+  const { getOrganizationMembers, organizationMembers } = useProjectMember();
   const {
     getAllProjectsWithTasksLoading,
     getTimeEntriesLoading,
@@ -151,14 +153,27 @@ const Time = () => {
 
   useEffect(() => {
     if (user?.currentTeamId) {
-      const formattedDate = format(date, "yyyy-MM-dd");
-      getTimeEntries(user?.currentTeamId, {
-        page: currentPage,
-        limit: 10,
-        date: formattedDate,
-      });
+      getOrganizationMembers(user.currentTeamId);
     }
-  }, [user?.currentTeamId, currentPage, date]);
+  }, [user?.currentTeamId]);
+
+  useEffect(() => {
+    if (!user?.currentTeamId || !organizationMembers.length) return;
+    const formattedDate = format(date, "yyyy-MM-dd");
+
+    const currentMember = organizationMembers.find(
+      (member) => member.user.id === user.id
+    );
+
+    if (!currentMember) return;
+
+    getTimeEntries(user.currentTeamId, {
+      page: currentPage,
+      limit: 10,
+      date: formattedDate,
+      memberId: currentMember.id,
+    });
+  }, [user?.currentTeamId, currentPage, date, organizationMembers, user?.id]);
 
   useEffect(() => {
     if (user?.currentTeamId) {

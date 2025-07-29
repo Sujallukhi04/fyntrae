@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router";
 import useAuthUser from "@/hooks/useAuthUser";
+import { LoaderMain } from "./Loader";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,16 +9,15 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading } = useAuthUser();
-  const location = useLocation();
 
   const isAuthenticated = Boolean(user);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoaderMain />;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

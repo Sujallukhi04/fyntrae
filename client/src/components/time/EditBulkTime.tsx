@@ -80,6 +80,12 @@ export const EditTimeEntryModal: React.FC<TimeEntryModalProps> = ({
       tagIds: selectedTags,
       billable,
     });
+
+    setDescription("");
+    setProjectId("");
+    setSelectedTags([]);
+    setBillable(false);
+    onClose();
   };
 
   return (

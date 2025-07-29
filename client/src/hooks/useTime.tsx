@@ -75,7 +75,7 @@ const useTime = () => {
 
   const getTimeEntries = async (
     organizationId: string,
-    params?: { page?: number; limit?: number; date?: string }
+    params?: { page?: number; limit?: number; date?: string; memberId?: string }
   ) => {
     try {
       setGetTimeEntriesLoading(true);

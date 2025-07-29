@@ -8,17 +8,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, MoreVertical } from "lucide-react";
-import type { Tag } from "@/types/project";
+import { Trash2, MoreVertical, Tag } from "lucide-react";
+import type { Tag as TagProps } from "@/types/project";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "../ui/dropdown-menu";
+import NoData from "../NoData";
 
 interface TagTableProps {
-  tags: Tag[];
+  tags: TagProps[];
   onDelete: (id: string) => void;
   deleteLoading?: boolean;
 }
@@ -42,11 +43,12 @@ const TagTable: React.FC<TagTableProps> = ({
         <TableBody>
           {tags.length === 0 ? (
             <TableRow>
-              <TableCell
-                colSpan={2}
-                className="text-center text-muted-foreground"
-              >
-                No tags found
+              <TableCell colSpan={5}>
+                <NoData
+                  icon={Tag}
+                  title="No Tags Found"
+                  description="Tags will appear here when available."
+                />
               </TableCell>
             </TableRow>
           ) : (

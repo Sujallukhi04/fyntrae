@@ -745,15 +745,24 @@ export const getMembersByOrganizationId = async (
     const userId = req.user?.id;
 
     if (!userId) throw new ErrorHandler("User not authenticated", 401);
-    if (!organizationId || !projectId)
+    if (!organizationId)
       throw new ErrorHandler("organizationId or ProjectId is required", 400);
 
-    await assertProjectAccess(
-      userId,
-      organizationId,
-      projectId as string,
-      "MANAGE_MEMBERS"
-    );
+    if (projectId) {
+      await assertProjectAccess(
+        userId,
+        organizationId,
+        projectId as string,
+        "MANAGE_MEMBERS"
+      );
+    }else{
+      await assertAPIPermission(
+        userId,
+        organizationId,
+        "PROJECT",
+        "VIEW"
+      );
+    }
 
     const existingProjectMemberIds = projectId
       ? (
@@ -768,9 +777,11 @@ export const getMembersByOrganizationId = async (
       where: {
         organizationId,
         isActive: true,
-        id: {
-          notIn: existingProjectMemberIds,
-        },
+        ...(projectId && {
+          id: {
+            notIn: existingProjectMemberIds,
+          },
+        }),
       },
       select: {
         id: true,
