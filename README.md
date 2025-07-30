@@ -7,8 +7,6 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 
 ## Features
 
-## Features
-
 - ⏱️ **Time Tracking:** Track your time with a modern and easy-to-use interface.
 - 📁 **Projects:** Create and manage projects, and assign project members.
 - ✅ **Tasks:** Create and manage tasks, and assign tasks to projects.
@@ -16,8 +14,9 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 - 💵 **Billable Rates:** Set billable rates for projects, project members, organization members, and organizations.
 - 🏢 **Multiple Organizations:** Create and manage multiple organizations with one account.
 - 🛡️ **Roles and Permissions:** Fine-grained control for creating and managing organizations and access.
-- 🚀 **Future Enhancement:**  
+- 🚀 **Future Enhancement:**
   - 🔄 **Import:** Import your time tracking data from other applications (Supported: Toggl, Clockify, Timeentry CSV).
+
 ---
 
 ## Tech Stack
