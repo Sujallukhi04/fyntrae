@@ -3,8 +3,6 @@
 **Flexflow** is a modern, full-featured time tracking and project management platform.  
 It helps teams and organizations track time, manage projects, assign tasks, and handle clients with ease.
 
----
-
 ## Features
 
 - ⏱️ **Time Tracking:** Track your time with a modern and easy-to-use interface.
@@ -17,7 +15,6 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 - 🚀 **Future Enhancement:**
   - 🔄 **Import:** Import your time tracking data from other applications (Supported: Toggl, Clockify, Timeentry CSV).
 
----
 
 ## Roles & Permissions
 
@@ -25,7 +22,7 @@ Flexflow supports multiple user roles within an organization, each with differen
 
 - 👑 **Owner:**  
   - Full access to the organization.
-  - Can delete the organization, transfer ownership, and (in cloud) access billing settings.
+  - Can delete the organization, transfer ownership.
 - 🛡️ **Admin:**  
   - Full access to the organization, except for actions reserved for the owner.
 - 📊 **Manager:**  
@@ -37,7 +34,6 @@ Flexflow supports multiple user roles within an organization, each with differen
   - Special users that cannot access the organization.
   - used for access that specific memeber time entry 
 
----
 
 ## Billable Rates Hierarchy
 
@@ -61,7 +57,6 @@ Billable rates in Flexflow determine the price per hour for tracked time and can
 If a billable rate is set for a project member, it overrides the project, organization member, and organization rates.  
 If not set, the system checks the next level up.
 
----
 
 ## Tech Stack
 
@@ -69,7 +64,6 @@ If not set, the system checks the next level up.
 - **Backend:** Node.js, Express, Prisma ORM, PostgreSQL
 - **Other:** JWT Auth, Zod validation, Lucide Icons
 
----
 
 ## Getting Started
 
