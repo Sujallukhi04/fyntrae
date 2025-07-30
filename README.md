@@ -39,7 +39,7 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 ### Clone the Repository
 
 ```sh
-git clone https://github.com/yourusername/flexflow.git
+git clone https://github.com/Sujallukhi04/flexflow.git
 cd flexflow
 ```
 
@@ -98,5 +98,3 @@ flexflow/
 
 Both `client` and `server` have `.env.example` files.  
 Copy them to `.env` and fill in the required values.
-
----
