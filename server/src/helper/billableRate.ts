@@ -95,8 +95,14 @@ export const updateBillableRate = async ({
           });
           oldRate = oldPM?.billableRate ?? null;
 
+          await tx.projectMember.update({
+            where: { id: sourceId },
+            data: { billableRate: newRate },
+          });
+
           let effectiveRate = newRate;
-          if (newRate === null && userId && projectId) {
+
+          if (userId && projectId) {
             const project = await tx.project.findUnique({
               where: { id: projectId },
               select: { billable: true, billableRate: true },
@@ -112,18 +118,15 @@ export const updateBillableRate = async ({
               select: { billableRates: true },
             });
 
-            effectiveRate =
-              project?.billable && project?.billableRate != null
-                ? project.billableRate
-                : orgMember?.billableRate != null
-                ? orgMember.billableRate
-                : org?.billableRates ?? null;
+            if (newRate === null) {
+              effectiveRate =
+                project?.billable && project?.billableRate != null
+                  ? project.billableRate
+                  : orgMember?.billableRate != null
+                  ? orgMember.billableRate
+                  : org?.billableRates ?? null;
+            }
           }
-
-          await tx.projectMember.update({
-            where: { id: sourceId },
-            data: { billableRate: effectiveRate },
-          });
 
           if (applyToExisting && userId && projectId) {
             await tx.timeEntry.updateMany({
@@ -131,7 +134,6 @@ export const updateBillableRate = async ({
                 organizationId,
                 userId,
                 projectId,
-                billableRate: oldRate,
               },
               data: {
                 billableRate: effectiveRate,
@@ -166,7 +168,6 @@ export const updateBillableRate = async ({
               select: { userId: true },
             });
 
-            // ✅ CASE: project is now not billable → set all associated time entries to null
             if (updatedProject?.billable === false) {
               await tx.timeEntry.updateMany({
                 where: {
@@ -178,7 +179,6 @@ export const updateBillableRate = async ({
                 },
               });
             } else {
-              // ✅ CASE: project is still billable → apply fallback logic
               for (const { userId } of projectMembers) {
                 let fallbackRate: number | null = null;
 
@@ -216,7 +216,6 @@ export const updateBillableRate = async ({
                     organizationId,
                     projectId,
                     userId,
-                    billableRate: oldRate, // only if time entry was previously using project rate
                   },
                   data: {
                     billableRate: fallbackRate,
@@ -234,7 +233,11 @@ export const updateBillableRate = async ({
             where: { id: sourceId },
             select: { billableRate: true, userId: true },
           });
-          oldRate = oldMember?.billableRate ?? null;
+
+          const org = await tx.organizations.findUnique({
+            where: { id: organizationId },
+            select: { billableRates: true },
+          });
 
           // Update the member’s billable rate
           await tx.member.update({
@@ -249,36 +252,14 @@ export const updateBillableRate = async ({
             if (newRate !== null) {
               fallbackRate = newRate;
             } else {
-              const org = await tx.organizations.findUnique({
-                where: { id: organizationId },
-                select: { billableRates: true },
-              });
               fallbackRate = org?.billableRates ?? null;
             }
-
-            // Get projects with their own override
-            const projectsWithOverride = (
-              await tx.project.findMany({
-                where: {
-                  billableRate: { not: null },
-                },
-                select: { id: true },
-              })
-            ).map((p) => p.id);
 
             await tx.timeEntry.updateMany({
               where: {
                 organizationId,
                 userId: oldMember?.userId || userId,
-                billableRate: oldRate,
-                OR: [
-                  { projectId: null },
-                  {
-                    projectId: {
-                      notIn: projectsWithOverride,
-                    },
-                  },
-                ],
+                projectId: null,
               },
               data: {
                 billableRate: fallbackRate,
@@ -356,7 +337,6 @@ export function getLocalDateRangeInUTC(
 }
 
 export async function recalculateProjectSpentTime(projectId: string) {
-  
   const total = await db.timeEntry.aggregate({
     where: { projectId },
     _sum: { duration: true },

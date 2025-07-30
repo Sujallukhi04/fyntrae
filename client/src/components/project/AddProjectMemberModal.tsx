@@ -159,14 +159,14 @@ const AddProjectMemberModal: React.FC<AddProjectMemberModalProps> = ({
               <Input
                 id="billable-rate"
                 type="text"
-                value={`${billableRate.toFixed(2)} ${currency}`}
+                value={`${billableRate} ${currency}`}
                 onChange={(e) => {
                   const numericValue = parseFloat(
                     e.target.value.replace(/[^\d.]/g, "")
                   );
                   setBillableRate(isNaN(numericValue) ? 0 : numericValue);
                 }}
-                className="w-full h-full text-center bg-background border border-border text-lg px-8"
+                className="w-full h-full text-center bg-background border border-border px-8"
               />
 
               {/* Plus Button */}

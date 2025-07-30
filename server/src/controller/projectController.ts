@@ -504,9 +504,45 @@ export const addProjectMember = async (
       },
     });
 
+    if (projectMember.user?.id) {
+      await updateBillableRate({
+        source: "project_member",
+        sourceId: projectMember.id,
+        newRate: projectMember.billableRate,
+        applyToExisting: true,
+        organizationId,
+        userId: projectMember.user.id,
+        projectId,
+      });
+    }
+
+    const getMember = await db.projectMember.findUnique({
+      where: {
+        projectId_memberId: {
+          projectId,
+          memberId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        member: {
+          select: {
+            role: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
     res.status(201).json({
       message: "Member added to project successfully",
-      projectMember,
+      projectMember: getMember,
     });
   } catch (error) {
     throw new ErrorHandler(
@@ -628,6 +664,7 @@ export const updateProjectMember = async (
         },
       },
     });
+
 
     if (projectMember.user?.id) {
       await updateBillableRate({
@@ -755,13 +792,8 @@ export const getMembersByOrganizationId = async (
         projectId as string,
         "MANAGE_MEMBERS"
       );
-    }else{
-      await assertAPIPermission(
-        userId,
-        organizationId,
-        "PROJECT",
-        "VIEW"
-      );
+    } else {
+      await assertAPIPermission(userId, organizationId, "PROJECT", "VIEW");
     }
 
     const existingProjectMemberIds = projectId

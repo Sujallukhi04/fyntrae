@@ -316,6 +316,13 @@ export const startTimer = async (
       if (!project) {
         throw new ErrorHandler("Project not found or inactive", 404);
       }
+
+      const isProjectMember = await db.projectMember.findFirst({
+        where: { projectId: data.projectId, userId },
+      });
+      if (!isProjectMember) {
+        throw new ErrorHandler("You are not a member of this project", 403);
+      }
     }
 
     if (data.taskId) {
@@ -653,6 +660,14 @@ export const updateTimeEntry = async (
       if (project.isArchived && existingEntry.projectId !== data.projectId) {
         throw new ErrorHandler("Cannot assign an archived project", 400);
       }
+
+      // Check project membership
+      const isProjectMember = await db.projectMember.findFirst({
+        where: { projectId: data.projectId, userId },
+      });
+      if (!isProjectMember) {
+        throw new ErrorHandler("You are not a member of this project", 403);
+      }
     }
 
     if (data.taskId) {
@@ -897,6 +912,19 @@ export const bulkUpdateTimeEntries = async (
       });
       if (!project) {
         throw new ErrorHandler("Project not found", 404);
+      }
+
+      // Check project membership
+      for (const entry of timeEntries) {
+        const isProjectMember = await db.projectMember.findFirst({
+          where: { projectId: data.updates.projectId, userId: entry.userId },
+        });
+        if (!isProjectMember) {
+          throw new ErrorHandler(
+            "One or more users are not members of the selected project.",
+            403
+          );
+        }
       }
     }
 

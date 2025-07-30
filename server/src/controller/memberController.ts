@@ -650,7 +650,8 @@ export const updateMember = async (
       },
     });
 
-    if (billableRate !== undefined ) {
+    if (billableRate !== undefined) {
+      console.log(billableRate, "billableRate");
       await updateBillableRate({
         source: "organization_member",
         sourceId: memberId,

@@ -59,6 +59,9 @@ export const API_PERMISSIONS = {
     CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER],
     VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
   },
+  TIME_SUMMARY: {
+    VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
+  },
 };
 
 export const hasPermission = (

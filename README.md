@@ -21,7 +21,6 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 - **Backend:** Node.js, Express, Prisma ORM, PostgreSQL
 - **Other:** JWT Auth, Zod validation, Lucide Icons
 
-
 ## Getting Started
 
 ### Prerequisites
@@ -71,12 +70,3 @@ npm run dev
 - `npm run dev` – Start the server with hot reload
 - `npm run build` – Build the server
 - `npm start` – Start the built server
-
----
-
-## Environment Variables
-
-Both `client` and `server` have `.env.example` files.  
-Copy them to `.env` and fill in the required values.
-
-
