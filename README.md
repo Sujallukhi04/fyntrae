@@ -16,7 +16,6 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 - 🚀 **Future Enhancement:**
   - 🔄 **Import:** Import your time tracking data from other applications (Supported: Toggl, Clockify, Timeentry CSV).
 
----
 
 ## Tech Stack
 
@@ -24,7 +23,6 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 - **Backend:** Node.js, Express, Prisma ORM, PostgreSQL
 - **Other:** JWT Auth, Zod validation, Lucide Icons
 
----
 
 ## Getting Started
 
@@ -64,7 +62,6 @@ npm install
 npm run dev
 ```
 
----
 
 ## Project Structure
 
@@ -74,7 +71,6 @@ flexflow/
   server/   # Node/Express backend
 ```
 
----
 
 ## Scripts
 
@@ -90,7 +86,6 @@ flexflow/
 - `npm run build` – Build the server
 - `npm start` – Start the built server
 
----
 
 ## Environment Variables
 
