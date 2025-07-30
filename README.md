@@ -15,49 +15,6 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 - 🚀 **Future Enhancement:**
   - 🔄 **Import:** Import your time tracking data from other applications (Supported: Toggl, Clockify, Timeentry CSV).
 
-
-## Roles & Permissions
-
-Flexflow supports multiple user roles within an organization, each with different levels of access:
-
-- 👑 **Owner:**  
-  - Full access to the organization.
-  - Can delete the organization, transfer ownership.
-- 🛡️ **Admin:**  
-  - Full access to the organization, except for actions reserved for the owner.
-- 📊 **Manager:**  
-  - Full access to projects, clients, tags, time entries, and reports.
-  - Cannot manage the organization or users.
-- 👤 **Employee:**  
-  - Can track time and use the application, but has no administrative rights.
-- 🕳️ **Placeholder:**  
-  - Special users that cannot access the organization.
-  - used for access that specific memeber time entry 
-
-
-## Billable Rates Hierarchy
-
-Billable rates in Flexflow determine the price per hour for tracked time and can be set at multiple levels.  
-**A lower-level rate always overrides a higher-level rate.**
-
-**Billable rate levels (from highest to lowest priority):**
-
-1. **Project Member:**  
-   - A specific user in a specific project.
-2. **Project:**  
-   - All users in a specific project.
-3. **Organization Member:**  
-   - A specific user in the organization.
-4. **Organization:**  
-   - All users in the organization.
-
-> **Note:** Setting the billable rate is optional at all levels.
-
-**How it works:**  
-If a billable rate is set for a project member, it overrides the project, organization member, and organization rates.  
-If not set, the system checks the next level up.
-
-
 ## Tech Stack
 
 - **Frontend:** React, TypeScript, Vite, Tailwind CSS, Recharts
@@ -102,20 +59,6 @@ cp .env.example .env
 npm install
 npm run dev
 ```
-
----
-
-## Project Structure
-
-```
-flexflow/
-  client/   # React frontend
-  server/   # Node/Express backend
-```
-
----
-
-## Scripts
 
 ### Client
 
