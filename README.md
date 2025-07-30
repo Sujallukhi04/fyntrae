@@ -3,7 +3,6 @@
 **Flexflow** is a modern, full-featured time tracking and project management platform.  
 It helps teams and organizations track time, manage projects, assign tasks, and handle clients with ease.
 
----
 
 ## Features
 
