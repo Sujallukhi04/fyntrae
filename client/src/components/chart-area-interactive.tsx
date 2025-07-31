@@ -68,6 +68,7 @@ export default function ChartAreaInteractive({
   const [billable, setBillable] = React.useState<boolean | undefined>(
     undefined
   );
+  const [taskIds, setTaskIds] = React.useState<string[]>([]);
   const [openFilter, setOpenFilter] = React.useState(false);
 
   const [date, setDate] = React.useState({
@@ -89,6 +90,7 @@ export default function ChartAreaInteractive({
         memberIds,
         clientIds,
         tagIds,
+        tasks: taskIds,
         billable,
       });
 
@@ -108,6 +110,7 @@ export default function ChartAreaInteractive({
     clientIds,
     tagIds,
     billable,
+    taskIds, // Ensure taskIds is included in the dependency array
   ]);
 
   const chartData = React.useMemo(() => {
@@ -232,13 +235,28 @@ export default function ChartAreaInteractive({
         members={members}
         projects={projects}
         tags={tags}
-        selected={{ projectIds, memberIds, clientIds, tagIds, billable }}
-        onApply={({ projectIds, memberIds, clientIds, tagIds, billable }) => {
+        selected={{
+          projectIds,
+          memberIds,
+          clientIds,
+          tagIds,
+          billable,
+          taskIds,
+        }}
+        onApply={({
+          projectIds,
+          memberIds,
+          clientIds,
+          tagIds,
+          billable,
+          taskIds,
+        }) => {
           setProjectIds(projectIds);
           setMemberIds(memberIds);
           setClientIds(clientIds);
           setTagIds(tagIds);
           setBillable(billable);
+          setTaskIds(taskIds);
         }}
       />
     </div>

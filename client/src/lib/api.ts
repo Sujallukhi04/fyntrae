@@ -595,6 +595,7 @@ export const timeSummaryApi = {
       billable?: boolean;
       tagIds?: string[];
       clientIds?: string[];
+      tasks?: string[];
       groups?: string | string[];
     }
   ) => {
@@ -612,6 +613,7 @@ export const timeSummaryApi = {
     if (params?.clientIds)
       queryParams.append("clients", params.clientIds.join(","));
     if (params?.groups) queryParams.append("groups", String(params.groups));
+    if (params?.tasks) queryParams.append("tasks", params.tasks.join(","));
 
     const response = await axiosInstance.get(
       `/timesummary/${organizationId}?${queryParams.toString()}`

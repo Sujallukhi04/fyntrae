@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import {
   Briefcase,
   Check,
+  CheckCircle2,
   CircleCheck,
   Folder,
   TagIcon,
@@ -49,6 +50,7 @@ interface Props {
     clientIds: string[];
     tagIds: string[];
     billable: boolean | undefined;
+    taskIds: string[];
   };
   onApply: (filters: Props["selected"]) => void;
 }
@@ -139,6 +141,15 @@ export default function ChartFilterModal({
               options={tags.map((t) => ({ id: t.id, name: t.name }))}
               onToggle={(id) => toggleItem("tagIds", id)}
               icon={<TagIcon className="w-4 h-4" />}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-sm text-muted-foreground">Tasks</Label>
+            <ProjectTaskSelector
+              projects={projects}
+              selectedTaskIds={filters.taskIds}
+              onToggleTask={(id) => toggleItem("taskIds", id)}
             />
           </div>
 
@@ -258,6 +269,103 @@ export function FilterPopover({
                     <CircleCheck className="w-5 h-5 " />
                   </div>
                   <span className="truncate">{opt.name}</span>
+                </button>
+              );
+            })
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+interface ProjectTaskSelectorProps {
+  projects: {
+    id: string;
+    name: string;
+    color?: string;
+    tasks: { id: string; name: string }[];
+  }[];
+  selectedTaskIds: string[];
+  onToggleTask: (taskId: string) => void;
+}
+
+function ProjectTaskSelector({
+  projects,
+  selectedTaskIds,
+  onToggleTask,
+}: ProjectTaskSelectorProps) {
+  const [search, setSearch] = React.useState("");
+
+  // Flatten all tasks for search
+  const allTasks = projects.flatMap((project) =>
+    project.tasks.map((task) => ({
+      ...task,
+      projectId: project.id,
+      projectName: project.name,
+      projectColor: project.color,
+    }))
+  );
+
+  // Filter tasks by search
+  const filteredTasks = search
+    ? allTasks.filter(
+        (task) =>
+          task.name.toLowerCase().includes(search.toLowerCase()) ||
+          task.projectName.toLowerCase().includes(search.toLowerCase())
+      )
+    : allTasks;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className="w-full justify-between text-sm px-3 py-2 gap-2"
+        >
+          <div className="flex items-center gap-2 truncate">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Tasks</span>
+          </div>
+          {selectedTaskIds.length > 0 && (
+            <span className="ml-auto bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">
+              {selectedTaskIds.length}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-58 p-2">
+        <Input
+          placeholder="Search for a task or project..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-2 h-8 text-sm"
+        />
+        <ScrollArea className="max-h-64 pr-1">
+          {filteredTasks.length === 0 ? (
+            <div className="text-sm text-muted-foreground px-2 py-4 text-center">
+              No tasks found
+            </div>
+          ) : (
+            filteredTasks.map((task) => {
+              const selected = selectedTaskIds.includes(task.id);
+              return (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => onToggleTask(task.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2 mb-1 px-2 py-2 text-sm rounded-md cursor-pointer transition-colors",
+                    selected
+                      ? "bg-muted text-foreground"
+                      : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                  )}
+                >
+                  <Checkbox checked={selected} className="" />
+                  <span className="truncate">{task.name}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {task.projectName}
+                  </span>
                 </button>
               );
             })

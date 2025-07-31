@@ -18,6 +18,7 @@ interface TimeSummaryParams {
   tagIds?: string[];
   clientIds?: string[];
   groups?: string | string[];
+  tasks?: string[];
 }
 
 const useTimesummary = () => {
