@@ -19,3 +19,13 @@ export function formatNumber(value: number, format: string, currency: string) {
     currency,
   }).format(value);
 }
+
+export const formatDurationFromSeconds = (seconds: number) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}h ${m.toString().padStart(2, "0")}min`;
+};
+
+export const formatCost = (cost: number) => {
+  return cost > 0 ? `${cost.toLocaleString("en-IN")} INR` : "--";
+};

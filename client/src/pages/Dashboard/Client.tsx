@@ -45,6 +45,7 @@ const Client = () => {
 
   const fetchActiveClients = useCallback(async () => {
     if (!user?.currentTeamId) return;
+
     await getClients(user.currentTeamId, "active", {
       page: activeCurrentPage,
       pageSize: 10,

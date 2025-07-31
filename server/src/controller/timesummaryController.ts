@@ -20,8 +20,19 @@ function getDateRangeArray(start: string, end: string) {
   return arr;
 }
 
-function getValueByGroupKey(entry: any, key: string): string | null {
+function getValueByGroupKey(
+  entry: any,
+  key: string,
+  offset = 0
+): string | null {
   switch (key) {
+    case "date":
+    case "day": {
+      if (!entry.start) return null;
+      const d = new Date(entry.start);
+      d.setMinutes(d.getMinutes() - offset);
+      return d.toISOString().slice(0, 10);
+    }
     case "members":
       return entry.memberId || null;
     case "tasks":
@@ -39,18 +50,22 @@ function getValueByGroupKey(entry: any, key: string): string | null {
   }
 }
 
-function groupByMultiple(entries: any[], groupKeys: string[]): any[] | null {
+function groupByMultiple(
+  entries: any[],
+  groupKeys: string[],
+  offset = 0
+): any[] | null {
   if (!groupKeys.length) return null;
   const [currentKey, ...restKeys] = groupKeys;
   const grouped: Record<string, any[]> = {};
   for (const entry of entries) {
-    const key = getValueByGroupKey(entry, currentKey) ?? "null";
+    const key = getValueByGroupKey(entry, currentKey, offset) ?? "null";
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(entry);
   }
   return Object.entries(grouped).map(([key, groupEntries]) => {
     const grouped_data = restKeys.length
-      ? groupByMultiple(groupEntries, restKeys)
+      ? groupByMultiple(groupEntries, restKeys, offset)
       : null;
     return {
       key,
@@ -69,116 +84,6 @@ function groupByMultiple(entries: any[], groupKeys: string[]): any[] | null {
   });
 }
 
-export const getTimeSummary = async (req: Request, res: Response) => {
-  const { organizationId } = req.params;
-  const {
-    startDate,
-    endDate,
-    tags,
-    clients,
-    members,
-    tasks,
-    projects,
-    billable,
-  } = req.query;
-  const userId = req.user?.id;
-
-  if (!userId || !organizationId)
-    throw new ErrorHandler("User ID and Organization ID are required", 400);
-
-  try {
-    await assertAPIPermission(userId, organizationId, "TIME_SUMMARY", "VIEW");
-
-    const userTimezoneOffset = new Date().getTimezoneOffset() * -1;
-
-    const offset = Number(userTimezoneOffset) || 0;
-
-    let utcRange = {};
-    if (startDate && endDate) {
-      const { startUTC } = getLocalDateRangeInUTC(startDate as string, offset);
-      const { endUTC } = getLocalDateRangeInUTC(endDate as string, offset);
-      utcRange = {
-        start: {
-          gte: startUTC,
-          lt: endUTC,
-        },
-      };
-    }
-
-    const projectIds = projects
-      ? Array.isArray(projects)
-        ? projects
-        : (projects as string).split(",")
-      : undefined;
-    const tagIds = tags
-      ? Array.isArray(tags)
-        ? tags
-        : (tags as string).split(",")
-      : undefined;
-    const clientIds = clients
-      ? Array.isArray(clients)
-        ? clients
-        : (clients as string).split(",")
-      : undefined;
-    const memberIds = members
-      ? Array.isArray(members)
-        ? members
-        : (members as string).split(",")
-      : undefined;
-    const taskIds = tasks
-      ? Array.isArray(tasks)
-        ? tasks
-        : (tasks as string).split(",")
-      : undefined;
-    const billableFilter =
-      billable !== undefined ? billable === "true" : undefined;
-
-    const where: any = {
-      organizationId,
-      ...utcRange,
-      ...(projectIds && { projectId: { in: projectIds } }),
-      ...(memberIds && { memberId: { in: memberIds } }),
-      ...(taskIds && { taskId: { in: taskIds } }),
-      ...(billableFilter !== undefined && { billable: billableFilter }),
-    };
-
-    if (tagIds) {
-      where.tags = { some: { tagId: { in: tagIds } } };
-    }
-
-    if (clientIds) {
-      where.project = { clientId: { in: clientIds } };
-    }
-
-    const timeEntries = await db.timeEntry.findMany({
-      where,
-      select: { start: true, duration: true },
-    });
-
-    const summary: Record<string, number> = {};
-    for (const entry of timeEntries) {
-      const d = new Date(entry.start);
-      d.setMinutes(d.getMinutes() - offset);
-      const localDate = d.toISOString().slice(0, 10);
-      if (!summary[localDate]) summary[localDate] = 0;
-      summary[localDate] += entry.duration;
-    }
-
-    const allDates = getDateRangeArray(startDate as string, endDate as string);
-    const result = allDates.map((date) => ({
-      date,
-      totalDuration: summary[date] || 0,
-    }));
-
-    res.json({ summary: result });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof Error ? 500 : 400
-    );
-  }
-};
-
 export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
   const { organizationId } = req.params;
   const {
@@ -190,7 +95,7 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
     tasks,
     projects,
     billable,
-    groups, // comma-separated string or array, e.g. "tasks,members"
+    groups,
   } = req.query;
   const userId = req.user?.id;
 
@@ -268,6 +173,7 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
       select: {
         id: true,
         projectId: true,
+        start: true,
         billable: true,
         duration: true,
         billableRate: true,
@@ -299,7 +205,7 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
     }
 
     // Group the data
-    const groupedData = groupByMultiple(timeEntries, groupKeys);
+    const groupedData = groupByMultiple(timeEntries, groupKeys, offset);
 
     // Top-level summary
     const totalSeconds = timeEntries.reduce(
@@ -314,6 +220,42 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
           : 0),
       0
     );
+
+    if (
+      groupKeys.length === 1 &&
+      (groupKeys[0] === "date" || groupKeys[0] === "day") &&
+      startDate &&
+      endDate
+    ) {
+      const groupedMap = new Map(
+        (groupedData || []).map((g: any) => [g.key, g])
+      );
+      const allDates = getDateRangeArray(
+        startDate as string,
+        endDate as string
+      );
+      const filledGroupedData = allDates.map((date) => {
+        if (groupedMap.has(date)) {
+          return groupedMap.get(date);
+        }
+        return {
+          key: date,
+          seconds: 0,
+          cost: 0,
+          grouped_type: null,
+          grouped_data: null,
+        };
+      });
+      res.json({
+        data: {
+          seconds: totalSeconds,
+          cost: totalCost,
+          grouped_type: groupKeys[0],
+          grouped_data: filledGroupedData,
+        },
+      });
+      return;
+    }
 
     res.json({
       data: {

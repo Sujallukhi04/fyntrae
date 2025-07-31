@@ -1188,6 +1188,7 @@ export const getAllProjectWithTasks = async (
   try {
     const { organizationId } = req.params;
     const userId = req.user?.id;
+    const getAllWithoutMembership = req.query.all === "true";
 
     if (!userId || !organizationId) {
       throw new ErrorHandler("User ID and Organization ID are required", 400);
@@ -1195,8 +1196,38 @@ export const getAllProjectWithTasks = async (
 
     await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
 
+    const whereCondition: any = {
+      organizationId,
+      isArchived: false,
+    };
+
+    if (!getAllWithoutMembership) {
+      const projectMemberships = await db.projectMember.findMany({
+        where: {
+          userId,
+          project: {
+            organizationId: organizationId,
+          },
+        },
+        select: {
+          projectId: true,
+        },
+      });
+
+      const projectIds = projectMemberships.map((pm) => pm.projectId);
+
+      if (projectIds.length === 0) {
+        throw new ErrorHandler(
+          "No projects found for the user in this organization",
+          404
+        );
+      }
+
+      whereCondition.id = { in: projectIds };
+    }
+
     const projects = await db.project.findMany({
-      where: { organizationId, isArchived: false },
+      where: whereCondition,
       include: {
         tasks: {
           where: { status: "ACTIVE" },

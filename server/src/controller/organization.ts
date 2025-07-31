@@ -356,6 +356,7 @@ export const getOrganizationMembers = async (
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 10;
     const skip = (page - 1) * pageSize;
+    const all = req.query.all === "true";
 
     if (!userId) {
       throw new ErrorHandler("User not authenticated", 401);
@@ -391,19 +392,22 @@ export const getOrganizationMembers = async (
         },
       },
       orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
-      skip,
-      take: pageSize,
+      ...(all ? {} : { skip, take: pageSize }),
     });
 
     res.status(200).json({
       message: "Organization members retrieved successfully",
       members,
-      pagination: {
-        total,
-        page,
-        pageSize,
-        totalPages: Math.ceil(total / pageSize),
-      },
+      ...(all
+        ? {}
+        : {
+            pagination: {
+              total,
+              page,
+              pageSize,
+              totalPages: Math.ceil(total / pageSize),
+            },
+          }),
     });
   } catch (error) {
     throw new ErrorHandler(

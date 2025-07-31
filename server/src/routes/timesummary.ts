@@ -7,12 +7,6 @@ const router = express.Router();
 router.get(
   "/:organizationId",
   protectRoute,
-  timeSummaryController.getTimeSummary
-);
-
-router.get(
-  "/:organizationId/time-summary-grouped",
-  protectRoute,
   timeSummaryController.getTimeSummaryGrouped
 );
 

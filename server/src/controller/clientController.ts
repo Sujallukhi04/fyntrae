@@ -10,7 +10,6 @@ import {
 } from "../helper/organization";
 import { Role } from "@prisma/client";
 
-
 export const createClient = async (req: Request, res: Response) => {
   try {
     const { organizationId } = req.params;
@@ -61,42 +60,55 @@ export const getClients = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
     const type = (req.query.type as "archived" | "active") || "active";
+    const allData = req.query.all === "true";
 
     // Centralized permission check
     await assertAPIPermission(userId, organizationId, "CLIENT", "VIEW");
 
     const isArchived = type === "archived";
 
-    const [clients, totalCount] = await Promise.all([
-      db.client.findMany({
-        where: {
-          organizationId,
-          archivedAt: isArchived ? { not: null } : null,
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      db.client.count({
-        where: {
-          organizationId,
-          archivedAt: isArchived ? { not: null } : null,
-        },
-      }),
-    ]);
+    const where = {
+      organizationId,
+      archivedAt: isArchived ? { not: null } : null,
+    };
 
-    res.status(200).json({
-      message: `${
-        type === "archived" ? "Archived" : "Active"
-      } clients retrieved successfully`,
-      clients,
-      pagination: {
-        total: totalCount,
-        page,
-        pageSize: limit,
-        totalPages: Math.ceil(totalCount / limit),
-      },
-    });
+    if (allData) {
+      const clients = await db.client.findMany({
+        where: { organizationId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      res.status(200).json({
+        message: `${
+          type === "archived" ? "Archived" : "Active"
+        } clients retrieved successfully`,
+        clients,
+        pagination: null,
+      });
+    } else {
+      const [clients, totalCount] = await Promise.all([
+        db.client.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        db.client.count({ where }),
+      ]);
+
+      res.status(200).json({
+        message: `${
+          type === "archived" ? "Archived" : "Active"
+        } clients retrieved successfully`,
+        clients,
+        pagination: {
+          total: totalCount,
+          page,
+          pageSize: limit,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      });
+    }
   } catch (error) {
     throw new ErrorHandler(
       error instanceof Error ? error.message : "Internal Server Error",
