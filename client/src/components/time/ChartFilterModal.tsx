@@ -36,6 +36,7 @@ import {
   Users2,
 } from "lucide-react";
 import { Input } from "../ui/input";
+import { Badge } from "../ui/badge";
 
 interface Props {
   open: boolean;
@@ -95,7 +96,7 @@ export default function ChartFilterModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ">
           <div className="space-y-1">
             <Label className="text-sm text-muted-foreground">Members</Label>
             <FilterPopover
@@ -363,9 +364,12 @@ function ProjectTaskSelector({
                 >
                   <Checkbox checked={selected} className="" />
                   <span className="truncate">{task.name}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">
+                  <Badge
+                    variant="outline"
+                    className="ml-auto text-xs text-muted-foreground"
+                  >
                     {task.projectName}
-                  </span>
+                  </Badge>
                 </button>
               );
             })

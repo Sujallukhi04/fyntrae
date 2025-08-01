@@ -17,7 +17,7 @@ interface TimeSummaryParams {
   billable?: boolean;
   tagIds?: string[];
   clientIds?: string[];
-  groups?: string | string[];
+  groups?: string;
   tasks?: string[];
 }
 

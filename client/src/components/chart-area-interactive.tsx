@@ -47,6 +47,24 @@ interface ChartAreaInteractiveProps {
     project: boolean;
     tag: boolean;
   };
+  date: {
+    from: Date;
+    to: Date;
+  };
+  setDate: React.Dispatch<
+    React.SetStateAction<{ from: Date | null; to: Date | null }>
+  >;
+  groupBy1: string;
+  setGroupBy1: React.Dispatch<React.SetStateAction<string>>;
+  groupBy2: string;
+  setGroupBy2: React.Dispatch<React.SetStateAction<string>>;
+  projectIds: string[];
+  taskIds: string[];
+  tagIds: string[];
+  memberIds: string[];
+  clientIds: string[];
+  billable: boolean | undefined;
+  setFilterOpen: (open: boolean) => void;
 }
 
 export default function ChartAreaInteractive({
@@ -55,26 +73,25 @@ export default function ChartAreaInteractive({
   projects,
   tags,
   loading,
+  date,
+  setDate,
+  groupBy1,
+  setGroupBy1,
+  groupBy2,
+  setGroupBy2,
+  projectIds,
+  taskIds,
+  tagIds,
+  memberIds,
+  clientIds,
+  billable,
+  setFilterOpen,
 }: ChartAreaInteractiveProps) {
   const { user } = useAuth();
   const today = new Date();
   const lastWeek = new Date();
   lastWeek.setDate(today.getDate() - 6);
   const [groupData, setGroupData] = React.useState<any>(null);
-  const [projectIds, setProjectIds] = React.useState<string[]>([]);
-  const [memberIds, setMemberIds] = React.useState<string[]>([]);
-  const [clientIds, setClientIds] = React.useState<string[]>([]);
-  const [tagIds, setTagIds] = React.useState<string[]>([]);
-  const [billable, setBillable] = React.useState<boolean | undefined>(
-    undefined
-  );
-  const [taskIds, setTaskIds] = React.useState<string[]>([]);
-  const [openFilter, setOpenFilter] = React.useState(false);
-
-  const [date, setDate] = React.useState({
-    from: lastWeek,
-    to: today,
-  });
 
   const { fetchGroupedSummary } = useTimesummary();
 
@@ -110,7 +127,7 @@ export default function ChartAreaInteractive({
     clientIds,
     tagIds,
     billable,
-    taskIds, // Ensure taskIds is included in the dependency array
+    taskIds,
   ]);
 
   const chartData = React.useMemo(() => {
@@ -168,7 +185,7 @@ export default function ChartAreaInteractive({
                   />
                 </PopoverContent>
               </Popover>
-              <Button variant="outline" onClick={() => setOpenFilter(true)}>
+              <Button variant="outline" onClick={() => setFilterOpen(true)}>
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
               </Button>
@@ -227,38 +244,6 @@ export default function ChartAreaInteractive({
           )}
         </CardContent>
       </Card>
-
-      <ChartFilterModal
-        open={openFilter}
-        onClose={() => setOpenFilter(false)}
-        clients={clients}
-        members={members}
-        projects={projects}
-        tags={tags}
-        selected={{
-          projectIds,
-          memberIds,
-          clientIds,
-          tagIds,
-          billable,
-          taskIds,
-        }}
-        onApply={({
-          projectIds,
-          memberIds,
-          clientIds,
-          tagIds,
-          billable,
-          taskIds,
-        }) => {
-          setProjectIds(projectIds);
-          setMemberIds(memberIds);
-          setClientIds(clientIds);
-          setTagIds(tagIds);
-          setBillable(billable);
-          setTaskIds(taskIds);
-        }}
-      />
     </div>
   );
 }

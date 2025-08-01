@@ -6,6 +6,10 @@ import {
   User,
   FolderOpen,
   Building2,
+  CheckCircle2,
+  Tag,
+  Folder,
+  Currency,
 } from "lucide-react";
 
 import ChartAreaInteractive from "@/components/chart-area-interactive";
@@ -13,7 +17,6 @@ import TimeEntryGroup from "@/components/time/TimeEntryGroup";
 import { ChartPieLegend } from "@/components/time/ChartPieLegend";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -26,13 +29,18 @@ import useTimesummary from "@/hooks/useTimesummary";
 import { useAuth } from "@/providers/AuthProvider";
 
 import type { Client, Member } from "@/types/oraganization";
-import type { ProjectWithTasks, Tag } from "@/types/project";
+import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
+import { format } from "date-fns";
+import ChartFilterModal from "@/components/time/ChartFilterModal";
 
 // Grouping options with icons
 const groupOptions = [
   { label: "Members", value: "members", icon: User },
-  { label: "Clients", value: "clients", icon: FolderOpen },
+  { label: "Clients", value: "clients", icon: Folder },
   { label: "Projects", value: "projects", icon: FolderOpen },
+  { label: "Tags", value: "tags", icon: Tag },
+  { label: "Tasks", value: "tasks", icon: CheckCircle2 },
+  { label: "Billable", value: "billable", icon: Currency },
 ];
 
 const Overview = () => {
@@ -43,13 +51,31 @@ const Overview = () => {
     fetchMembers,
     fetchProjectWiTasks,
     fetchTags,
+    fetchGroupedSummary,
   } = useTimesummary();
+
+  const today = new Date();
+  const lastWeek = new Date();
+  lastWeek.setDate(today.getDate() - 6);
+
+  const [date, setDate] = useState({
+    from: lastWeek,
+    to: today,
+  });
+
+  const [projectIds, setProjectIds] = useState<string[]>([]);
+  const [memberIds, setMemberIds] = useState<string[]>([]);
+  const [clientIds, setClientIds] = useState<string[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
+  const [billable, setBillable] = useState<boolean | undefined>(undefined);
+  const [taskIds, setTaskIds] = useState<string[]>([]);
+  const [openFilter, setOpenFilter] = useState(false);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [projects, setProjects] = useState<ProjectWithTasks[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-
+  const [tags, setTags] = useState<TagType[]>([]);
+  const [groupData, setGroupData] = useState<any>(null);
   const [groupBy1, setGroupBy1] = useState("projects");
   const [groupBy2, setGroupBy2] = useState("members");
 
@@ -75,6 +101,75 @@ const Overview = () => {
 
     if (user?.currentTeamId) loadData();
   }, [user?.currentTeamId]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.currentTeamId || !date.from || !date.to) return;
+      try {
+        const result = await fetchGroupedSummary({
+          organizationId: user.currentTeamId,
+          startDate: format(date.from!, "yyyy-MM-dd"),
+          endDate: format(date.to!, "yyyy-MM-dd"),
+          projectIds,
+          memberIds,
+          clientIds,
+          tagIds,
+          tasks: taskIds,
+          billable,
+          groups: `${groupBy1},${groupBy2}`,
+        });
+        setGroupData(result);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchData();
+  }, [
+    date.from,
+    date.to,
+    fetchGroupedSummary,
+    user?.currentTeamId,
+    projectIds,
+    memberIds,
+    clientIds,
+    tagIds,
+    billable,
+    taskIds,
+    groupBy1,
+    groupBy2,
+  ]);
+
+  const getAvailableOptions = (currentValue: string, excludeValue: string) => {
+    return groupOptions.filter(
+      (opt) => opt.value === currentValue || opt.value !== excludeValue
+    );
+  };
+
+  // Handle groupBy changes with validation
+  const handleGroupBy1Change = (value: string) => {
+    setGroupBy1(value);
+    // If the new value conflicts with groupBy2, reset groupBy2
+    if (value === groupBy2) {
+      // Find the first available option that's not the selected one
+      const availableOption = groupOptions.find((opt) => opt.value !== value);
+      if (availableOption) {
+        setGroupBy2(availableOption.value);
+      }
+    }
+  };
+
+  const handleGroupBy2Change = (value: string) => {
+    setGroupBy2(value);
+    // If the new value conflicts with groupBy1, reset groupBy1
+    if (value === groupBy1) {
+      // Find the first available option that's not the selected one
+      const availableOption = groupOptions.find((opt) => opt.value !== value);
+      if (availableOption) {
+        setGroupBy1(availableOption.value);
+      }
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
@@ -105,6 +200,19 @@ const Overview = () => {
             projects={projects}
             tags={tags}
             loading={loading}
+            setFilterOpen={setOpenFilter}
+            date={date}
+            setDate={setDate}
+            groupBy1={groupBy1}
+            setGroupBy1={setGroupBy1}
+            groupBy2={groupBy2}
+            setGroupBy2={setGroupBy2}
+            projectIds={projectIds}
+            taskIds={taskIds}
+            tagIds={tagIds}
+            memberIds={memberIds}
+            clientIds={clientIds}
+            billable={billable}
           />
         </div>
 
@@ -117,16 +225,25 @@ const Overview = () => {
                 Group by
               </span>
 
-              <Select value={groupBy1} onValueChange={setGroupBy1}>
+              <Select value={groupBy1} onValueChange={handleGroupBy1Change}>
                 <SelectTrigger className="w-[140px] h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {groupOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
+                  {getAvailableOptions(groupBy1, groupBy2).map((opt) => (
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      disabled={opt.value === groupBy2}
+                    >
                       <div className="flex items-center gap-2">
                         <opt.icon className="w-4 h-4" />
                         {opt.label}
+                        {opt.value === groupBy2 && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (used in 2nd field)
+                          </span>
+                        )}
                       </div>
                     </SelectItem>
                   ))}
@@ -137,16 +254,25 @@ const Overview = () => {
                 and
               </span>
 
-              <Select value={groupBy2} onValueChange={setGroupBy2}>
+              <Select value={groupBy2} onValueChange={handleGroupBy2Change}>
                 <SelectTrigger className="w-[140px] h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {groupOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
+                  {getAvailableOptions(groupBy2, groupBy1).map((opt) => (
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      disabled={opt.value === groupBy1}
+                    >
                       <div className="flex items-center gap-2">
                         <opt.icon className="w-4 h-4" />
                         {opt.label}
+                        {opt.value === groupBy1 && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (used in 1st field)
+                          </span>
+                        )}
                       </div>
                     </SelectItem>
                   ))}
@@ -154,16 +280,59 @@ const Overview = () => {
               </Select>
             </div>
 
-            {/* Time Entries */}
-            <TimeEntryGroup />
+            <TimeEntryGroup
+              groupedData={groupData?.grouped_data || []}
+              members={members}
+              projects={projects}
+              clients={clients}
+              groupBy1={groupBy1}
+              groupBy2={groupBy2}
+            />
           </div>
 
           {/* Right: Chart */}
           <div className="lg:w-[40%] w-full">
-            <ChartPieLegend />
+            <ChartPieLegend
+              groupedData={groupData?.grouped_data || []}
+              members={members}
+              projects={projects}
+              clients={clients}
+              groupBy={groupBy1}
+            />
           </div>
         </div>
       </div>
+      <ChartFilterModal
+        open={openFilter}
+        onClose={() => setOpenFilter(false)}
+        clients={clients}
+        members={members}
+        projects={projects}
+        tags={tags}
+        selected={{
+          projectIds,
+          memberIds,
+          clientIds,
+          tagIds,
+          billable,
+          taskIds,
+        }}
+        onApply={({
+          projectIds,
+          memberIds,
+          clientIds,
+          tagIds,
+          billable,
+          taskIds,
+        }) => {
+          setProjectIds(projectIds);
+          setMemberIds(memberIds);
+          setClientIds(clientIds);
+          setTagIds(tagIds);
+          setBillable(billable);
+          setTaskIds(taskIds);
+        }}
+      />
     </div>
   );
 };

@@ -7,55 +7,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronDown,
-  ChevronRight,
-  FolderOpen,
-  Folder,
-  CheckCircle,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, FolderOpen } from "lucide-react";
 import NoData from "../NoData";
+import type { Client, Member } from "@/types/oraganization";
+import type { ProjectWithTasks } from "@/types/project";
 
-// --- Mock Data ---
-const mockData = [
-  {
-    key: "project1",
-    seconds: 7200,
-    cost: 200,
-    grouped_data: [
-      { key: "task1", seconds: 3600, cost: 100 },
-      { key: "task2", seconds: 3600, cost: 100 },
-    ],
-  },
-  {
-    key: "project2",
-    seconds: 3600,
-    cost: 90,
-    grouped_data: [
-      { key: "task1", seconds: 1800, cost: 40 },
-      { key: "task3", seconds: 1800, cost: 50 },
-    ],
-  },
-];
+interface GroupRow {
+  key: string;
+  seconds: number;
+  cost: number;
+  grouped_data?: GroupRow[] | null;
+}
 
-const mockProjects = [
-  { id: "project1", name: "Website" },
-  { id: "project2", name: "Mobile App" },
-];
-
-const mockTasks = [
-  { id: "task1", name: "Design" },
-  { id: "task2", name: "Development" },
-  { id: "task3", name: "Testing" },
-];
+interface TimeEntryGroupProps {
+  groupedData?: GroupRow[];
+  members?: Member[];
+  projects?: ProjectWithTasks[];
+  clients?: Client[];
+  groupBy1?: string;
+  groupBy2?: string;
+}
 
 const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600);
@@ -63,23 +35,15 @@ const formatDuration = (seconds: number) => {
   return `${h}h ${m.toString().padStart(2, "0")}min`;
 };
 
-const groupOptions = [
-  {
-    label: "Projects",
-    value: "project",
-    icon: <Folder className="w-4 h-4 mr-2" />,
-  },
-  {
-    label: "Tasks",
-    value: "task",
-    icon: <CheckCircle className="w-4 h-4 mr-2" />,
-  },
-];
-
-const TimeEntryGroup: React.FC = () => {
+const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
+  groupedData = [],
+  members = [],
+  projects = [],
+  clients = [],
+  groupBy1 = "projects",
+  groupBy2 = "members",
+}) => {
   const [expanded, setExpanded] = useState<string[]>([]);
-  const [groupBy1, setGroupBy1] = useState("project");
-  const [groupBy2, setGroupBy2] = useState("task");
 
   const toggleExpand = (key: string) =>
     setExpanded((prev) =>
@@ -88,43 +52,57 @@ const TimeEntryGroup: React.FC = () => {
 
   const isExpanded = (key: string) => expanded.includes(key);
 
-  const getName = (type: string, id: string | null) => {
+  const getName = (type: string, id: string) => {
     if (!id || id === "null") return `No ${type}`;
-    if (type === "project")
-      return mockProjects.find((p) => p.id === id)?.name || id;
-    if (type === "task") return mockTasks.find((t) => t.id === id)?.name || id;
+
+    if (type === "members")
+      return members.find((m) => m.id === id)?.user.name || id;
+    if (type === "projects")
+      return projects.find((p) => p.id === id)?.name || id;
+    if (type === "clients") return clients.find((c) => c.id === id)?.name || id;
+    if (type === "tags") return projects.find((t) => t.id === id)?.name || id;
+    if (type === "tasks") {
+      for (const p of projects) {
+        const task = p.tasks.find((t) => t.id === id);
+        console.log(task);
+        if (task) return task.name;
+      }
+      return id;
+    }
+    if (type === "billable") return id === "1" ? "Billable" : "Non-Billable";
     return id;
   };
-
-  const totalSeconds = mockData.reduce((sum, g) => sum + g.seconds, 0);
-  const totalCost = mockData.reduce((sum, g) => sum + g.cost, 0);
+  const totalSeconds = groupedData.reduce(
+    (sum, g) => sum + (g.seconds || 0),
+    0
+  );
+  const totalCost = groupedData.reduce((sum, g) => sum + (g.cost || 0), 0);
 
   return (
     <div className="space-y-4">
-      {/* Table */}
       <div className="rounded-md bg-muted/40 border border-muted">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[45%]">Name</TableHead>
-              <TableHead className="w-[10%]">Duration</TableHead>
-              <TableHead className="w-[5%]">Cost</TableHead>
+              <TableHead className="w-[25%]">Duration</TableHead>
+              <TableHead className="w-[15%]">Cost</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockData.length === 0 ? (
+            {groupedData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3}>
                   <NoData
                     icon={FolderOpen}
                     title="No data found"
-                    description="Start by creating time entries."
+                    description="No time entries found for the selected filters."
                   />
                 </TableCell>
               </TableRow>
             ) : (
               <>
-                {mockData.map((group) => (
+                {groupedData.map((group) => (
                   <React.Fragment key={group.key}>
                     <TableRow
                       className="hover:bg-muted/50 cursor-pointer"
@@ -147,16 +125,17 @@ const TimeEntryGroup: React.FC = () => {
                               <ChevronRight className="h-4 w-4" />
                             )}
                           </Button>
+
                           <span className="font-medium text-sm">
                             {getName(groupBy1, group.key)}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground py-3">
+                      <TableCell className="text-sm  py-3">
                         {formatDuration(group.seconds)}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground py-3">
-                        ₹{group.cost}
+                      <TableCell className="text-sm  py-3">
+                        {group.cost || "--"}
                       </TableCell>
                     </TableRow>
 
@@ -170,7 +149,7 @@ const TimeEntryGroup: React.FC = () => {
                             {formatDuration(sub.seconds)}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground py-3">
-                            ₹{sub.cost}
+                            {sub.cost || "--"}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -181,7 +160,7 @@ const TimeEntryGroup: React.FC = () => {
                 <TableRow className="bg-muted/30 font-semibold">
                   <TableCell>Total</TableCell>
                   <TableCell>{formatDuration(totalSeconds)}</TableCell>
-                  <TableCell>₹{totalCost}</TableCell>
+                  <TableCell>{totalCost || "--"}</TableCell>
                 </TableRow>
               </>
             )}

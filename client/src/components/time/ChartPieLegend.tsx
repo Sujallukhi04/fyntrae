@@ -1,64 +1,86 @@
-import { Pie, PieChart, Cell } from "recharts";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Pie, PieChart } from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
+import type { Client, Member } from "@/types/oraganization";
+import type { ProjectWithTasks } from "@/types/project";
 
 const COLORS = [
-  "#3B82F6", // blue-500
-  "#60A5FA", // blue-400
-  "#93C5FD", // blue-300
-  "#BFDBFE", // blue-200
-  "#DBEAFE", // blue-100
-  "#F472B6", // pink-400
-  "#FBBF24", // yellow-400
-  "#34D399", // green-400
-  "#A78BFA", // purple-400
-  "#F87171", // red-400
-  // ...add more as needed
+  "#3B82F6",
+  "#60A5FA",
+  "#93C5FD",
+  "#BFDBFE",
+  "#DBEAFE",
+  "#F472B6",
+  "#FBBF24",
+  "#34D399",
+  "#A78BFA",
+  "#F87171",
 ];
 
-const chartData = [
-  { browser: "Chrome", visitors: 275, fill: "#3B82F6" }, // blue-500
-  { browser: "Safari", visitors: 200, fill: "#60A5FA" }, // blue-400
-  { browser: "Firefox", visitors: 187, fill: "#93C5FD" }, // blue-300
-  { browser: "Edge", visitors: 173, fill: "#BFDBFE" }, // blue-200
-  { browser: "Other", visitors: 90, fill: "#DBEAFE" }, // blue-100
-];
+interface ChartPieLegendProps {
+  groupedData: any[];
+  members: Member[];
+  projects: ProjectWithTasks[];
+  clients: Client[];
+  groupBy: string;
+}
 
-const chartConfig = {
-  visitors: { label: "Visitors" },
-  Chrome: { label: "Chrome", color: "#3B82F6" },
-  Safari: { label: "Safari", color: "#60A5FA" },
-  Firefox: { label: "Firefox", color: "#93C5FD" },
-  Edge: { label: "Edge", color: "#BFDBFE" },
-  Other: { label: "Other", color: "#DBEAFE" },
-};
+export function ChartPieLegend({
+  groupedData = [],
+  members = [],
+  projects = [],
+  clients = [],
+  groupBy = "members",
+}: ChartPieLegendProps) {
+  const getName = (type: string, id: string) => {
+    if (!id || id === "null") return `No ${type}`;
 
-export function ChartPieLegend() {
+    if (type === "members")
+      return members.find((m) => m.id === id)?.user.name || id;
+    if (type === "projects")
+      return projects.find((p) => p.id === id)?.name || id;
+    if (type === "clients") return clients.find((c) => c.id === id)?.name || id;
+    if (type === "tags") return projects.find((t) => t.id === id)?.name || id;
+    if (type === "tasks") {
+      for (const p of projects) {
+        const task = p.tasks.find((t) => t.id === id);
+        console.log(task);
+        if (task) return task.name;
+      }
+      return id;
+    }
+    if (type === "billable") return id === "1" ? "Billable" : "Non-Billable";
+    return id;
+  };
+
+  // Transform API data to chart format
+  const chartData = groupedData.map((item, idx) => ({
+    name: getName(groupBy, item.key),
+    value: Math.round(((item.seconds || 0) / 3600) * 100) / 100,
+    fill: COLORS[idx % COLORS.length],
+  }));
+
+  const chartConfig = chartData.reduce((config, item) => {
+    config[item.name] = { label: item.name, color: item.fill };
+    return config;
+  }, {} as any);
+
   return (
     <Card className="flex flex-col">
-      <CardContent className=" pb-0">
+      <CardContent className="pb-0">
         <ChartContainer
           config={chartConfig}
           className="mx-auto aspect-square max-h-[300px]"
         >
           <PieChart>
-            <Pie data={chartData} dataKey="visitors" />
+            <Pie data={chartData} dataKey="value" nameKey="name" />
             <ChartLegend
-              content={<ChartLegendContent nameKey="browser" />}
-              className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center"
+              content={<ChartLegendContent nameKey="name" />}
+              className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
             />
           </PieChart>
         </ChartContainer>
