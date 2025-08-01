@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, FolderOpen } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, FolderOpen } from "lucide-react";
 import NoData from "../NoData";
 import type { Client, Member } from "@/types/oraganization";
 import type { ProjectWithTasks } from "@/types/project";
@@ -22,11 +22,9 @@ interface GroupRow {
 
 interface TimeEntryGroupProps {
   groupedData?: GroupRow[];
-  members?: Member[];
-  projects?: ProjectWithTasks[];
-  clients?: Client[];
   groupBy1?: string;
   groupBy2?: string;
+  getName: (type: string, id: string) => string;
 }
 
 const formatDuration = (seconds: number) => {
@@ -37,11 +35,9 @@ const formatDuration = (seconds: number) => {
 
 const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
   groupedData = [],
-  members = [],
-  projects = [],
-  clients = [],
   groupBy1 = "projects",
   groupBy2 = "members",
+  getName,
 }) => {
   const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -52,26 +48,6 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
 
   const isExpanded = (key: string) => expanded.includes(key);
 
-  const getName = (type: string, id: string) => {
-    if (!id || id === "null") return `No ${type}`;
-
-    if (type === "members")
-      return members.find((m) => m.id === id)?.user.name || id;
-    if (type === "projects")
-      return projects.find((p) => p.id === id)?.name || id;
-    if (type === "clients") return clients.find((c) => c.id === id)?.name || id;
-    if (type === "tags") return projects.find((t) => t.id === id)?.name || id;
-    if (type === "tasks") {
-      for (const p of projects) {
-        const task = p.tasks.find((t) => t.id === id);
-        console.log(task);
-        if (task) return task.name;
-      }
-      return id;
-    }
-    if (type === "billable") return id === "1" ? "Billable" : "Non-Billable";
-    return id;
-  };
   const totalSeconds = groupedData.reduce(
     (sum, g) => sum + (g.seconds || 0),
     0
@@ -94,9 +70,10 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
               <TableRow>
                 <TableCell colSpan={3}>
                   <NoData
-                    icon={FolderOpen}
+                    icon={Clock}
                     title="No data found"
                     description="No time entries found for the selected filters."
+                    className="py-12"
                   />
                 </TableCell>
               </TableRow>

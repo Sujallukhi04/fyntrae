@@ -1100,7 +1100,18 @@ export const getTimeEntries = async (
   try {
     const { organizationId } = req.params;
     const userId = req.user?.id;
-    const { page = "1", limit = "10", date, memberId } = req.query;
+    const {
+      page = "1",
+      limit = "10",
+      all = "false",
+      date,
+      tags,
+      clients,
+      members,
+      tasks,
+      projects,
+      billable,
+    } = req.query;
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
@@ -1109,15 +1120,68 @@ export const getTimeEntries = async (
       throw new ErrorHandler("User ID and Organization ID are required", 400);
     }
 
-    await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
+    const member = await assertAPIPermission(
+      userId,
+      organizationId,
+      "TIME",
+      "CREATE"
+    );
+
+    const isEmployee = member.role === "EMPLOYEE";
+    const fetchAll = all === "true" && !isEmployee;
+
+    let projectIds = projects
+      ? Array.isArray(projects)
+        ? projects
+        : (projects as string).split(",")
+      : undefined;
+
+    let tagIds = tags
+      ? Array.isArray(tags)
+        ? tags
+        : (tags as string).split(",")
+      : undefined;
+
+    let clientIds = clients
+      ? Array.isArray(clients)
+        ? clients
+        : (clients as string).split(",")
+      : undefined;
+
+    let memberIds = members
+      ? Array.isArray(members)
+        ? members
+        : (members as string).split(",")
+      : undefined;
+
+    let taskIds = tasks
+      ? Array.isArray(tasks)
+        ? tasks
+        : (tasks as string).split(",")
+      : undefined;
+    const billableFilter =
+      billable !== undefined ? billable === "true" : undefined;
 
     const whereClause: any = {
       organizationId,
       end: { not: null },
+      ...(projectIds && { projectId: { in: projectIds } }),
+      ...(taskIds && { taskId: { in: taskIds } }),
+      ...(billableFilter !== undefined && { billable: billableFilter }),
     };
 
-    if (memberId && typeof memberId === "string") {
-      whereClause.memberId = memberId;
+    if (!fetchAll) {
+      whereClause.memberId = member.id;
+    } else if (memberIds) {
+      whereClause.memberId = { in: memberIds };
+    }
+
+    if (tagIds) {
+      whereClause.tags = { some: { tagId: { in: tagIds } } };
+    }
+
+    if (clientIds && !isEmployee) {
+      whereClause.project = { clientId: { in: clientIds } };
     }
 
     if (date) {
@@ -1188,7 +1252,6 @@ export const getAllProjectWithTasks = async (
   try {
     const { organizationId } = req.params;
     const userId = req.user?.id;
-    const getAllWithoutMembership = req.query.all === "true";
 
     if (!userId || !organizationId) {
       throw new ErrorHandler("User ID and Organization ID are required", 400);
@@ -1196,42 +1259,20 @@ export const getAllProjectWithTasks = async (
 
     await assertAPIPermission(userId, organizationId, "TIME", "CREATE");
 
-    const whereCondition: any = {
-      organizationId,
-      isArchived: false,
-    };
-
-    if (!getAllWithoutMembership) {
-      const projectMemberships = await db.projectMember.findMany({
-        where: {
-          userId,
-          project: {
-            organizationId: organizationId,
-          },
-        },
-        select: {
-          projectId: true,
-        },
-      });
-
-      const projectIds = projectMemberships.map((pm) => pm.projectId);
-
-      if (projectIds.length === 0) {
-        throw new ErrorHandler(
-          "No projects found for the user in this organization",
-          404
-        );
-      }
-
-      whereCondition.id = { in: projectIds };
-    }
-
     const projects = await db.project.findMany({
-      where: whereCondition,
+      where: {
+        organizationId,
+        isArchived: false,
+      },
       include: {
         tasks: {
           where: { status: "ACTIVE" },
           select: { id: true, name: true },
+        },
+        members: {
+          select: {
+            userId: true,
+          },
         },
       },
     });
@@ -1246,8 +1287,9 @@ export const getAllProjectWithTasks = async (
           id: task.id,
           name: task.name,
         })),
+        members: project.members.map((member) => member.userId),
       })),
-      message: "Projects and tasks retrieved successfully",
+      message: "Projects with tasks and members retrieved successfully",
     });
   } catch (error) {
     throw new ErrorHandler(

@@ -29,6 +29,7 @@ import { Checkbox } from "../ui/checkbox";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import PaginationControls from "../PaginationControl";
 import { TimeEntriesTableSkeleton } from "../modals/Skeleton";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface TimeEntriesTableProps {
   timeEntries: TimeEntry[];
@@ -82,6 +83,7 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
   showMember = false,
 }) => {
   const { organization } = useOrganization();
+  const { user } = useAuth();
   // Helper to get project and task names
   const getProjectTask = (projectId?: string, taskId?: string) => {
     const project = projectsWithTasks.find((p) => p.id === projectId);
@@ -178,10 +180,11 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                           </span>
                           {showMember && (
                             <Badge variant="secondary" className="text-xs">
-                              {
-                                members.find((m) => m.user.id === entry.userId)
-                                  ?.user.name
-                              }
+                              {members.find((m) => m.user.id === entry.userId)
+                                ?.user.name ??
+                                (entry.userId === user?.id
+                                  ? user?.name
+                                  : "Unknown User")}
                             </Badge>
                           )}
                         </div>

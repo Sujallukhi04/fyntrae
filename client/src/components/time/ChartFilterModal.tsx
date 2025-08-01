@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface Props {
   open: boolean;
@@ -67,6 +68,7 @@ export default function ChartFilterModal({
   onApply,
 }: Props) {
   const [filters, setFilters] = React.useState(selected);
+  const { user } = useAuth();
 
   React.useEffect(() => {
     setFilters(selected);
@@ -116,7 +118,9 @@ export default function ChartFilterModal({
             <FilterPopover
               label="Projects"
               values={filters.projectIds}
-              options={projects.map((p) => ({ id: p.id, name: p.name }))}
+              options={projects
+                .filter((p) => p.members?.some((m) => m === user?.id))
+                .map((p) => ({ id: p.id, name: p.name }))}
               onToggle={(id) => toggleItem("projectIds", id)}
               icon={<Folder className="w-4 h-4" />}
             />
@@ -148,7 +152,9 @@ export default function ChartFilterModal({
           <div className="space-y-1">
             <Label className="text-sm text-muted-foreground">Tasks</Label>
             <ProjectTaskSelector
-              projects={projects}
+              projects={projects.filter((p) =>
+                p.members?.some((m) => m === user?.id)
+              )}
               selectedTaskIds={filters.taskIds}
               onToggleTask={(id) => toggleItem("taskIds", id)}
             />

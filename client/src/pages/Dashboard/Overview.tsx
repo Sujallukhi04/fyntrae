@@ -58,11 +58,10 @@ const Overview = () => {
   const lastWeek = new Date();
   lastWeek.setDate(today.getDate() - 6);
 
-  const [date, setDate] = useState({
+  const [date, setDate] = useState<{ from: Date | null; to: Date | null }>({
     from: lastWeek,
     to: today,
   });
-
   const [projectIds, setProjectIds] = useState<string[]>([]);
   const [memberIds, setMemberIds] = useState<string[]>([]);
   const [clientIds, setClientIds] = useState<string[]>([]);
@@ -82,20 +81,35 @@ const Overview = () => {
   useEffect(() => {
     const loadData = async () => {
       if (!user?.currentTeamId) return;
+
+      const orgId = user.currentTeamId;
+
       try {
-        const clientData = await fetchClients(user.currentTeamId);
+        const clientData = await fetchClients(orgId);
         setClients(clientData.clients);
+      } catch (error) {
+        setClients([]);
+      }
 
-        const memberData = await fetchMembers(user.currentTeamId);
+      try {
+        const memberData = await fetchMembers(orgId);
         setMembers(memberData.members);
+      } catch (error) {
+        setMembers([]);
+      }
 
-        const projectData = await fetchProjectWiTasks(user.currentTeamId);
+      try {
+        const projectData = await fetchProjectWiTasks(orgId);
         setProjects(projectData.data);
+      } catch (error) {
+        setProjects([]);
+      }
 
-        const tagData = await fetchTags(user.currentTeamId);
+      try {
+        const tagData = await fetchTags(orgId);
         setTags(tagData.tags);
       } catch (error) {
-        console.error(error);
+        setTags([]);
       }
     };
 
@@ -171,6 +185,32 @@ const Overview = () => {
     }
   };
 
+  const getName = (type: string, id: string) => {
+    if (!id || id === "null") return `No ${type}`;
+
+    if (type === "members") {
+      const member = members.find((m) => m.id === id);
+      if (member) {
+        return member.user.name;
+      }
+
+      return user?.name || "Unknown Member";
+    }
+    if (type === "projects")
+      return projects.find((p) => p.id === id)?.name || id;
+    if (type === "clients") return clients.find((c) => c.id === id)?.name || id;
+    if (type === "tags") return projects.find((t) => t.id === id)?.name || id;
+    if (type === "tasks") {
+      for (const p of projects) {
+        const task = p.tasks.find((t) => t.id === id);
+        if (task) return task.name;
+      }
+      return id;
+    }
+    if (type === "billable") return id === "1" ? "Billable" : "Non-Billable";
+    return id;
+  };
+
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <div className="flex flex-col gap-3 pt-1">
@@ -195,18 +235,10 @@ const Overview = () => {
         {/* Chart Area Filters */}
         <div className="px-2">
           <ChartAreaInteractive
-            clients={clients}
-            members={members}
-            projects={projects}
-            tags={tags}
             loading={loading}
             setFilterOpen={setOpenFilter}
             date={date}
             setDate={setDate}
-            groupBy1={groupBy1}
-            setGroupBy1={setGroupBy1}
-            groupBy2={groupBy2}
-            setGroupBy2={setGroupBy2}
             projectIds={projectIds}
             taskIds={taskIds}
             tagIds={tagIds}
@@ -282,11 +314,9 @@ const Overview = () => {
 
             <TimeEntryGroup
               groupedData={groupData?.grouped_data || []}
-              members={members}
-              projects={projects}
-              clients={clients}
               groupBy1={groupBy1}
               groupBy2={groupBy2}
+              getName={getName}
             />
           </div>
 
@@ -294,10 +324,8 @@ const Overview = () => {
           <div className="lg:w-[40%] w-full">
             <ChartPieLegend
               groupedData={groupData?.grouped_data || []}
-              members={members}
-              projects={projects}
-              clients={clients}
               groupBy={groupBy1}
+              getName={getName}
             />
           </div>
         </div>

@@ -7,39 +7,49 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Plus, TagIcon, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
+import useTimesummary from "@/hooks/useTimesummary";
+import type { Tag } from "@/types/project";
+import { toast } from "sonner";
 
 const Tag = () => {
   const { user } = useAuth();
-  const {
-    getTags,
-    tags,
-    createTag,
-    deleteTag,
-    createTagLoading,
-    deleteTagLoading,
-  } = useTime();
+  const { createTag, deleteTag, createTagLoading, deleteTagLoading } =
+    useTime();
   const [search, setSearch] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const { fetchTags, loading } = useTimesummary();
+  const [tags, setTags] = useState<Tag[]>([]);
 
   useEffect(() => {
     if (user?.currentTeamId) {
-      getTags(user?.currentTeamId);
+      fetchTags(user?.currentTeamId)
+        .then((fetchedTags) => {
+          setTags(fetchedTags.tags || []);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch tags:", error);
+        });
     }
   }, [user?.currentTeamId]);
 
-  // Filter tags by search
   const filteredTags = tags.filter((tag) =>
     tag.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleCreateTag = async (tagName: string) => {
     if (!user?.currentTeamId) return;
-    await createTag(user.currentTeamId, tagName);
+    const newTag = await createTag(user.currentTeamId, tagName);
+    if (newTag) {
+      setTags((prev) => [...prev, newTag]);
+    }
   };
 
   const handleDeleteTag = async (tagId: string) => {
     if (!user?.currentTeamId) return;
-    await deleteTag(user.currentTeamId, tagId);
+    const result = await deleteTag(user.currentTeamId, tagId);
+    if (result) {
+      setTags((prev) => prev.filter((tag) => tag.id !== tagId));
+    }
   };
 
   return (

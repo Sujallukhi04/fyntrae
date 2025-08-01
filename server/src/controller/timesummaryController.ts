@@ -84,6 +84,33 @@ function groupByMultiple(
   });
 }
 
+function filterGroupDataForEmployeeRecursive(
+  data: any[] | null,
+  groupedType: string | null
+): any[] | null {
+  if (!data) return null;
+
+  return data
+    .filter((group) => {
+      // Only filter out non-null clients if this level is grouped by clients
+      if (groupedType === "clients") {
+        return group.key === "null";
+      }
+      return true;
+    })
+    .map((group) => ({
+      ...group,
+      grouped_data: filterGroupDataForEmployeeRecursive(
+        group.grouped_data,
+        group.grouped_type
+      ),
+    }))
+    .filter(
+      (group) =>
+        group.seconds > 0 || (group.grouped_data && group.grouped_data.length)
+    );
+}
+
 export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
   const { organizationId } = req.params;
   const {
@@ -103,10 +130,16 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
     throw new ErrorHandler("User ID and Organization ID are required", 400);
 
   try {
-    await assertAPIPermission(userId, organizationId, "TIME_SUMMARY", "VIEW");
+    const member = await assertAPIPermission(
+      userId,
+      organizationId,
+      "TIME_SUMMARY",
+      "VIEW"
+    );
 
     const userTimezoneOffset = new Date().getTimezoneOffset() * -1;
     const offset = Number(userTimezoneOffset) || 0;
+    const isEmployee = member.role === "EMPLOYEE";
 
     // Date range filter
     let utcRange = {};
@@ -122,33 +155,42 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
     }
 
     // Parse filters
-    const projectIds = projects
+    let projectIds = projects
       ? Array.isArray(projects)
         ? projects
         : (projects as string).split(",")
       : undefined;
-    const tagIds = tags
+
+    let tagIds = tags
       ? Array.isArray(tags)
         ? tags
         : (tags as string).split(",")
       : undefined;
-    const clientIds = clients
+
+    let clientIds = clients
       ? Array.isArray(clients)
         ? clients
         : (clients as string).split(",")
       : undefined;
-    const memberIds = members
+
+    let memberIds = members
       ? Array.isArray(members)
         ? members
         : (members as string).split(",")
       : undefined;
-    const taskIds = tasks
+
+    let taskIds = tasks
       ? Array.isArray(tasks)
         ? tasks
         : (tasks as string).split(",")
       : undefined;
     const billableFilter =
       billable !== undefined ? billable === "true" : undefined;
+
+    if (isEmployee) {
+      memberIds = [userId];
+      clientIds = undefined;
+    }
 
     // Build Prisma where clause
     const where: any = {
@@ -160,10 +202,14 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
       ...(billableFilter !== undefined && { billable: billableFilter }),
     };
 
+    if (isEmployee) {
+      where.memberId = member.id;
+    }
+
     if (tagIds) {
       where.tags = { some: { tagId: { in: tagIds } } };
     }
-    if (clientIds) {
+    if (clientIds && !isEmployee) {
       where.project = { clientId: { in: clientIds } };
     }
 
@@ -257,12 +303,16 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
       return;
     }
 
+    const filteredGroupData = isEmployee
+      ? filterGroupDataForEmployeeRecursive(groupedData, groupKeys[0] || null)
+      : groupedData;
+
     res.json({
       data: {
         seconds: totalSeconds,
         cost: totalCost,
         grouped_type: groupKeys[0] || null,
-        grouped_data: groupedData,
+        grouped_data: filteredGroupData,
       },
     });
   } catch (error) {

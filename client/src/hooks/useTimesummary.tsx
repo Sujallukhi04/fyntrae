@@ -81,9 +81,8 @@ const useTimesummary = () => {
       setLoading((prev) => ({ ...prev, project: true }));
       const response = await timeApi.getAllProjectWithTasks(
         organizationId,
-        true
       );
-      return response;
+      return response;  
     } catch (error: any) {
       throw error;
     } finally {

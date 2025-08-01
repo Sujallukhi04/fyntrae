@@ -19,19 +19,27 @@ import {
   PoundSterling,
   ChartNoAxesColumnDecreasing,
   ChevronRight,
+  Filter,
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
-import type { TimeEntry } from "@/types/project";
+import type {
+  ProjectWithTasks,
+  Tag as TagType,
+  TimeEntry,
+} from "@/types/project";
 import { useAuth } from "@/providers/AuthProvider";
 import TimeEntriesTable from "@/components/time/TimeEntriesTable";
 import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
 import useProjectMember from "@/hooks/useProjectMember";
 import FilterModal from "@/components/time/FillterModal";
+import useTimesummary from "@/hooks/useTimesummary";
+import type { Client, Member } from "@/types/oraganization";
+import ChartFilterModal from "@/components/time/ChartFilterModal";
 
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
@@ -54,32 +62,36 @@ const getCurrencyIcon = (
   }
 };
 
-const formatDuration = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
-
 const Detailed = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+  const [projectsWithTasks, setProjectsWithTasks] = useState<
+    ProjectWithTasks[]
+  >([]);
   const [currentPage, setCurrentPage] = useState(1);
   const { organization, runningTimer } = useOrganization();
   const { user } = useAuth();
-
-  const { getOrganizationMembers, organizationMembers } = useProjectMember();
+  const [projectIds, setProjectIds] = useState<string[]>([]);
+  const [memberIds, setMemberIds] = useState<string[]>([]);
+  const [clientIds, setClientIds] = useState<string[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
+  const [billable, setBillable] = useState<boolean | undefined>(undefined);
+  const [taskIds, setTaskIds] = useState<string[]>([]);
+  const [openFilter, setOpenFilter] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [tags, setTags] = useState<TagType[]>([]);
+  const {
+    fetchProjectWiTasks,
+    fetchTags,
+    loading,
+    fetchClients,
+    fetchMembers,
+  } = useTimesummary();
   const {
     getTimeEntriesLoading,
-    projectsWithTasks,
-    timeEntries,
+    timeEntries = [],
     getTimeEntries,
-    getAllProjectsWithTasks,
-    getTags,
-    tagLoading,
-    tags,
     timeEntriesPagination,
     updateTimeEntry,
     deleteTimeEntry,
@@ -96,71 +108,87 @@ const Detailed = () => {
     data: null,
   });
 
-  const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [billableFilter, setBillableFilter] = useState("all");
-  const [projectFilter, setProjectFilter] = useState("all");
-  const [taskFilter, setTaskFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("all");
-
   const allTasks = projectsWithTasks.flatMap((p) =>
     (p.tasks || []).map((t) => ({ ...t, projectId: p.id }))
   );
 
-  // Filtered time entries
-  const filteredTimeEntries = timeEntries.filter((entry) => {
-    const billableOk =
-      billableFilter === "all"
-        ? true
-        : billableFilter === "true"
-        ? entry.billable
-        : !entry.billable;
-    const projectOk =
-      projectFilter === "all" ? true : entry.projectId === projectFilter;
-    const taskOk = taskFilter === "all" ? true : entry.taskId === taskFilter;
-    const tagOk =
-      tagFilter === "all"
-        ? true
-        : entry.tags && entry.tags.some((t) => t === tagFilter);
-
-    return billableOk && projectOk && taskOk && tagOk;
-  });
-
   useEffect(() => {
-    if (user?.currentTeamId) {
-      getOrganizationMembers(user.currentTeamId);
-    }
+    const loadData = async () => {
+      if (!user?.currentTeamId) return;
+
+      const orgId = user.currentTeamId;
+
+      try {
+        const clientData = await fetchClients(orgId);
+        setClients(clientData.clients);
+      } catch (error) {
+        setClients([]);
+      }
+
+      try {
+        const memberData = await fetchMembers(orgId);
+        setMembers(memberData.members);
+      } catch (error) {
+        setMembers([]);
+      }
+
+      try {
+        const projectData = await fetchProjectWiTasks(orgId);
+        setProjectsWithTasks(projectData.data);
+      } catch (error) {
+        setProjectsWithTasks([]);
+      }
+
+      try {
+        const tagData = await fetchTags(orgId);
+        setTags(tagData.tags);
+      } catch (error) {
+        setTags([]);
+      }
+    };
+
+    if (user?.currentTeamId) loadData();
   }, [user?.currentTeamId]);
 
   useEffect(() => {
-    if (!user?.currentTeamId || !organizationMembers.length) return;
+    if (!user?.currentTeamId) return;
     const formattedDate = format(date, "yyyy-MM-dd");
-
-    const currentMember = organizationMembers.find(
-      (member) => member.user.id === user.id
-    );
-
-    if (!currentMember) return;
-
-    const currentOrg = user.organizations.find(
-      (org) => org.id === user.currentTeamId
-    );
-
-    const allowedRoles = ["OWNER", "ADMIN", "MANAGER"];
-    const hasPrivilegedRole =
-      currentOrg && allowedRoles.includes(currentOrg.role);
 
     getTimeEntries(user.currentTeamId, {
       page: currentPage,
       limit: 10,
       date: formattedDate,
-      memberId: hasPrivilegedRole ? undefined : currentMember.id,
+      projectIds,
+      memberIds,
+      clientIds,
+      tagIds,
+      taskIds,
+      billable,
+      all: true,
     });
-  }, [user?.currentTeamId, currentPage, date, organizationMembers, user?.id]);
+  }, [
+    user?.currentTeamId,
+    currentPage,
+    date,
+    projectIds,
+    memberIds,
+    clientIds,
+    tagIds,
+    billable,
+    taskIds,
+  ]);
 
   useEffect(() => {
     if (user?.currentTeamId) {
-      getAllProjectsWithTasks(user?.currentTeamId);
-      getTags(user?.currentTeamId);
+      Promise.all([
+        fetchProjectWiTasks(user.currentTeamId),
+        fetchTags(user.currentTeamId),
+      ])
+        .then(([projects, fetchedTags]) => {
+          setProjectsWithTasks(projects.data || []);
+          setTags(fetchedTags.tags || []);
+        })
+        .catch((error) => console.log(error, "fetch projects and tags"));
     }
   }, [user?.currentTeamId]);
 
@@ -281,7 +309,7 @@ const Detailed = () => {
         runningTimer={!!runningTimer}
         mode="edit"
         initialData={modalState.data || null}
-        tagLoading={tagLoading}
+        tagLoading={loading.tag}
         getCurrencyIcon={getCurrencyIcon}
       />
 
@@ -293,25 +321,8 @@ const Detailed = () => {
         tags={tags}
         projectWithTasks={projectsWithTasks}
         runningTimer={!!runningTimer}
-        tagLoading={tagLoading}
+        tagLoading={loading.tag}
         getCurrencyIcon={getCurrencyIcon}
-      />
-
-      <FilterModal
-        isOpen={filterModalOpen}
-        onClose={() => setFilterModalOpen(false)}
-        onApply={() => setFilterModalOpen(false)}
-        tags={tags}
-        projectsWithTasks={projectsWithTasks}
-        tasks={allTasks}
-        billable={billableFilter}
-        setBillable={setBillableFilter}
-        selectedTag={tagFilter}
-        setSelectedTag={setTagFilter}
-        selectedProject={projectFilter}
-        setSelectedProject={setProjectFilter}
-        selectedTask={taskFilter}
-        setSelectedTask={setTaskFilter}
       />
 
       {/* Time Entries Table */}
@@ -373,17 +384,17 @@ const Detailed = () => {
             )}
             <Button
               variant="outline"
-              onClick={() => setFilterModalOpen(true)}
+              onClick={() => setOpenFilter(true)}
               className="h-8 px-3 text-sm"
             >
-              <Tag className="w-4 h-4 mr-1" />
+              <Filter className="w-4 h-4 mr-1" />
               Filter
             </Button>
           </div>
         </div>
 
         <TimeEntriesTable
-          timeEntries={filteredTimeEntries}
+          timeEntries={timeEntries}
           projectsWithTasks={projectsWithTasks}
           tags={tags}
           selectedEntries={selectedEntries}
@@ -400,7 +411,39 @@ const Detailed = () => {
           onPageChange={setCurrentPage}
           runningTimer={!!runningTimer}
           showMember={true}
-          members={organizationMembers}
+          members={members}
+        />
+
+        <ChartFilterModal
+          open={openFilter}
+          onClose={() => setOpenFilter(false)}
+          clients={clients}
+          members={members}
+          projects={projectsWithTasks}
+          tags={tags}
+          selected={{
+            projectIds,
+            memberIds,
+            clientIds,
+            tagIds,
+            billable,
+            taskIds,
+          }}
+          onApply={({
+            projectIds,
+            memberIds,
+            clientIds,
+            tagIds,
+            billable,
+            taskIds,
+          }) => {
+            setProjectIds(projectIds);
+            setMemberIds(memberIds);
+            setClientIds(clientIds);
+            setTagIds(tagIds);
+            setBillable(billable);
+            setTaskIds(taskIds);
+          }}
         />
       </div>
     </div>

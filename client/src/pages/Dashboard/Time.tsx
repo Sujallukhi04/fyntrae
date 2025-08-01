@@ -1,73 +1,37 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
   Clock,
   DollarSign,
   Play,
   Plus,
-  Tag,
-  MoreHorizontal,
-  Edit,
   Trash2,
   CalendarIcon,
-  Download,
   Pencil,
-  MoreVertical,
   IndianRupee,
   Euro,
   PoundSterling,
-  ChevronRight,
   Loader2,
   Square,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { use, useEffect, useRef, useState } from "react";
-import { format, set } from "date-fns";
+
+import { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
-import type { TimeEntry } from "@/types/project";
-import NoData from "@/components/NoData";
+import type {
+  ProjectWithTasks,
+  Tag as TagType,
+  TimeEntry,
+} from "@/types/project";
 import ProjectTaskSelector from "@/components/time/ProjectTaskSelect";
 import { TagSelectorPopover } from "@/components/time/TagSelector";
 import { useAuth } from "@/providers/AuthProvider";
@@ -75,6 +39,7 @@ import TimeEntriesTable from "@/components/time/TimeEntriesTable";
 import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
 import useProjectMember from "@/hooks/useProjectMember";
+import useTimesummary from "@/hooks/useTimesummary";
 
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
@@ -109,6 +74,10 @@ const formatDuration = (seconds: number) => {
 const Time = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+  const [projectsWithTasks, setProjectsWithTasks] = useState<
+    ProjectWithTasks[]
+  >([]);
+  const [tags, setTags] = useState<TagType[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [description, setDescription] = useState("");
   const [selectedProject, setSelectedProject] = useState<string>("");
@@ -120,19 +89,13 @@ const Time = () => {
   const { user } = useAuth();
   const { getOrganizationMembers, organizationMembers } = useProjectMember();
   const {
-    getAllProjectsWithTasksLoading,
     getTimeEntriesLoading,
-    projectsWithTasks,
     timeEntries,
     getTimeEntries,
-    getAllProjectsWithTasks,
-    getTags,
     startTimer,
     stopTimer,
-    tagLoading,
     startTimerLoading,
     stopTimerLoading,
-    tags,
     timeEntriesPagination,
     createTimeEntry,
     updateTimeEntry,
@@ -145,6 +108,8 @@ const Time = () => {
     bulkUpdateLoading,
     bulkDeleteLoading,
   } = useTime();
+
+  const { fetchProjectWiTasks, fetchTags, loading } = useTimesummary();
 
   const [modalState, setModalState] = useState<TimeProps>({
     type: null,
@@ -161,24 +126,27 @@ const Time = () => {
     if (!user?.currentTeamId || !organizationMembers.length) return;
     const formattedDate = format(date, "yyyy-MM-dd");
 
-    const currentMember = organizationMembers.find(
-      (member) => member.user.id === user.id
-    );
-
-    if (!currentMember) return;
-
     getTimeEntries(user.currentTeamId, {
       page: currentPage,
       limit: 10,
       date: formattedDate,
-      memberId: currentMember.id,
     });
-  }, [user?.currentTeamId, currentPage, date, organizationMembers, user?.id]);
+  }, [user?.currentTeamId, currentPage, date, organizationMembers]);
 
   useEffect(() => {
     if (user?.currentTeamId) {
-      getAllProjectsWithTasks(user?.currentTeamId);
-      getTags(user?.currentTeamId);
+      fetchProjectWiTasks(user?.currentTeamId)
+        .then((projects) => setProjectsWithTasks(projects.data))
+        .catch((error) => {
+          console.error("Failed to fetch projects with tasks:", error);
+        });
+      fetchTags(user?.currentTeamId)
+        .then((fetchedTags) => {
+          setTags(fetchedTags.tags);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch tags:", error);
+        });
     }
   }, [user?.currentTeamId]);
 
@@ -307,12 +275,6 @@ const Time = () => {
     } catch (error) {}
   };
 
-  const formatEntryDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-  };
-
   const handleCreateTimeEntry = async (data: {
     description?: string;
     projectId?: string;
@@ -432,7 +394,7 @@ const Time = () => {
                   onCreateFirstTag={() =>
                     console.log("Create First Tag clicked")
                   }
-                  tagLoading={tagLoading}
+                  tagLoading={loading.tag}
                   runningTimer={!!runningTimer}
                 />
                 {/* Dollar Button */}
@@ -536,7 +498,7 @@ const Time = () => {
         runningTimer={!!runningTimer}
         mode="add"
         initialData={null}
-        tagLoading={tagLoading}
+        tagLoading={loading.tag}
         getCurrencyIcon={getCurrencyIcon}
       />
 
@@ -550,7 +512,7 @@ const Time = () => {
         runningTimer={!!runningTimer}
         mode="edit"
         initialData={modalState.data || null}
-        tagLoading={tagLoading}
+        tagLoading={loading.tag}
         getCurrencyIcon={getCurrencyIcon}
       />
 
@@ -562,7 +524,7 @@ const Time = () => {
         tags={tags}
         projectWithTasks={projectsWithTasks}
         runningTimer={!!runningTimer}
-        tagLoading={tagLoading}
+        tagLoading={loading.tag}
         getCurrencyIcon={getCurrencyIcon}
       />
 

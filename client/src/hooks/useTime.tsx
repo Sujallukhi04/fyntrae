@@ -7,15 +7,8 @@ import { toast } from "sonner";
 const useTime = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const { setRunningTimer } = useOrganization();
-  const [projectsWithTasks, setProjectsWithTasks] = useState<
-    ProjectWithTasks[]
-  >([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [getTimeEntriesLoading, setGetTimeEntriesLoading] =
-    useState<boolean>(false);
-  const [getAllProjectsWithTasksLoading, setGetAllProjectsWithTasksLoading] =
     useState<boolean>(false);
   const [startTimerLoading, setStartTimerLoading] = useState<boolean>(false);
   const [stopTimerLoading, setStopTimerLoading] = useState<boolean>(false);
@@ -27,7 +20,6 @@ const useTime = () => {
     useState<boolean>(false);
   const [bulkUpdateLoading, setBulkUpdateLoading] = useState<boolean>(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState<boolean>(false);
-  const [tagLoading, setTagLoading] = useState<boolean>(false);
   const [createTagLoading, setCreateTagLoading] = useState<boolean>(false);
   const [deleteTagLoading, setDeleteTagLoading] = useState<boolean>(false);
 
@@ -57,25 +49,20 @@ const useTime = () => {
     }
   };
 
-  const getTags = async (organizationId: string) => {
-    try {
-      setTagLoading(true);
-
-      const response = await timeApi.getTags(organizationId);
-
-      setTags(response.tags || []);
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to fetch tags";
-      toast.error(errorMessage);
-    } finally {
-      setTagLoading(false);
-    }
-  };
-
   const getTimeEntries = async (
     organizationId: string,
-    params?: { page?: number; limit?: number; date?: string; memberId?: string }
+    params?: {
+      page?: number;
+      limit?: number;
+      date?: string;
+      projectIds?: string[];
+      memberIds?: string[];
+      taskIds?: string[];
+      billable?: boolean;
+      tagIds?: string[];
+      clientIds?: string[];
+      all?: boolean;
+    }
   ) => {
     try {
       setGetTimeEntriesLoading(true);
@@ -90,20 +77,6 @@ const useTime = () => {
       toast.error(errorMessage);
     } finally {
       setGetTimeEntriesLoading(false);
-    }
-  };
-
-  const getAllProjectsWithTasks = async (organizationId: string) => {
-    try {
-      setGetAllProjectsWithTasksLoading(true);
-      const response = await timeApi.getAllProjectWithTasks(organizationId);
-      setProjectsWithTasks(response.data || []);
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to fetch projects with tasks";
-      toast.error(errorMessage);
-    } finally {
-      setGetAllProjectsWithTasksLoading(false);
     }
   };
 
@@ -373,10 +346,9 @@ const useTime = () => {
       setCreateTagLoading(true);
 
       const response = await timeApi.createTag(organizationId, name);
-      setTags((prev) => [...prev, response.tag]);
       toast.success("Tag created successfully");
 
-      return response.data;
+      return response.tag;
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to create tag";
@@ -390,7 +362,6 @@ const useTime = () => {
     try {
       setDeleteTagLoading(true);
       const response = await timeApi.deleteTag(organizationId, tagId);
-      setTags((prev) => prev.filter((tag) => tag.id !== tagId));
       toast.success("Tag deleted successfully");
       return response;
     } catch (error: any) {
@@ -404,10 +375,6 @@ const useTime = () => {
 
   return {
     timeEntries,
-    tags,
-    getTags,
-    tagLoading,
-    projectsWithTasks,
     isLoading,
     startTimerLoading,
     stopTimerLoading,
@@ -417,11 +384,9 @@ const useTime = () => {
     bulkUpdateLoading,
     bulkDeleteLoading,
     timeEntriesPagination,
-    getAllProjectsWithTasksLoading,
     getTimeEntriesLoading,
     getRunningTimer,
     getTimeEntries,
-    getAllProjectsWithTasks,
     startTimer,
     stopTimer,
     createTimeEntry,

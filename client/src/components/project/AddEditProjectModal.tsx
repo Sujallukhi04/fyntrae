@@ -163,8 +163,6 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
       return false;
     }
 
-
-
     return true;
   };
 
@@ -179,7 +177,7 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
       billable,
       billableRate: billable ? billableRate ?? null : null,
       estimatedTime,
-      clientId: clientId || null,
+      clientId: clientId?.trim() ? clientId : null,
     });
   };
 
@@ -260,14 +258,19 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-2 ">
+            <div className="flex flex-col gap-2">
               <Label htmlFor="client">Client</Label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger className="w-32 ">
+              <Select
+                value={clientId ?? "no-client"}
+                onValueChange={(val) =>
+                  setClientId(val === "no-client" ? "" : val)
+                }
+              >
+                <SelectTrigger className="w-32">
                   <SelectValue placeholder="No Client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Client</SelectItem>
+                  <SelectItem value="no-client">No Client</SelectItem>
                   {(mode === "add"
                     ? clients.filter((client) => !client.archivedAt)
                     : clients

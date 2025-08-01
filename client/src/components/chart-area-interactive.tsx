@@ -2,6 +2,7 @@ import * as React from "react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { Calendar as CalendarIcon, Filter } from "lucide-react";
 import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
 import {
   Card,
   CardContent,
@@ -22,11 +23,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import useTimesummary from "@/hooks/useTimesummary"; // <-- import your hook
+import useTimesummary from "@/hooks/useTimesummary";
 import { useAuth } from "@/providers/AuthProvider";
-import type { Client, Member } from "@/types/oraganization";
-import type { ProjectWithTasks, Tag } from "@/types/project";
-import ChartFilterModal from "./time/ChartFilterModal";
 
 const chartConfig = {
   desktop: {
@@ -36,10 +34,6 @@ const chartConfig = {
 };
 
 interface ChartAreaInteractiveProps {
-  clients: Client[];
-  members: Member[];
-  projects: ProjectWithTasks[];
-  tags: Tag[];
   loading: {
     group: boolean;
     clients: boolean;
@@ -48,16 +42,12 @@ interface ChartAreaInteractiveProps {
     tag: boolean;
   };
   date: {
-    from: Date;
-    to: Date;
+    from: Date | null;
+    to: Date | null;
   };
   setDate: React.Dispatch<
     React.SetStateAction<{ from: Date | null; to: Date | null }>
   >;
-  groupBy1: string;
-  setGroupBy1: React.Dispatch<React.SetStateAction<string>>;
-  groupBy2: string;
-  setGroupBy2: React.Dispatch<React.SetStateAction<string>>;
   projectIds: string[];
   taskIds: string[];
   tagIds: string[];
@@ -68,17 +58,9 @@ interface ChartAreaInteractiveProps {
 }
 
 export default function ChartAreaInteractive({
-  clients,
-  members,
-  projects,
-  tags,
   loading,
   date,
   setDate,
-  groupBy1,
-  setGroupBy1,
-  groupBy2,
-  setGroupBy2,
   projectIds,
   taskIds,
   tagIds,
@@ -88,9 +70,6 @@ export default function ChartAreaInteractive({
   setFilterOpen,
 }: ChartAreaInteractiveProps) {
   const { user } = useAuth();
-  const today = new Date();
-  const lastWeek = new Date();
-  lastWeek.setDate(today.getDate() - 6);
   const [groupData, setGroupData] = React.useState<any>(null);
 
   const { fetchGroupedSummary } = useTimesummary();
@@ -134,7 +113,7 @@ export default function ChartAreaInteractive({
     if (!groupData?.grouped_data) return [];
     return groupData.grouped_data.map((item: any) => ({
       date: item.key,
-      desktop: Math.round(((item.seconds || 0) / 3600) * 100) / 100, // convert seconds to hours
+      desktop: Math.round(((item.seconds || 0) / 3600) * 100) / 100,
     }));
   }, [groupData]);
 
@@ -146,6 +125,19 @@ export default function ChartAreaInteractive({
       "MMM dd, y"
     )}`;
   };
+
+  // Handle date selection with proper type conversion
+  const handleDateSelect = (selectedDate: DateRange | undefined) => {
+    if (selectedDate) {
+      setDate({
+        from: selectedDate.from || null,
+        to: selectedDate.to || null,
+      });
+    }
+  };
+
+  const dateRange: DateRange | undefined =
+    date.from && date.to ? { from: date.from, to: date.to } : undefined;
 
   return (
     <div className="w-full max-w-6xl mx-auto p-3">
@@ -177,9 +169,9 @@ export default function ChartAreaInteractive({
                   <Calendar
                     initialFocus
                     mode="range"
-                    defaultMonth={date?.from}
-                    selected={date}
-                    onSelect={setDate}
+                    defaultMonth={date?.from || undefined}
+                    selected={dateRange}
+                    onSelect={handleDateSelect}
                     numberOfMonths={2}
                     className="rounded-md border"
                   />

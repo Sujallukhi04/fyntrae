@@ -463,14 +463,26 @@ export const timeApi = {
       page?: number;
       limit?: number;
       date?: string;
-      memberId?: string;
+      projectIds?: string[];
+      memberIds?: string[];
+      taskIds?: string[];
+      billable?: boolean;
+      tagIds?: string[];
+      all?: boolean;
     }
   ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.date) queryParams.append("date", params.date);
-    if (params?.memberId) queryParams.append("memberId", params.memberId);
+    if (params?.projectIds)
+      queryParams.append("projects", params.projectIds.join(","));
+    if (params?.memberIds)
+      queryParams.append("members", params.memberIds.join(","));
+    if (params?.taskIds) queryParams.append("tasks", params.taskIds.join(","));
+    if (params?.billable !== undefined)
+      queryParams.append("billable", String(params.billable));
+    if(params?.all) queryParams.append("all", "true");
 
     const response = await axiosInstance.get(
       `/time/${organizationId}?${queryParams.toString()}`
@@ -553,12 +565,9 @@ export const timeApi = {
     return response.data;
   },
 
-  getAllProjectWithTasks: async (organizationId: string, all?: boolean) => {
-    const queryParams = new URLSearchParams();
-    if (all) queryParams.append("all", "true");
-
+  getAllProjectWithTasks: async (organizationId: string) => {
     const response = await axiosInstance.get(
-      `/time/${organizationId}/projects-with-tasks?${queryParams.toString()}`
+      `/time/${organizationId}/projects-with-tasks`
     );
     return response.data;
   },

@@ -86,6 +86,7 @@ export interface ProjectWithTasks {
       name: string;
     }
   ];
+  members: string[];
 }
 
 export interface Tag {

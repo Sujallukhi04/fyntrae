@@ -62,6 +62,9 @@ export const getClients = async (req: Request, res: Response) => {
     const type = (req.query.type as "archived" | "active") || "active";
     const allData = req.query.all === "true";
 
+    if (!organizationId || !userId) {
+      throw new ErrorHandler("Organization ID and user ID are required", 400);
+    }
     // Centralized permission check
     await assertAPIPermission(userId, organizationId, "CLIENT", "VIEW");
 

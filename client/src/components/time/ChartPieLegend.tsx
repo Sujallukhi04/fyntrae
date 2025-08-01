@@ -5,8 +5,6 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart";
-import type { Client, Member } from "@/types/oraganization";
-import type { ProjectWithTasks } from "@/types/project";
 
 const COLORS = [
   "#3B82F6",
@@ -23,40 +21,15 @@ const COLORS = [
 
 interface ChartPieLegendProps {
   groupedData: any[];
-  members: Member[];
-  projects: ProjectWithTasks[];
-  clients: Client[];
   groupBy: string;
+  getName: (type: string, id: string) => string;
 }
 
 export function ChartPieLegend({
   groupedData = [],
-  members = [],
-  projects = [],
-  clients = [],
   groupBy = "members",
+  getName,
 }: ChartPieLegendProps) {
-  const getName = (type: string, id: string) => {
-    if (!id || id === "null") return `No ${type}`;
-
-    if (type === "members")
-      return members.find((m) => m.id === id)?.user.name || id;
-    if (type === "projects")
-      return projects.find((p) => p.id === id)?.name || id;
-    if (type === "clients") return clients.find((c) => c.id === id)?.name || id;
-    if (type === "tags") return projects.find((t) => t.id === id)?.name || id;
-    if (type === "tasks") {
-      for (const p of projects) {
-        const task = p.tasks.find((t) => t.id === id);
-        console.log(task);
-        if (task) return task.name;
-      }
-      return id;
-    }
-    if (type === "billable") return id === "1" ? "Billable" : "Non-Billable";
-    return id;
-  };
-
   // Transform API data to chart format
   const chartData = groupedData.map((item, idx) => ({
     name: getName(groupBy, item.key),
