@@ -23,12 +23,22 @@ import Detailed from "./pages/Dashboard/Detailed";
 import Overview from "./pages/Dashboard/Overview";
 import PermissionRoute from "./components/PermissionRoute";
 import { useOrganization } from "./providers/OrganizationProvider";
+import useTimesummary from "./hooks/useTimesummary";
 
 const App = () => {
   const { isLoading, isAuthenticated, user } = useAuthUser();
   const { isLoading: orgLoading } = useOrganization();
+  const { loading } = useTimesummary();
+  const loader =
+    loading.clients ||
+    loading.project ||
+    loading.members ||
+    loading.tag ||
+    loading.group ||
+    orgLoading ||
+    isLoading;
 
-  if (isLoading || orgLoading) return <LoaderMain />;
+  if (loader) return <LoaderMain />;
 
   return (
     <div>

@@ -38,9 +38,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import TimeEntriesTable from "@/components/time/TimeEntriesTable";
 import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
-import useProjectMember from "@/hooks/useProjectMember";
 import useTimesummary from "@/hooks/useTimesummary";
-
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
   data: TimeEntry | null;
@@ -87,7 +85,6 @@ const Time = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { organization, runningTimer } = useOrganization();
   const { user } = useAuth();
-  const { getOrganizationMembers, organizationMembers } = useProjectMember();
   const {
     getTimeEntriesLoading,
     timeEntries,
@@ -109,7 +106,8 @@ const Time = () => {
     bulkDeleteLoading,
   } = useTime();
 
-  const { fetchProjectWiTasks, fetchTags, loading } = useTimesummary();
+  const { fetchProjectWiTasks, fetchTags, fetchMembers, loading } =
+    useTimesummary();
 
   const [modalState, setModalState] = useState<TimeProps>({
     type: null,
@@ -117,13 +115,7 @@ const Time = () => {
   });
 
   useEffect(() => {
-    if (user?.currentTeamId) {
-      getOrganizationMembers(user.currentTeamId);
-    }
-  }, [user?.currentTeamId]);
-
-  useEffect(() => {
-    if (!user?.currentTeamId || !organizationMembers.length) return;
+    if (!user?.currentTeamId) return;
     const formattedDate = format(date, "yyyy-MM-dd");
 
     getTimeEntries(user.currentTeamId, {
@@ -131,23 +123,30 @@ const Time = () => {
       limit: 10,
       date: formattedDate,
     });
-  }, [user?.currentTeamId, currentPage, date, organizationMembers]);
+  }, [user?.currentTeamId, currentPage, date]);
 
   useEffect(() => {
-    if (user?.currentTeamId) {
-      fetchProjectWiTasks(user?.currentTeamId)
-        .then((projects) => setProjectsWithTasks(projects.data))
-        .catch((error) => {
-          console.error("Failed to fetch projects with tasks:", error);
-        });
-      fetchTags(user?.currentTeamId)
-        .then((fetchedTags) => {
-          setTags(fetchedTags.tags);
-        })
-        .catch((error) => {
-          console.error("Failed to fetch tags:", error);
-        });
-    }
+    const loadData = async () => {
+      if (!user?.currentTeamId) return;
+
+      const orgId = user.currentTeamId;
+
+      try {
+        const projectData = await fetchProjectWiTasks(orgId);
+        setProjectsWithTasks(projectData.data);
+      } catch (error) {
+        setProjectsWithTasks([]);
+      }
+
+      try {
+        const tagData = await fetchTags(orgId);
+        setTags(tagData.tags);
+      } catch (error) {
+        setTags([]);
+      }
+    };
+
+    if (user?.currentTeamId) loadData();
   }, [user?.currentTeamId]);
 
   useEffect(() => {
@@ -255,11 +254,11 @@ const Time = () => {
         : timeEntries.map((entry) => entry.id)
     );
   };
-  // Bulk update function
+
   const handleBulkUpdate = async (data: {
     description?: string;
-    projectId?: string;
-    taskId?: string;
+    projectId: string | null;
+    taskId: string | null;
     billable: boolean;
     tagIds?: string[];
   }) => {
@@ -277,8 +276,8 @@ const Time = () => {
 
   const handleCreateTimeEntry = async (data: {
     description?: string;
-    projectId?: string;
-    taskId?: string;
+    projectId?: string | null;
+    taskId?: string | null;
     start: Date;
     end: Date;
     tagIds: string[];
@@ -304,8 +303,8 @@ const Time = () => {
 
   const handleUpdateTimeEntry = async (data: {
     description?: string;
-    projectId?: string;
-    taskId?: string;
+    projectId: string | null;
+    taskId: string | null;
     start: Date;
     end: Date;
     tagIds: string[];

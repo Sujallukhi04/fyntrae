@@ -5,7 +5,6 @@ import {
   timeApi,
   timeSummaryApi,
 } from "../lib/api";
-import { toast } from "sonner";
 
 interface TimeSummaryParams {
   organizationId: string;
@@ -79,10 +78,8 @@ const useTimesummary = () => {
   const fetchProjectWiTasks = useCallback(async (organizationId: string) => {
     try {
       setLoading((prev) => ({ ...prev, project: true }));
-      const response = await timeApi.getAllProjectWithTasks(
-        organizationId,
-      );
-      return response;  
+      const response = await timeApi.getAllProjectWithTasks(organizationId);
+      return response;
     } catch (error: any) {
       throw error;
     } finally {

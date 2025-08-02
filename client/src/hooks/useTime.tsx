@@ -152,8 +152,8 @@ const useTime = () => {
       description?: string;
       start: Date;
       end: Date;
-      projectId?: string;
-      taskId?: string;
+      projectId?: string | null;
+      taskId?: string | null;
       billable: boolean;
       tagIds?: string[];
     },
@@ -201,8 +201,8 @@ const useTime = () => {
       description?: string;
       start: Date;
       end: Date;
-      projectId?: string;
-      taskId?: string;
+      projectId: string | null;
+      taskId: string | null;
       billable: boolean;
       tagIds?: string[];
     }
@@ -272,8 +272,8 @@ const useTime = () => {
       timeEntryIds: string[];
       updates: {
         description?: string;
-        projectId?: string;
-        taskId?: string;
+        projectId: string | null;
+        taskId: string | null;
         billable: boolean;
         tagIds?: string[];
       };

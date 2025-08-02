@@ -45,8 +45,8 @@ interface TimeEntryModalProps {
   onClose: () => void;
   onSubmit: (data: {
     description: string;
-    projectId?: string;
-    taskId?: string;
+    projectId: string | null;
+    taskId: string | null;
     start: Date;
     end: Date;
     tagIds: string[];
@@ -125,13 +125,13 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
       return;
     }
 
-    const projectid = projectId.split(":")[0] || "";
-    const taskId = projectId.split(":")[1] || "";
+    const projectid = projectId.split(":")[0] || null;
+    const taskId = projectId.split(":")[1] || null;
 
     onSubmit({
       description,
-      ...(projectId && { projectId: projectid }),
-      ...(taskId && { taskId }),
+      projectId: projectid,
+      taskId,
       start: startTime,
       end: endTime,
       tagIds: selectedTags,

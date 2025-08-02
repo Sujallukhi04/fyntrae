@@ -482,7 +482,7 @@ export const timeApi = {
     if (params?.taskIds) queryParams.append("tasks", params.taskIds.join(","));
     if (params?.billable !== undefined)
       queryParams.append("billable", String(params.billable));
-    if(params?.all) queryParams.append("all", "true");
+    if (params?.all) queryParams.append("all", "true");
 
     const response = await axiosInstance.get(
       `/time/${organizationId}?${queryParams.toString()}`
@@ -497,8 +497,8 @@ export const timeApi = {
       description?: string;
       start: Date;
       end: Date;
-      projectId?: string;
-      taskId?: string;
+      projectId?: string | null;
+      taskId?: string | null;
       billable: boolean;
       tagIds?: string[];
     }
@@ -514,8 +514,8 @@ export const timeApi = {
       description?: string;
       start: Date;
       end: Date;
-      projectId?: string;
-      taskId?: string;
+      projectId: string | null;
+      taskId: string | null;
       billable: boolean;
       tagIds?: string[];
     }
@@ -540,8 +540,8 @@ export const timeApi = {
       timeEntryIds: string[];
       updates: {
         description?: string;
-        projectId?: string;
-        taskId?: string;
+        projectId: string | null;
+        taskId: string | null;
         billable: boolean;
         tagIds?: string[];
       };

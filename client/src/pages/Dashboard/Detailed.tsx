@@ -35,8 +35,6 @@ import { useAuth } from "@/providers/AuthProvider";
 import TimeEntriesTable from "@/components/time/TimeEntriesTable";
 import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
-import useProjectMember from "@/hooks/useProjectMember";
-import FilterModal from "@/components/time/FillterModal";
 import useTimesummary from "@/hooks/useTimesummary";
 import type { Client, Member } from "@/types/oraganization";
 import ChartFilterModal from "@/components/time/ChartFilterModal";
@@ -211,8 +209,8 @@ const Detailed = () => {
   // Bulk update function
   const handleBulkUpdate = async (data: {
     description?: string;
-    projectId?: string;
-    taskId?: string;
+    projectId: string | null;
+    taskId: string | null;
     billable: boolean;
     tagIds?: string[];
   }) => {
@@ -230,8 +228,8 @@ const Detailed = () => {
 
   const handleUpdateTimeEntry = async (data: {
     description?: string;
-    projectId?: string;
-    taskId?: string;
+    projectId: string | null;
+    taskId: string | null;
     start: Date;
     end: Date;
     tagIds: string[];

@@ -159,17 +159,16 @@ export const createTimeEntry = async (
         where: { id: data.projectId, organizationId, isArchived: false },
       });
       if (!project) throw new ErrorHandler("Project not found", 404);
-    }
-
-    if (data.taskId) {
-      const task = await db.task.findFirst({
-        where: {
-          id: data.taskId,
-          organizationId,
-          ...(data.projectId && { projectId: data.projectId }),
-        },
-      });
-      if (!task) throw new ErrorHandler("Task not found", 404);
+      if (data.taskId) {
+        const task = await db.task.findFirst({
+          where: {
+            id: data.taskId,
+            organizationId,
+            projectId: data.projectId,
+          },
+        });
+        if (!task) throw new ErrorHandler("Task not found", 404);
+      }
     }
 
     const billableRate = data.billable
@@ -661,36 +660,59 @@ export const updateTimeEntry = async (
         throw new ErrorHandler("Cannot assign an archived project", 400);
       }
 
-      // Check project membership
-      const isProjectMember = await db.projectMember.findFirst({
-        where: { projectId: data.projectId, userId },
-      });
-      if (!isProjectMember) {
-        throw new ErrorHandler("You are not a member of this project", 403);
-      }
-    }
+      const isCurrentProject = existingEntry.projectId === data.projectId;
 
-    if (data.taskId) {
-      const task = await db.task.findFirst({
+      const isProjectMember = await db.projectMember.findFirst({
         where: {
-          id: data.taskId,
-          organizationId,
-          ...(data.projectId && { projectId: data.projectId }),
+          projectId: data.projectId,
+          userId: existingEntry.userId,
         },
       });
-      if (!task) {
-        throw new ErrorHandler("Task not found", 404);
+
+      const currentUser = existingEntry.userId === userId;
+
+      if (!isCurrentProject && !isProjectMember) {
+        throw new ErrorHandler(
+          `${currentUser ? "You are" : "user not"} a member of this project`,
+          403
+        );
+      }
+
+      if (data.taskId) {
+        const task = await db.task.findFirst({
+          where: {
+            id: data.taskId,
+            organizationId,
+            projectId: data.projectId,
+          },
+          include: {
+            project: true,
+          },
+        });
+
+        if (!task) {
+          throw new ErrorHandler("Task not found", 404);
+        }
       }
     }
 
-    let billableRate = !existingEntry.billable
-      ? await calculateBillableRate({
-          userId: existingEntry.userId,
-          projectId: data.projectId,
-          organizationId,
-        })
-      : existingEntry.billableRate;
+    let billableRate = existingEntry.billableRate;
 
+    const isBillable = data.billable ?? existingEntry.billable;
+
+    if (isBillable === false) {
+      billableRate = null;
+    } else if (
+      isBillable === true &&
+      (existingEntry.billableRate === null ||
+        existingEntry.billableRate === undefined)
+    ) {
+      billableRate = await calculateBillableRate({
+        userId: existingEntry.userId,
+        projectId: data.projectId ?? existingEntry.projectId ?? undefined,
+        organizationId,
+      });
+    }
     const newDuration = finalEnd
       ? calculateDuration(finalStart, finalEnd)
       : null;
@@ -699,12 +721,12 @@ export const updateTimeEntry = async (
       const entry = await tx.timeEntry.update({
         where: { id: timeEntryId },
         data: {
-          ...(data.description && { description: data.description }),
-          ...(data.start && { start: data.start }),
-          ...(data.end !== undefined && { end: data.end }),
-          ...(data.billable !== undefined && { billable: data.billable }),
-          ...(data.projectId !== undefined && { projectId: data.projectId }),
-          ...(data.taskId !== undefined && { taskId: data.taskId }),
+          description: data.description,
+          start: data.start,
+          end: data.end,
+          billable: data.billable,
+          projectId: data.projectId,
+          taskId: data.taskId,
           duration: newDuration?.seconds || 0,
           billableRate,
         },
@@ -914,53 +936,87 @@ export const bulkUpdateTimeEntries = async (
         throw new ErrorHandler("Project not found", 404);
       }
 
-      // Check project membership
-      for (const entry of timeEntries) {
-        const isProjectMember = await db.projectMember.findFirst({
-          where: { projectId: data.updates.projectId, userId: entry.userId },
+      if (project.isArchived) {
+        const allAlreadyAssigned = timeEntries.every(
+          (entry) => entry.projectId === data.updates.projectId
+        );
+        if (!allAlreadyAssigned) {
+          throw new ErrorHandler("Cannot assign archived project", 400);
+        }
+      }
+
+      const allHasAccess = await Promise.all(
+        timeEntries.map(async (entry) => {
+          console.log(entry.projectId, data.updates.projectId);
+          if (entry.projectId && entry.projectId === data.updates.projectId)
+            return true;
+
+          const isProjectMember = await db.projectMember.findFirst({
+            where: {
+              userId: entry.userId,
+              projectId: data.updates.projectId!,
+            },
+          });
+
+          return Boolean(isProjectMember);
+        })
+      );
+
+      console.log(allHasAccess);
+
+      if (allHasAccess.includes(false)) {
+        throw new ErrorHandler(
+          "One or more entries cannot be moved to this project due to membership restrictions",
+          403
+        );
+      }
+
+      if (data.updates.taskId) {
+        const task = await db.task.findFirst({
+          where: {
+            id: data.updates.taskId,
+            organizationId,
+            projectId: data.updates.projectId,
+          },
         });
-        if (!isProjectMember) {
-          throw new ErrorHandler(
-            "One or more users are not members of the selected project.",
-            403
-          );
+
+        if (!task) {
+          throw new ErrorHandler("Task not found in this project", 404);
         }
       }
     }
 
-    if (data.updates.taskId) {
-      const task = await db.task.findFirst({
-        where: {
-          id: data.updates.taskId,
-          organizationId,
-          ...(data.updates.projectId && { projectId: data.updates.projectId }),
-        },
-      });
-      if (!task) {
-        throw new ErrorHandler("Task not found", 404);
+    const billableRatesMap: Record<string, number | null> = {};
+
+    if (data.updates.billable === true) {
+      for (const entry of timeEntries) {
+        if (entry.billableRate == null) {
+          const rate = await calculateBillableRate({
+            userId: entry.userId,
+            projectId: data.updates.projectId ?? entry.projectId ?? undefined,
+            organizationId,
+          });
+          billableRatesMap[entry.id] = rate;
+        }
       }
     }
 
     await db.$transaction(async (tx) => {
-      await tx.timeEntry.updateMany({
-        where: {
-          id: { in: data.timeEntryIds },
-        },
-        data: {
-          ...(data.updates.description && {
+      for (const entry of timeEntries) {
+        await tx.timeEntry.update({
+          where: { id: entry.id },
+          data: {
             description: data.updates.description,
-          }),
-          ...(data.updates.billable !== undefined && {
             billable: data.updates.billable,
-          }),
-          ...(data.updates.projectId !== undefined && {
+            billableRate:
+              data.updates.billable === false
+                ? null
+                : billableRatesMap[entry.id] ?? entry.billableRate,
             projectId: data.updates.projectId,
-          }),
-          ...(data.updates.taskId !== undefined && {
             taskId: data.updates.taskId,
-          }),
-        },
-      });
+          },
+        });
+      }
 
       if (data.updates.tagIds) {
         await tx.timeEntryTag.deleteMany({

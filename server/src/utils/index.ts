@@ -241,8 +241,8 @@ export const updatesTimeEntrySchema = z
       .transform((val) => new Date(val)),
 
     billable: z.boolean().default(false),
-    projectId: z.string().cuid().nullable().optional(),
-    taskId: z.string().cuid().nullable().optional(),
+    projectId: z.string().cuid().nullable(),
+    taskId: z.string().cuid().nullable(),
     tagIds: z.array(z.string().cuid()).optional().default([]),
   })
   .refine((data) => data.end > data.start, {
@@ -295,8 +295,8 @@ export const bulkUpdateTimeEntriesSchema = z.object({
       .max(500, "Description must be less than 500 characters")
       .default(""),
     billable: z.boolean().default(false),
-    projectId: z.string().cuid().optional().nullable(),
-    taskId: z.string().cuid().nullable().optional(),
+    projectId: z.string().cuid().nullable(),
+    taskId: z.string().cuid().nullable(),
     tagIds: z.array(z.string().cuid()).optional().default([]),
   }),
 });

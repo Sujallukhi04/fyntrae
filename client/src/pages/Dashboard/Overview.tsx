@@ -160,12 +160,9 @@ const Overview = () => {
     );
   };
 
-  // Handle groupBy changes with validation
   const handleGroupBy1Change = (value: string) => {
     setGroupBy1(value);
-    // If the new value conflicts with groupBy2, reset groupBy2
     if (value === groupBy2) {
-      // Find the first available option that's not the selected one
       const availableOption = groupOptions.find((opt) => opt.value !== value);
       if (availableOption) {
         setGroupBy2(availableOption.value);
