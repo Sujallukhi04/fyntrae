@@ -17,17 +17,20 @@ import {
   DropdownMenuItem,
 } from "../ui/dropdown-menu";
 import NoData from "../NoData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TagTableProps {
   tags: TagProps[];
   onDelete: (id: string) => void;
   deleteLoading?: boolean;
+  loading?: boolean;
 }
 
 const TagTable: React.FC<TagTableProps> = ({
   tags,
   onDelete,
   deleteLoading,
+  loading,
 }) => {
   return (
     <div className="rounded-md bg-muted/40 border border-muted">
@@ -41,9 +44,20 @@ const TagTable: React.FC<TagTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tags.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <TableRow key={`skeleton-${index}`}>
+                <TableCell>
+                  <Skeleton className="h-5 w-40 rounded-md my-1" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-6 rounded-md ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))
+          ) : tags.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5}>
+              <TableCell colSpan={2}>
                 <NoData
                   icon={Tag}
                   title="No Tags Found"

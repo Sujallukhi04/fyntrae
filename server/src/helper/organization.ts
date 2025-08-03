@@ -61,6 +61,11 @@ export const API_PERMISSIONS = {
   },
   TIME_SUMMARY: {
     VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
+    EXPORT: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
+  },
+  REPORTS: {
+    CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER],
+   
   },
 };
 

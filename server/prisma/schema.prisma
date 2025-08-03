@@ -76,6 +76,7 @@ model Organizations {
   tasks            Task[]
   tags             Tag[]
   timeEntries      TimeEntry[]
+  reports          Report[]
 }
 
 model Member {
@@ -243,4 +244,19 @@ model TimeEntryTag {
   tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Restrict)
 
   @@id([timeEntryId, tagId])
+}
+
+model Report {
+  id             String    @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String
+  isPublic       Boolean   @default(false)
+  publicUntil    DateTime?
+  shareSecret    String?
+  properties     Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }

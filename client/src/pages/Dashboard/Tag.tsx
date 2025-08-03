@@ -8,8 +8,7 @@ import { Plus, TagIcon, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import useTimesummary from "@/hooks/useTimesummary";
-import type { Tag } from "@/types/project";
-import { toast } from "sonner";
+import type { Tag as TagType } from "@/types/project";
 
 const Tag = () => {
   const { user } = useAuth();
@@ -18,7 +17,7 @@ const Tag = () => {
   const [search, setSearch] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const { fetchTags, loading } = useTimesummary();
-  const [tags, setTags] = useState<Tag[]>([]);
+  const [tags, setTags] = useState<TagType[]>([]);
 
   useEffect(() => {
     if (user?.currentTeamId) {
@@ -89,6 +88,7 @@ const Tag = () => {
             tags={filteredTags}
             onDelete={handleDeleteTag}
             deleteLoading={deleteTagLoading}
+            loading={loading.tag}
           />
         </div>
       </div>

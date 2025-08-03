@@ -110,3 +110,18 @@ export interface TimeEntry {
   tags: string[];
   billable: boolean;
 }
+
+export interface GroupRow {
+  key: string;
+  name: string;
+  seconds: number;
+  cost: number;
+  grouped_data?: GroupRow[] | null;
+}
+
+export interface TimeEntryGroupProps {
+  groupedData?: GroupRow[];
+  groupBy1?: string;
+  groupBy2?: string;
+  getName: (type: string, id: string) => string;
+}

@@ -24,19 +24,14 @@ import Overview from "./pages/Dashboard/Overview";
 import PermissionRoute from "./components/PermissionRoute";
 import { useOrganization } from "./providers/OrganizationProvider";
 import useTimesummary from "./hooks/useTimesummary";
+import Shared from "./pages/Dashboard/Shared";
 
 const App = () => {
-  const { isLoading, isAuthenticated, user } = useAuthUser();
+  const { isLoading, isAuthenticated } = useAuthUser();
   const { isLoading: orgLoading } = useOrganization();
   const { loading } = useTimesummary();
   const loader =
-    loading.clients ||
-    loading.project ||
-    loading.members ||
-    loading.tag ||
-    loading.group ||
-    orgLoading ||
-    isLoading;
+    Object.values(loading).some((v) => v === true) || orgLoading || isLoading;
 
   if (loader) return <LoaderMain />;
 
@@ -142,6 +137,14 @@ const App = () => {
                 element={
                   <PermissionRoute>
                     <Overview />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="reporting/shared"
+                element={
+                  <PermissionRoute>
+                    <Shared />
                   </PermissionRoute>
                 }
               />

@@ -10,4 +10,10 @@ router.get(
   timeSummaryController.getTimeSummaryGrouped
 );
 
+router.get(
+  "/:organizationId/export",
+  protectRoute,
+  timeSummaryController.exportTimeSummary
+);
+
 export default router;

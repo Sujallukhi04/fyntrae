@@ -22,3 +22,29 @@ declare global {
     }
   }
 }
+
+export interface TimeTrackingData {
+  summary: {
+    totalHours: number;
+    totalCost: number;
+    totalEntries: number;
+    dateRange: {
+      start: string | null;
+      end: string | null;
+    };
+  };
+  barChart: any;
+  pieChart: any;
+  groupedData: any;
+  analytics: {
+    averageHoursPerDay: number;
+    billableHours: number;
+    nonBillableHours: number;
+    billablePercentage: number;
+    topPerformers: Array<{
+      name: string;
+      hours: number;
+      cost: number;
+    }>;
+  };
+}

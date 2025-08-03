@@ -618,15 +618,35 @@ export const timeSummaryApi = {
     if (params?.taskIds) queryParams.append("tasks", params.taskIds.join(","));
     if (params?.billable !== undefined)
       queryParams.append("billable", String(params.billable));
-    if (params?.tagIds) queryParams.append("tagIds", params.tagIds.join(","));
+    if (params?.tagIds) queryParams.append("tags", params.tagIds.join(","));
     if (params?.clientIds)
       queryParams.append("clients", params.clientIds.join(","));
     if (params?.groups) queryParams.append("groups", String(params.groups));
-    if (params?.tasks) queryParams.append("tasks", params.tasks.join(","));
 
     const response = await axiosInstance.get(
       `/timesummary/${organizationId}?${queryParams.toString()}`
     );
+    return response.data;
+  },
+};
+
+export const reportApi = {
+  getReports: async (
+    organizationId: string,
+    params?: { page?: number; pageSize?: number }
+  ) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.pageSize)
+      queryParams.append("pageSize", params.pageSize.toString());
+
+    const response = await axiosInstance.get(
+      `/report/${organizationId}/reports?${queryParams.toString()}`
+    );
+    return response.data;
+  },
+  getReportByScrectId: async (screct: string) => {
+    const response = await axiosInstance.get(`/report/${screct}`);
     return response.data;
   },
 };

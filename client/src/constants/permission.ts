@@ -14,6 +14,7 @@ export const OrgRolePages: Record<OrgRole, string[]> = {
     "/project/:id",
     "/settings",
     "/time",
+    "/reporting/shared",
   ],
   ADMIN: [
     "/",
@@ -28,6 +29,7 @@ export const OrgRolePages: Record<OrgRole, string[]> = {
     "/project/:id",
     "/settings",
     "/time",
+    "/reporting/shared",
   ],
   MANAGER: [
     "/",
@@ -40,6 +42,7 @@ export const OrgRolePages: Record<OrgRole, string[]> = {
     "/reporting/overview",
     "/reporting/detailed",
     "/time",
+    "/reporting/shared",
   ],
   EMPLOYEE: [
     "/",

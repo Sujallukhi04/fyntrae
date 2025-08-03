@@ -10,6 +10,7 @@ import {
   Tag,
   Folder,
   Currency,
+  Save,
 } from "lucide-react";
 
 import ChartAreaInteractive from "@/components/chart-area-interactive";
@@ -32,13 +33,13 @@ import type { Client, Member } from "@/types/oraganization";
 import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
 import { format } from "date-fns";
 import ChartFilterModal from "@/components/time/ChartFilterModal";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 // Grouping options with icons
 const groupOptions = [
   { label: "Members", value: "members", icon: User },
   { label: "Clients", value: "clients", icon: Folder },
   { label: "Projects", value: "projects", icon: FolderOpen },
-  { label: "Tags", value: "tags", icon: Tag },
   { label: "Tasks", value: "tasks", icon: CheckCircle2 },
   { label: "Billable", value: "billable", icon: Currency },
 ];
@@ -77,6 +78,7 @@ const Overview = () => {
   const [groupData, setGroupData] = useState<any>(null);
   const [groupBy1, setGroupBy1] = useState("projects");
   const [groupBy2, setGroupBy2] = useState("members");
+  const { role } = useOrgAccess();
 
   useEffect(() => {
     const loadData = async () => {
@@ -128,7 +130,7 @@ const Overview = () => {
           memberIds,
           clientIds,
           tagIds,
-          tasks: taskIds,
+          taskIds,
           billable,
           groups: `${groupBy1},${groupBy2}`,
         });
@@ -190,7 +192,6 @@ const Overview = () => {
       if (member) {
         return member.user.name;
       }
-
       return user?.name || "Unknown Member";
     }
     if (type === "projects")
@@ -221,10 +222,18 @@ const Overview = () => {
               <span className="text-foreground">Detailed</span>
             </h1>
           </div>
-          <Button className="w-full md:w-auto" variant="outline">
-            <Download className="h-5 w-5 mr-2" />
-            Export
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button className="w-full md:w-auto" variant="outline">
+              <Download className="h-5 w-5 mr-2" />
+              Export
+            </Button>
+            {role !== "EMPLOYEE" && (
+              <Button className="w-full md:w-auto" variant="outline">
+                <Save className="h-5 w-5 mr-2" />
+                Save Report
+              </Button>
+            )}
+          </div>
         </div>
 
         <Separator />

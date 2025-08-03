@@ -8,6 +8,7 @@ import projectRoutes from "./routes/project";
 import timeRoutes from "./routes/time";
 import tagRoutes from "./routes/tag";
 import timeSummaryRoutes from "./routes/timesummary";
+import reportRoutes from "./routes/report";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
@@ -41,6 +42,7 @@ app.use("/api/project", projectRoutes);
 app.use("/api/time", timeRoutes);
 app.use("/api/tag", tagRoutes);
 app.use("/api/timesummary", timeSummaryRoutes);
+app.use("/api/report", reportRoutes);
 
 app.use(errorHandler);
 

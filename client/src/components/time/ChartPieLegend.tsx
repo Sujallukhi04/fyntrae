@@ -5,22 +5,11 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart";
-
-const COLORS = [
-  "#3B82F6",
-  "#60A5FA",
-  "#93C5FD",
-  "#BFDBFE",
-  "#DBEAFE",
-  "#F472B6",
-  "#FBBF24",
-  "#34D399",
-  "#A78BFA",
-  "#F87171",
-];
+import type { GroupRow } from "@/types/project";
+import { generateBlueTones } from "@/lib/utils";
 
 interface ChartPieLegendProps {
-  groupedData: any[];
+  groupedData: GroupRow[];
   groupBy: string;
   getName: (type: string, id: string) => string;
 }
@@ -30,11 +19,11 @@ export function ChartPieLegend({
   groupBy = "members",
   getName,
 }: ChartPieLegendProps) {
-  // Transform API data to chart format
+  const blueColors = generateBlueTones(groupedData.length);
   const chartData = groupedData.map((item, idx) => ({
     name: getName(groupBy, item.key),
     value: Math.round(((item.seconds || 0) / 3600) * 100) / 100,
-    fill: COLORS[idx % COLORS.length],
+    fill: blueColors[idx],
   }));
 
   const chartConfig = chartData.reduce((config, item) => {

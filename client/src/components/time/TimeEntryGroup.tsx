@@ -11,21 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, Clock, FolderOpen } from "lucide-react";
 import NoData from "../NoData";
 import type { Client, Member } from "@/types/oraganization";
-import type { ProjectWithTasks } from "@/types/project";
-
-interface GroupRow {
-  key: string;
-  seconds: number;
-  cost: number;
-  grouped_data?: GroupRow[] | null;
-}
-
-interface TimeEntryGroupProps {
-  groupedData?: GroupRow[];
-  groupBy1?: string;
-  groupBy2?: string;
-  getName: (type: string, id: string) => string;
-}
+import type { ProjectWithTasks, TimeEntryGroupProps } from "@/types/project";
 
 const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600);

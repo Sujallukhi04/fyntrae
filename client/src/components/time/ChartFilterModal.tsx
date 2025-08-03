@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -96,6 +97,7 @@ export default function ChartFilterModal({
           <DialogTitle className="text-lg font-semibold">
             Filter Time Data
           </DialogTitle>
+          <DialogDescription></DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ">

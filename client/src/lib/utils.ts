@@ -29,3 +29,17 @@ export const formatDurationFromSeconds = (seconds: number) => {
 export const formatCost = (cost: number) => {
   return cost > 0 ? `${cost.toLocaleString("en-IN")} INR` : "--";
 };
+
+export function generateBlueTones(count: number): string[] {
+  const baseHue = 210; // blue hue
+  const lightnessStart = 35;
+  const lightnessEnd = 70;
+  const saturation = 85;
+
+  return Array.from({ length: count }, (_, i) => {
+    const lightness =
+      lightnessStart +
+      ((lightnessEnd - lightnessStart) * i) / Math.max(count - 1, 1);
+    return `hsl(${baseHue}, ${saturation}%, ${lightness}%)`;
+  });
+}

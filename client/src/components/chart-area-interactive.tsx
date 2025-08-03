@@ -86,7 +86,7 @@ export default function ChartAreaInteractive({
         memberIds,
         clientIds,
         tagIds,
-        tasks: taskIds,
+        taskIds,
         billable,
       });
 
