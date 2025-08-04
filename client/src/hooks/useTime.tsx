@@ -1,7 +1,7 @@
 import { timeApi } from "@/lib/api";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 const useTime = () => {
@@ -35,50 +35,145 @@ const useTime = () => {
     totalPages: 0,
   });
 
-  const getRunningTimer = async (organizationId: string) => {
-    try {
-      setIsLoading(true);
-      const response = await timeApi.getRunningTimer(organizationId);
-      setRunningTimer(response.timer || null);
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to fetch running timer";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const updatePagination = useCallback((increment: number) => {
+    setTimeEntriesPagination((prev) => {
+      if (!prev) return null;
 
-  const getTimeEntries = async (
-    organizationId: string,
-    params?: {
-      page?: number;
-      limit?: number;
-      date?: string;
-      projectIds?: string[];
-      memberIds?: string[];
-      taskIds?: string[];
-      billable?: boolean;
-      tagIds?: string[];
-      clientIds?: string[];
-      all?: boolean;
-    }
-  ) => {
-    try {
-      setGetTimeEntriesLoading(true);
-      const response = await timeApi.getTimeEntries(organizationId, params);
-      setTimeEntries(response.data || []);
-      setTimeEntriesPagination(response.pagination || null);
+      const newTotal = Math.max(0, prev.total + increment);
+      const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize));
+      const currentPage = prev.page || 1;
+      const newPage = Math.min(currentPage, newTotalPages);
 
-      return response;
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to fetch time entries";
-      toast.error(errorMessage);
-    } finally {
-      setGetTimeEntriesLoading(false);
-    }
-  };
+      return {
+        ...prev,
+        total: newTotal,
+        totalPages: newTotalPages,
+        page: newPage,
+      };
+    });
+  }, []);
+
+  const addTimeEntryToList = useCallback(
+    (timeEntry: TimeEntry, selectedDate?: Date) => {
+      if (selectedDate) {
+        const entryDate = new Date(timeEntry.start);
+        const selected = new Date(selectedDate);
+        const isSameDate = entryDate.toDateString() === selected.toDateString();
+
+        if (!isSameDate) return;
+      }
+
+      setTimeEntries((prev) => {
+        const pageSize = timeEntriesPagination?.pageSize || 10;
+
+        // Insert the new entry in chronological order (newest first)
+        const updatedTimeEntries = [...prev];
+        const newEntryStart = new Date(timeEntry.start);
+
+        // Find the correct position to insert (newest first order)
+        let insertIndex = 0;
+        for (let i = 0; i < updatedTimeEntries.length; i++) {
+          const existingEntryStart = new Date(updatedTimeEntries[i].start);
+          if (newEntryStart >= existingEntryStart) {
+            insertIndex = i;
+            break;
+          }
+          insertIndex = i + 1;
+        }
+
+        // Insert at the correct position
+        updatedTimeEntries.splice(insertIndex, 0, timeEntry);
+
+        // Remove excess entries if page size is exceeded
+        if (updatedTimeEntries.length > pageSize) {
+          updatedTimeEntries.splice(pageSize);
+        }
+
+        return updatedTimeEntries;
+      });
+
+      updatePagination(1);
+    },
+    [timeEntriesPagination?.pageSize, updatePagination]
+  );
+
+  const removeTimeEntriesFromList = useCallback(
+    (entryIds: string | string[]) => {
+      const idsArray = Array.isArray(entryIds) ? entryIds : [entryIds];
+
+      setTimeEntries((prev) =>
+        prev.filter((entry) => !idsArray.includes(entry.id))
+      );
+
+      updatePagination(-idsArray.length);
+    },
+    [updatePagination]
+  );
+
+  const updateTimeEntryInList = useCallback(
+    (timeEntryId: string, updatedEntry: TimeEntry | Partial<TimeEntry>) => {
+      setTimeEntries((prev) =>
+        prev.map((entry) =>
+          entry.id === timeEntryId ? { ...entry, ...updatedEntry } : entry
+        )
+      );
+    },
+    []
+  );
+
+  const handleError = useCallback((error: any, defaultMessage: string) => {
+    const errorMessage = error.response?.data?.message || defaultMessage;
+    toast.error(errorMessage);
+  }, []);
+
+  const getRunningTimer = useCallback(
+    async (organizationId: string) => {
+      try {
+        setIsLoading(true);
+        const response = await timeApi.getRunningTimer(organizationId);
+        setRunningTimer(response.timer || null);
+        return response.timer;
+      } catch (error: any) {
+        handleError(error, "Failed to fetch running timer");
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setRunningTimer, handleError]
+  );
+
+  const getTimeEntries = useCallback(
+    async (
+      organizationId: string,
+      params?: {
+        page?: number;
+        limit?: number;
+        date?: string;
+        projectIds?: string[];
+        memberIds?: string[];
+        taskIds?: string[];
+        billable?: boolean;
+        tagIds?: string[];
+        clientIds?: string[];
+        all?: boolean;
+      }
+    ) => {
+      try {
+        setGetTimeEntriesLoading(true);
+        const response = await timeApi.getTimeEntries(organizationId, params);
+        setTimeEntries(response.data || []);
+        setTimeEntriesPagination(response.pagination || null);
+        return response;
+      } catch (error: any) {
+        handleError(error, "Failed to fetch time entries");
+        throw error;
+      } finally {
+        setGetTimeEntriesLoading(false);
+      }
+    },
+    [handleError]
+  );
 
   const startTimer = async (
     organizationId: string,
@@ -98,9 +193,8 @@ const useTime = () => {
       toast.success("Timer started successfully");
       return response;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to start timer";
-      toast.error(errorMessage);
+      handleError(error, "Failed to start timer");
+      throw error;
     } finally {
       setStartTimerLoading(false);
     }
@@ -115,42 +209,12 @@ const useTime = () => {
       setStopTimerLoading(true);
       const response = await timeApi.stopTimer(organizationId, timeEntryId);
       setRunningTimer(null);
-
-      const newEntry = response.data;
-
-      const entryDate = new Date(newEntry.start);
-      const selected = new Date(selectedDate);
-      const isSameDate = entryDate.toDateString() === selected.toDateString();
-
-      if (isSameDate) {
-        setTimeEntries((prev) => {
-          const pageSize = timeEntriesPagination?.pageSize || 10;
-          const updatedTimeEntries = [newEntry, ...prev];
-
-          if (updatedTimeEntries.length > pageSize) {
-            updatedTimeEntries.pop();
-          }
-
-          return updatedTimeEntries;
-        });
-
-        setTimeEntriesPagination((prev) => {
-          if (!prev) return null;
-          const newTotal = prev.total + 1;
-          return {
-            ...prev,
-            total: newTotal,
-            totalPages: Math.ceil(newTotal / prev.pageSize),
-          };
-        });
-      }
-
+      addTimeEntryToList(response.data, selectedDate);
       toast.success("Timer stopped successfully");
       return response.data;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to stop timer";
-      toast.error(errorMessage);
+      handleError(error, "Failed to stop timer");
+      throw error;
     } finally {
       setStopTimerLoading(false);
     }
@@ -173,42 +237,12 @@ const useTime = () => {
       setCreateTimeEntryLoading(true);
       const response = await timeApi.createTimeEntry(organizationId, data);
 
-      const newEntry = response.data;
-
-      const entryDate = new Date(newEntry.start);
-      const selected = new Date(selectedDate);
-      const isSameDate = entryDate.toDateString() === selected.toDateString();
-
-      if (isSameDate) {
-        setTimeEntries((prev) => {
-          const pageSize = timeEntriesPagination?.pageSize || 10; // Default page size
-          const updatedTimeEntries = [newEntry, ...prev]; // Add new entry at the beginning
-
-          // Remove the last entry if the page size is exceeded
-          if (updatedTimeEntries.length > pageSize) {
-            updatedTimeEntries.pop();
-          }
-
-          return updatedTimeEntries;
-        });
-
-        setTimeEntriesPagination((prev) => {
-          if (!prev) return null;
-          const newTotal = prev.total + 1;
-          return {
-            ...prev,
-            total: newTotal,
-            totalPages: Math.ceil(newTotal / prev.pageSize),
-          };
-        });
-      }
-
+      addTimeEntryToList(response.data, selectedDate);
       toast.success("Time entry created successfully");
       return response.data;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to create time entry";
-      toast.error(errorMessage);
+      handleError(error, "Failed to create time entry");
+      throw error;
     } finally {
       setCreateTimeEntryLoading(false);
     }
@@ -235,16 +269,12 @@ const useTime = () => {
         data
       );
 
-      setTimeEntries((prev) =>
-        prev.map((entry) => (entry.id === timeEntryId ? response.data : entry))
-      );
-
+      updateTimeEntryInList(timeEntryId, response.data);
       toast.success("Time entry updated successfully");
       return response.data;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to update time entry";
-      toast.error(errorMessage);
+      handleError(error, "Failed to update time entry");
+      throw error;
     } finally {
       setUpdateTimeEntryLoading(false);
     }
@@ -261,32 +291,12 @@ const useTime = () => {
         timeEntryId
       );
 
-      setTimeEntries((prev) =>
-        prev.filter((entry) => entry.id !== timeEntryId)
-      );
-
-      setTimeEntriesPagination((prev) => {
-        if (!prev) return null;
-
-        const newTotal = Math.max(0, prev.total - 1);
-        const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize));
-        const currentPage = prev.page || 1; // Fallback to page 1 if undefined
-        const newPage = Math.min(currentPage, newTotalPages);
-
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: newTotalPages,
-          page: newPage,
-        };
-      });
-
+      removeTimeEntriesFromList(timeEntryId);
       toast.success("Time entry deleted successfully");
       return response;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete time entry";
-      toast.error(errorMessage);
+      handleError(error, "Failed to delete time entry");
+      throw error;
     } finally {
       setDeleteTimeEntryLoading(false);
     }
@@ -312,20 +322,16 @@ const useTime = () => {
         data
       );
 
-      setTimeEntries((prev) =>
-        prev.map((entry) =>
-          data.timeEntryIds.includes(entry.id)
-            ? { ...entry, ...data.updates }
-            : entry
-        )
-      );
+      // Update multiple entries
+      data.timeEntryIds.forEach((id) => {
+        updateTimeEntryInList(id, data.updates);
+      });
 
       toast.success("Time entries updated successfully");
       return response;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to update time entries";
-      toast.error(errorMessage);
+      handleError(error, "Failed to update time entries");
+      throw error;
     } finally {
       setBulkUpdateLoading(false);
     }
@@ -342,32 +348,12 @@ const useTime = () => {
         timeEntryIds
       );
 
-      setTimeEntries((prev) =>
-        prev.filter((entry) => !timeEntryIds.includes(entry.id))
-      );
-
-      setTimeEntriesPagination((prev) => {
-        if (!prev) return null;
-
-        const newTotal = Math.max(0, prev.total - timeEntryIds.length);
-        const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize));
-        const currentPage = prev.page || 1; // Fallback to page 1 if undefined
-        const newPage = Math.min(currentPage, newTotalPages);
-
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: newTotalPages,
-          page: newPage,
-        };
-      });
-
+      removeTimeEntriesFromList(timeEntryIds);
       toast.success("Time entries deleted successfully");
       return response;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete time entries";
-      toast.error(errorMessage);
+      handleError(error, "Failed to delete time entries");
+      throw error;
     } finally {
       setBulkDeleteLoading(false);
     }
@@ -376,15 +362,12 @@ const useTime = () => {
   const createTag = async (organizationId: string, name: string) => {
     try {
       setCreateTagLoading(true);
-
       const response = await timeApi.createTag(organizationId, name);
       toast.success("Tag created successfully");
-
       return response.tag;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to create tag";
-      toast.error(errorMessage);
+      handleError(error, "Failed to create tag");
+      throw error;
     } finally {
       setCreateTagLoading(false);
     }
@@ -397,9 +380,8 @@ const useTime = () => {
       toast.success("Tag deleted successfully");
       return response;
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete tag";
-      toast.error(errorMessage);
+      handleError(error, "Failed to delete tag");
+      throw error;
     } finally {
       setDeleteTagLoading(false);
     }

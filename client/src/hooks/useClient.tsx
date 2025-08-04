@@ -1,6 +1,6 @@
 import { clientApi } from "@/lib/api";
 import type { Client } from "@/types/oraganization";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 const useClient = () => {
@@ -40,6 +40,62 @@ const useClient = () => {
     totalPages: 0,
   });
 
+  const updatePagination = useCallback(
+    (
+      setPagination: React.Dispatch<React.SetStateAction<any>>,
+      increment: number // +1 for add, -1 for remove
+    ) => {
+      setPagination((prev: any) => {
+        if (!prev) return null;
+
+        const newTotal = Math.max(0, prev.total + increment);
+        const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize));
+        const currentPage = prev.page || 1;
+        const newPage = Math.min(currentPage, newTotalPages);
+
+        return {
+          ...prev,
+          total: newTotal,
+          totalPages: newTotalPages,
+          page: newPage,
+        };
+      });
+    },
+    []
+  );
+
+  // Utility function to add client to list with pagination
+  const addClientToList = useCallback(
+    (
+      setClientList: React.Dispatch<React.SetStateAction<Client[]>>,
+      client: Client,
+      pagination: any
+    ) => {
+      setClientList((prev) => {
+        const pageSize = pagination?.pageSize || 10;
+        const updatedClients = [client, ...prev];
+
+        if (updatedClients.length > pageSize) {
+          updatedClients.pop();
+        }
+
+        return updatedClients;
+      });
+    },
+    []
+  );
+
+  // Utility function to remove client from list
+  const removeClientFromList = useCallback(
+    (
+      setClientList: React.Dispatch<React.SetStateAction<Client[]>>,
+      clientId: string
+    ) => {
+      setClientList((prev) => prev.filter((client) => client.id !== clientId));
+    },
+    []
+  );
+
   const getClients = async (
     organizationId: string,
     type: "active" | "archived",
@@ -63,6 +119,7 @@ const useClient = () => {
       const errorMessage =
         error.response?.data?.message || "Failed to fetch members";
       toast.error(errorMessage);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -74,23 +131,15 @@ const useClient = () => {
       const response = await clientApi.createClient(organizationId, name);
       toast.success("Client created successfully");
 
-      setClients((prev) => [...prev, response.client]);
+      addClientToList(setClients, response.client, clientPagination);
+      updatePagination(setClientPagination, 1);
 
-      setClientPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total + 1;
-        console.log(newTotal, prev.pageSize);
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.ceil(newTotal / prev.pageSize),
-        };
-      });
       return response.client;
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to create client";
       toast.error(errorMessage);
+      throw error;
     } finally {
       setCreateClientLoading(false);
     }
@@ -116,10 +165,12 @@ const useClient = () => {
       );
 
       toast.success("Client updated successfully");
+      return response.client;
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to update client";
       toast.error(errorMessage);
+      throw error;
     } finally {
       setEditClientLoading(false);
     }
@@ -132,31 +183,12 @@ const useClient = () => {
     try {
       setSendArchiveClientLoading(true);
       const response = await clientApi.sendArchive(clientId, organizationId);
-      setClients((prev) => prev.filter((client) => client.id !== clientId));
-      // Add to archived clients
-      setArchivedClients((prev) => [...prev, response.client]);
 
-      console.log(clients);
+      removeClientFromList(setClients, clientId);
+      addClientToList(setArchivedClients, response.client, archivedPagination);
+      updatePagination(setClientPagination, -1);
+      updatePagination(setArchivedPagination, 1);
 
-      setClientPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total - 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
-      });
-
-      setArchivedPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total + 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.ceil(newTotal / prev.pageSize),
-        };
-      });
       toast.success("Client archived successfully");
 
       return response.client;
@@ -164,6 +196,7 @@ const useClient = () => {
       const errorMessage =
         error.response?.data?.message || "Failed to archive client";
       toast.error(errorMessage);
+      throw error;
     } finally {
       setSendArchiveClientLoading(false);
     }
@@ -176,33 +209,11 @@ const useClient = () => {
         clientId,
         organizationId
       );
-      setArchivedClients((prev) =>
-        prev.filter((client) => client.id !== clientId)
-      );
-      // Add to active clients
-      setClients((prev) => [...prev, response.client]);
+      removeClientFromList(setArchivedClients, clientId);
+      addClientToList(setClients, response.client, clientPagination);
+      updatePagination(setArchivedPagination, -1);
+      updatePagination(setClientPagination, 1);
 
-      // Update paginations
-
-      setArchivedPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total - 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.ceil(newTotal / prev.pageSize),
-        };
-      });
-
-      setClientPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total + 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.ceil(newTotal / prev.pageSize),
-        };
-      });
       toast.success("Client unarchived successfully");
 
       return response.client;
@@ -210,6 +221,7 @@ const useClient = () => {
       const errorMessage =
         error.response?.data?.message || "Failed to unarchive client";
       toast.error(errorMessage);
+      throw error;
     } finally {
       setUnarchiveClientLoading(false);
     }
@@ -220,29 +232,13 @@ const useClient = () => {
       setClientDeleteLoading(true);
       const response = await clientApi.deleteClient(clientId, organizationId);
 
-      setClients((prev) => prev.filter((client) => client.id !== clientId));
-      setArchivedClients((prev) =>
-        prev.filter((client) => client.id !== clientId)
-      );
+      // Remove from both lists (could be in either active or archived)
+      removeClientFromList(setClients, clientId);
+      removeClientFromList(setArchivedClients, clientId);
 
-      setClientPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total - 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
-      });
-      setArchivedPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total - 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
-      });
+      // Update both paginations (one will have no effect if client wasn't in that list)
+      updatePagination(setClientPagination, -1);
+      updatePagination(setArchivedPagination, -1);
 
       toast.success("Client deleted successfully");
       return response.client;
@@ -250,6 +246,7 @@ const useClient = () => {
       const errorMessage =
         error.response?.data?.message || "Failed to unarchive client";
       toast.error(errorMessage);
+      throw error;
     } finally {
       setClientDeleteLoading(false);
     }

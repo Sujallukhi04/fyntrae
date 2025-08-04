@@ -4,7 +4,6 @@ import {
   Search,
   AlertTriangle,
   Trash2,
-  Users2Icon,
   UsersIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

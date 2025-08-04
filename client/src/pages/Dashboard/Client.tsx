@@ -97,6 +97,46 @@ const Client = () => {
     }
   }, [activeCurrentPage, archivedCurrentPage, user?.currentTeamId]);
 
+  const refreshClients = useCallback(async () => {
+    if (!user?.currentTeamId) return;
+
+    const isActive = activeTab === "active";
+    const pageSize = isActive
+      ? clientPagination?.pageSize || 10
+      : archivedPagination?.pageSize || 10;
+    const totalClients = isActive
+      ? clientPagination?.total || 0
+      : archivedPagination?.total || 0;
+    const currentClients = isActive ? clients.length : archivedClients.length;
+    const currentPage = isActive ? activeCurrentPage : archivedCurrentPage;
+
+    // Always refresh if we have no clients or if there are more clients to load
+    if (currentClients === 0 || totalClients > pageSize * currentPage) {
+      await getClients(user.currentTeamId, activeTab, {
+        page: currentPage,
+        pageSize: pageSize,
+      });
+
+      if (isActive) {
+        setActiveLoaded(true);
+      } else {
+        setArchivedLoaded(true);
+      }
+    }
+  }, [
+    user?.currentTeamId,
+    activeTab,
+    clientPagination?.pageSize,
+    clientPagination?.total,
+    archivedPagination?.pageSize,
+    archivedPagination?.total,
+    clients.length,
+    archivedClients.length,
+    activeCurrentPage,
+    archivedCurrentPage,
+    getClients,
+  ]);
+
   const createclient = useCallback(async (name: string) => {
     if (!user?.currentTeamId) return;
     if (!name.trim()) {
@@ -120,6 +160,23 @@ const Client = () => {
 
       try {
         await deleteClient(clientId, user.currentTeamId);
+
+        const isActiveTab = activeTab === "active";
+        const currentPage = isActiveTab
+          ? activeCurrentPage
+          : archivedCurrentPage;
+        const currnetData = isActiveTab ? clients : archivedClients;
+
+        if (currnetData.length === 1 && currentPage > 1) {
+          const newPage = Math.max(currentPage - 1, 1);
+          if (isActiveTab) {
+            setActiveCurrentPage(newPage);
+          } else {
+            setArchivedCurrentPage(newPage);
+          }
+        }
+
+        await refreshClients();
       } catch (error) {}
     },
     [user?.currentTeamId, deleteClient]
@@ -139,8 +196,10 @@ const Client = () => {
         return;
       }
 
-      await editClient(user.currentTeamId, modalState.data.id, name);
-      setModalState({ type: null, data: null });
+      try {
+        await editClient(user.currentTeamId, modalState.data.id, name);
+        setModalState({ type: null, data: null });
+      } catch (error) {}
     },
     [user?.currentTeamId, editClient, modalState.data]
   );
@@ -151,6 +210,22 @@ const Client = () => {
 
       try {
         await sendArchiveClient(clientId, user.currentTeamId);
+        const isActiveTab = activeTab === "active";
+        const currentPage = isActiveTab
+          ? activeCurrentPage
+          : archivedCurrentPage;
+        const currnetData = isActiveTab ? clients : archivedClients;
+
+        if (currnetData.length === 1 && currentPage > 1) {
+          const newPage = Math.max(currentPage - 1, 1);
+          if (isActiveTab) {
+            setActiveCurrentPage(newPage);
+          } else {
+            setArchivedCurrentPage(newPage);
+          }
+        }
+
+        await refreshClients();
       } catch (error: any) {}
     },
     [user?.currentTeamId, sendArchiveClient, modalState]
@@ -162,6 +237,22 @@ const Client = () => {
 
       try {
         await unarchiveClient(clientId, user.currentTeamId);
+        const isActiveTab = activeTab === "active";
+        const currentPage = isActiveTab
+          ? activeCurrentPage
+          : archivedCurrentPage;
+        const currnetData = isActiveTab ? clients : archivedClients;
+
+        if (currnetData.length === 1 && currentPage > 1) {
+          const newPage = Math.max(currentPage - 1, 1);
+          if (isActiveTab) {
+            setActiveCurrentPage(newPage);
+          } else {
+            setArchivedCurrentPage(newPage);
+          }
+        }
+
+        await refreshClients();
       } catch (error: any) {}
     },
     [user?.currentTeamId, unarchiveClient]

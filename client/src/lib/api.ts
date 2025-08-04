@@ -180,7 +180,7 @@ export const clientApi = {
     name: string
   ) => {
     const response = await axiosInstance.put(
-      `/client/${clientId}/organzation/${organizationId}`,
+      `/client/${clientId}/organization/${organizationId}`,
       {
         name,
       }
