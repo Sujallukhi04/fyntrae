@@ -14,7 +14,7 @@ import {
   createTimeEntrySchema,
   startTimerSchema,
   updatesTimeEntrySchema,
-} from "../utils";
+} from "../schemas/time";
 
 const calculateDuration = (start: Date, end: Date | null) => {
   if (!end) return null;
@@ -1168,6 +1168,7 @@ export const getTimeEntries = async (
       projects,
       billable,
     } = req.query;
+
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;

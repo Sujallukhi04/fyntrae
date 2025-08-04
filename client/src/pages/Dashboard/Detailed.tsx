@@ -37,7 +37,7 @@ import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
 import useTimesummary from "@/hooks/useTimesummary";
 import type { Client, Member } from "@/types/oraganization";
-import ChartFilterModal from "@/components/time/ChartFilterModal";
+import ChartFilterModal from "@/components/reporting/ChartFilterModal";
 
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;

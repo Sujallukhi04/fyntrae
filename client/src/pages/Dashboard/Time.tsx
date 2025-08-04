@@ -23,7 +23,7 @@ import {
   Square,
 } from "lucide-react";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
@@ -61,15 +61,6 @@ const getCurrencyIcon = (
   }
 };
 
-const formatDuration = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
-
 const Time = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
@@ -82,6 +73,10 @@ const Time = () => {
   const { user } = useAuth();
   const {
     getTimeEntriesLoading,
+    startTimer,
+    stopTimer,
+    startTimerLoading,
+    stopTimerLoading,
     timeEntries,
     getTimeEntries,
     timeEntriesPagination,
@@ -155,6 +150,31 @@ const Time = () => {
     );
   };
 
+  const refreshTimeEntries = useCallback(async () => {
+    if (!user?.currentTeamId) return;
+
+    const formattedDate = format(date, "yyyy-MM-dd");
+    const pageSize = timeEntriesPagination?.pageSize || 10;
+    const totalEntries = timeEntriesPagination?.total || 0;
+    const currentEntries = timeEntries.length;
+
+    // Always refresh if we have no entries or if there are more entries to load
+    if (currentEntries === 0 || totalEntries > pageSize * currentPage) {
+      await getTimeEntries(user.currentTeamId, {
+        page: currentPage,
+        limit: pageSize,
+        date: formattedDate,
+      });
+    }
+  }, [
+    user?.currentTeamId,
+    date,
+    timeEntriesPagination?.pageSize,
+    timeEntriesPagination?.total,
+    timeEntries.length,
+    currentPage,
+    getTimeEntries,
+  ]);
   const handleBulkUpdate = async (data: {
     description?: string;
     projectId: string | null;
@@ -230,6 +250,13 @@ const Time = () => {
     try {
       await deleteTimeEntry(user.currentTeamId, entryId);
       setSelectedEntries((prev) => prev.filter((id) => id !== entryId));
+
+      if (timeEntries.length === 1 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        setCurrentPage(newPage);
+      }
+
+      await refreshTimeEntries();
     } catch (error) {
       console.error("Failed to delete time entry:", error);
     }
@@ -241,8 +268,44 @@ const Time = () => {
     try {
       await bulkDeleteTimeEntries(user.currentTeamId, selectedEntries);
       setSelectedEntries([]);
+
+      const currentTimeentrys = timeEntries.length - selectedEntries.length;
+
+      if (currentTimeentrys === 0 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        setCurrentPage(newPage);
+      }
+
+      await refreshTimeEntries();
     } catch (error) {
       console.error("Failed to delete time entries:", error);
+    }
+  };
+
+  const handleTimerStart = async (data: {
+    description?: string;
+    projectId?: string;
+    taskId?: string;
+    tagIds: string[];
+    billable: boolean;
+  }) => {
+    if (!user?.currentTeamId) return;
+
+    try {
+      await startTimer(user.currentTeamId, data);
+      // Refresh is handled by the timer start logic, but you could add it here too
+    } catch (error) {
+      console.error("Failed to start timer:", error);
+    }
+  };
+
+  const handleTimerStop = async () => {
+    if (!user?.currentTeamId || !runningTimer) return;
+
+    try {
+      await stopTimer(user.currentTeamId, runningTimer.id, date);
+    } catch (error) {
+      console.error("Failed to stop timer:", error);
     }
   };
 
@@ -253,6 +316,10 @@ const Time = () => {
         getCurrencyIcon={getCurrencyIcon}
         projectsWithTasks={projectsWithTasks}
         tags={tags}
+        onStart={handleTimerStart}
+        onStop={handleTimerStop}
+        startTimerLoading={startTimerLoading}
+        stopTimerLoading={stopTimerLoading}
       />
 
       <TimeEntryModal

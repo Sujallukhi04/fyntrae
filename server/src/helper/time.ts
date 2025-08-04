@@ -553,13 +553,13 @@ export async function generateTimeSummaryGroupData(
   filters: {
     startDate?: string;
     endDate?: string;
-    tags?: string | string[];
-    clients?: string | string[];
-    members?: string | string[];
-    tasks?: string | string[];
-    projects?: string | string[];
+    tags?: string;
+    clients?: string;
+    members?: string;
+    tasks?: string;
+    projects?: string;
     billable?: string;
-    groups?: string | string[];
+    groups?: string;
   },
   userId: string | null,
   member: Member | null
@@ -586,7 +586,6 @@ export async function generateTimeSummaryGroupData(
     groups,
   } = filters;
 
- 
   const userTimezoneOffset = new Date().getTimezoneOffset() * -1;
   const offset = Number(userTimezoneOffset) || 0;
   const isEmployee = member?.role === "EMPLOYEE";

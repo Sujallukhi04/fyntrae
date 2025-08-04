@@ -13,9 +13,9 @@ import {
   Save,
 } from "lucide-react";
 
-import ChartAreaInteractive from "@/components/chart-area-interactive";
-import TimeEntryGroup from "@/components/time/TimeEntryGroup";
-import { ChartPieLegend } from "@/components/time/ChartPieLegend";
+import ChartAreaInteractive from "@/components/reporting/chart-area-interactive";
+import TimeEntryGroup from "@/components/reporting/TimeEntryGroup";
+import { ChartPieLegend } from "@/components/reporting/ChartPieLegend";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -32,7 +32,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import type { Client, Member } from "@/types/oraganization";
 import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
 import { format } from "date-fns";
-import ChartFilterModal from "@/components/time/ChartFilterModal";
+import ChartFilterModal from "@/components/reporting/ChartFilterModal";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 // Grouping options with icons

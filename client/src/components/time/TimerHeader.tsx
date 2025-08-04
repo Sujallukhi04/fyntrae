@@ -25,6 +25,16 @@ interface TimerHeaderProps {
   showManualEntryButton?: boolean;
   projectsWithTasks?: ProjectWithTasks[];
   tags?: TagType[];
+  onStart: (data: {
+    description?: string;
+    projectId?: string;
+    taskId?: string;
+    tagIds: string[];
+    billable: boolean;
+  }) => Promise<void>;
+  onStop: () => Promise<void>;
+  startTimerLoading?: boolean;
+  stopTimerLoading?: boolean;
 }
 
 const formatDuration = (seconds: number) => {
@@ -45,6 +55,10 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
   showManualEntryButton = true,
   projectsWithTasks = [],
   tags = [],
+  onStart,
+  onStop,
+  startTimerLoading = false,
+  stopTimerLoading = false,
 }) => {
   // Internal state
 
@@ -58,8 +72,7 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
   // Hooks
   const { organization, runningTimer } = useOrganization();
   const { user } = useAuth();
-  const { startTimer, stopTimer, startTimerLoading, stopTimerLoading } =
-    useTime();
+
   const { loading } = useTimesummary();
 
   // Sync form with running timer
@@ -134,7 +147,7 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
     const taskId = selectedProject.split(":")[1] || "";
 
     try {
-      await startTimer(user.currentTeamId, {
+      await onStart({
         description,
         ...(projectId && { projectId }),
         ...(taskId && { taskId }),
@@ -153,8 +166,7 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
     if (!user?.currentTeamId || !runningTimer) return;
 
     try {
-      await stopTimer(user.currentTeamId, runningTimer.id, new Date());
-
+      await onStop();
       // Reset form
       setDescription("");
       setSelectedProject("");

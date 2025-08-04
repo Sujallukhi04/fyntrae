@@ -29,7 +29,7 @@ import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import useAuthUser from "@/hooks/useAuthUser";
-import { TimerWidget } from "../TimerWeight";
+import { TimerWidget } from "../time/TimerWeight";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 const formatRole = (role: string) => {

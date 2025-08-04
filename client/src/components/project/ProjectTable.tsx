@@ -71,6 +71,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
 }) => {
   const { organization } = useOrganization();
   const navigate = useNavigate();
+  console.log(isDeleteLoading);
   return (
     <>
       {isLoading ? (

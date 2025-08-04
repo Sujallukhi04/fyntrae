@@ -32,6 +32,22 @@ const useProject = () => {
     totalPages: number;
   } | null>(null);
 
+  const updatePagination = (prev: any, change: number) => {
+    if (!prev) return null;
+
+    const newTotal = Math.max(0, prev.total + change); // Ensure total is not negative
+    const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize)); // Ensure at least one page exists
+    const currentPage = prev.page || 1; // Fallback to page 1 if undefined
+    const newPage = Math.min(currentPage, newTotalPages); // Adjust current page if it exceeds the new total pages
+
+    return {
+      ...prev,
+      total: newTotal,
+      totalPages: newTotalPages,
+      page: newPage,
+    };
+  };
+
   // Get projects (active or archived)
   const getProjects = async (
     organizationId: string,
@@ -72,19 +88,20 @@ const useProject = () => {
       clientId?: string | null;
     }
   ) => {
+    const pageSize = projectPagination?.pageSize || 10;
     try {
       setCreateProjectLoading(true);
       const response = await projectApi.createProject(organizationId, data);
-      setProjects((prev) => [response.project, ...prev]);
-      setProjectPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total + 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.ceil(newTotal / prev.pageSize),
-        };
+
+      setProjects((prev) => {
+        const updatedProjects = [response.project, ...prev];
+        if (updatedProjects.length > pageSize) {
+          updatedProjects.pop();
+        }
+        return updatedProjects;
       });
+
+      setProjectPagination((prev) => updatePagination(prev, 1));
       toast.success("Project created successfully");
       return response.project;
     } catch (error: any) {
@@ -117,7 +134,6 @@ const useProject = () => {
         data
       );
 
-      console.log(response.project);
       setProjects((prev) =>
         prev.map((proj) => (proj.id === projectId ? response.project : proj))
       );
@@ -149,26 +165,20 @@ const useProject = () => {
       );
       // Remove from active, add to archived
       setProjects((prev) => prev.filter((proj) => proj.id !== projectId));
-      setArchivedProjects((prev) => [response.project, ...prev]);
-      // Update paginations
-      setProjectPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = Math.max(0, prev.total - 1);
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
+      setArchivedProjects((prev) => {
+        const updatedProjects = [response.project, ...prev];
+        const pageSize = archivedProjectPagination?.pageSize || 10;
+
+        // If the page size exceeds the limit, remove the last project
+        if (updatedProjects.length > pageSize) {
+          updatedProjects.pop();
+        }
+        return updatedProjects;
       });
-      setArchivedProjectPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total + 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
-      });
+
+      setProjectPagination((prev) => updatePagination(prev, -1));
+      setArchivedProjectPagination((prev) => updatePagination(prev, 1));
+
       toast.success("Project archived successfully");
       return response.project;
     } catch (error: any) {
@@ -195,26 +205,20 @@ const useProject = () => {
       setArchivedProjects((prev) =>
         prev.filter((proj) => proj.id !== projectId)
       );
-      setProjects((prev) => [response.project, ...prev]);
-      // Update paginations
-      setArchivedProjectPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = Math.max(0, prev.total - 1);
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
+      setProjects((prev) => {
+        const updatedProjects = [response.project, ...prev];
+        const pageSize = projectPagination?.pageSize || 10;
+
+        // If the page size exceeds the limit, remove the last project
+        if (updatedProjects.length > pageSize) {
+          updatedProjects.pop();
+        }
+        return updatedProjects;
       });
-      setProjectPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = prev.total + 1;
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
-      });
+
+      setArchivedProjectPagination((prev) => updatePagination(prev, -1));
+      setProjectPagination((prev) => updatePagination(prev, 1));
+
       toast.success("Project unarchived successfully");
       return response.project;
     } catch (error: any) {
@@ -262,6 +266,10 @@ const useProject = () => {
     try {
       setDeleteProjectLoading(true);
 
+      const projectarchived = archivedProjects.find(
+        (proj) => proj.id === projectId
+      )?.isArchived;
+
       const response = await projectApi.deleteProject(
         projectId,
         organizationId
@@ -270,30 +278,21 @@ const useProject = () => {
       setArchivedProjects((prev) =>
         prev.filter((proj) => proj.id !== projectId)
       );
-      setProjectPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = Math.max(0, prev.total - 1);
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
-      });
-      setArchivedProjectPagination((prev) => {
-        if (!prev) return null;
-        const newTotal = Math.max(0, prev.total - 1);
-        return {
-          ...prev,
-          total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
-        };
-      });
+
+      if (projectarchived) {
+        setArchivedProjectPagination((prev) => updatePagination(prev, -1));
+      } else {
+        setProjectPagination((prev) => updatePagination(prev, -1));
+      }
+
       toast.success("Project deleted successfully");
       return response;
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to delete project";
       toast.error(errorMessage);
+    } finally {
+      setDeleteProjectLoading(false);
     }
   };
 

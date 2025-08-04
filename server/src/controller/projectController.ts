@@ -7,7 +7,7 @@ import {
   updateProjectMemberSchema,
   updateTaskSchema,
   updateTaskStatusSchema,
-} from "../utils/index";
+} from "../schemas/project";
 import { db } from "../prismaClient";
 import {
   assertActivePermissionedMember,
@@ -664,7 +664,6 @@ export const updateProjectMember = async (
         },
       },
     });
-
 
     if (projectMember.user?.id) {
       await updateBillableRate({

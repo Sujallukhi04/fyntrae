@@ -121,8 +121,18 @@ const useTime = () => {
       const entryDate = new Date(newEntry.start);
       const selected = new Date(selectedDate);
       const isSameDate = entryDate.toDateString() === selected.toDateString();
+
       if (isSameDate) {
-        setTimeEntries((prev) => [response.data, ...prev]);
+        setTimeEntries((prev) => {
+          const pageSize = timeEntriesPagination?.pageSize || 10;
+          const updatedTimeEntries = [newEntry, ...prev];
+
+          if (updatedTimeEntries.length > pageSize) {
+            updatedTimeEntries.pop();
+          }
+
+          return updatedTimeEntries;
+        });
 
         setTimeEntriesPagination((prev) => {
           if (!prev) return null;
@@ -170,7 +180,17 @@ const useTime = () => {
       const isSameDate = entryDate.toDateString() === selected.toDateString();
 
       if (isSameDate) {
-        setTimeEntries((prev) => [newEntry, ...prev]);
+        setTimeEntries((prev) => {
+          const pageSize = timeEntriesPagination?.pageSize || 10; // Default page size
+          const updatedTimeEntries = [newEntry, ...prev]; // Add new entry at the beginning
+
+          // Remove the last entry if the page size is exceeded
+          if (updatedTimeEntries.length > pageSize) {
+            updatedTimeEntries.pop();
+          }
+
+          return updatedTimeEntries;
+        });
 
         setTimeEntriesPagination((prev) => {
           if (!prev) return null;
@@ -247,11 +267,17 @@ const useTime = () => {
 
       setTimeEntriesPagination((prev) => {
         if (!prev) return null;
-        const newTotal = prev.total - 1;
+
+        const newTotal = Math.max(0, prev.total - 1);
+        const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize));
+        const currentPage = prev.page || 1; // Fallback to page 1 if undefined
+        const newPage = Math.min(currentPage, newTotalPages);
+
         return {
           ...prev,
           total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
+          totalPages: newTotalPages,
+          page: newPage,
         };
       });
 
@@ -322,11 +348,17 @@ const useTime = () => {
 
       setTimeEntriesPagination((prev) => {
         if (!prev) return null;
-        const newTotal = prev.total - timeEntryIds.length;
+
+        const newTotal = Math.max(0, prev.total - timeEntryIds.length);
+        const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize));
+        const currentPage = prev.page || 1; // Fallback to page 1 if undefined
+        const newPage = Math.min(currentPage, newTotalPages);
+
         return {
           ...prev,
           total: newTotal,
-          totalPages: Math.max(1, Math.ceil(newTotal / prev.pageSize)),
+          totalPages: newTotalPages,
+          page: newPage,
         };
       });
 

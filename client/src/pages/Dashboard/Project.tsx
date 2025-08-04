@@ -108,6 +108,53 @@ const ProjectPage = () => {
     });
   }, [user?.currentTeamId]);
 
+  const refreshProjects = useCallback(async () => {
+    if (!user?.currentTeamId) return;
+    const pageSize =
+      activeTab === "active"
+        ? projectPagination?.pageSize || 10
+        : archivedProjectPagination?.pageSize || 10;
+
+    const totalProjects =
+      activeTab === "active"
+        ? projectPagination?.total || 0
+        : archivedProjectPagination?.total || 0;
+
+    const total =
+      activeTab === "active" ? projects.length : archivedProjects.length;
+
+    const currentPage =
+      activeTab === "active" ? activeCurrentPage : archivedCurrentPage;
+
+    if (total === 0 || totalProjects > pageSize * currentPage) {
+      if (activeTab === "active") {
+        await getProjects(user.currentTeamId, "active", {
+          page: activeCurrentPage,
+          pageSize,
+        });
+        setActiveLoaded(true);
+      } else {
+        await getProjects(user.currentTeamId, "archived", {
+          page: archivedCurrentPage,
+          pageSize,
+        });
+        setArchivedLoaded(true);
+      }
+    }
+  }, [
+    user?.currentTeamId,
+    activeTab,
+    projectPagination?.pageSize,
+    projectPagination?.total,
+    archivedProjectPagination?.pageSize,
+    archivedProjectPagination?.total,
+    projects.length,
+    archivedProjects.length,
+    activeCurrentPage,
+    archivedCurrentPage,
+    getProjects,
+  ]);
+
   const handleCreateProject = useCallback(
     async (data: ProjectData) => {
       if (!user?.currentTeamId) return;
@@ -130,22 +177,82 @@ const ProjectPage = () => {
     async (projectId: string) => {
       if (!user?.currentTeamId) return;
       await archiveProject(projectId, user.currentTeamId);
+
+      const isActiveTab = activeTab === "active";
+      const currentPage = isActiveTab ? activeCurrentPage : archivedCurrentPage;
+      const currnetData = isActiveTab ? projects : archivedProjects;
+
+      if (currnetData.length === 1 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        if (isActiveTab) {
+          setActiveCurrentPage(newPage);
+        } else {
+          setArchivedCurrentPage(newPage);
+        }
+      }
+
+      await refreshProjects();
     },
-    [user?.currentTeamId, archiveProject]
+    [user?.currentTeamId, archiveProject, refreshProjects]
   );
 
   const handleUnarchiveProject = useCallback(
     async (projectId: string) => {
       if (!user?.currentTeamId) return;
       await unarchiveProject(projectId, user.currentTeamId);
+
+      const isActiveTab = activeTab === "active";
+      const currentPage = isActiveTab ? activeCurrentPage : archivedCurrentPage;
+      const currnetData = isActiveTab ? projects : archivedProjects;
+
+      if (currnetData.length === 1 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        if (isActiveTab) {
+          setActiveCurrentPage(newPage);
+        } else {
+          setArchivedCurrentPage(newPage);
+        }
+      }
+
+      await refreshProjects();
     },
-    [user?.currentTeamId, unarchiveProject]
+    [user?.currentTeamId, unarchiveProject, refreshProjects]
   );
 
-  const handleDeleteProject = useCallback(async (projectId: string) => {
-    if (!user?.currentTeamId) return;
-    await deleteProject(projectId, user.currentTeamId);
-  }, []);
+  const handleDeleteProject = useCallback(
+    async (projectId: string) => {
+      if (!user?.currentTeamId) return;
+      try {
+        await deleteProject(projectId, user.currentTeamId);
+
+        const isActiveTab = activeTab === "active";
+        const currentPage = isActiveTab
+          ? activeCurrentPage
+          : archivedCurrentPage;
+        const currnetData = isActiveTab ? projects : archivedProjects;
+
+        if (currnetData.length === 1 && currentPage > 1) {
+          const newPage = Math.max(currentPage - 1, 1);
+          if (isActiveTab) {
+            setActiveCurrentPage(newPage);
+          } else {
+            setArchivedCurrentPage(newPage);
+          }
+        }
+        await refreshProjects();
+      } catch (error) {}
+    },
+    [
+      user?.currentTeamId,
+      deleteProject,
+      activeTab,
+      activeCurrentPage,
+      archivedCurrentPage,
+      projects,
+      archivedProjects,
+      refreshProjects,
+    ]
+  );
 
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">

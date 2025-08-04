@@ -22,23 +22,12 @@ import { format, parse, set } from "date-fns";
 import { Ban, CalendarIcon, Clock, DollarSign, Loader2 } from "lucide-react";
 import { TagSelectorPopover } from "./TagSelector";
 import ProjectTaskSelector from "./ProjectTaskSelect";
-import type { ProjectWithTasks, TimeEntry } from "@/types/project";
+import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { Calendar } from "../ui/calendar";
 import { toast } from "sonner";
-
-interface Project {
-  id: string;
-  name: string;
-  color?: string;
-}
-
-interface Tag {
-  id: string;
-  name: string;
-}
 
 interface TimeEntryModalProps {
   isOpen: boolean;

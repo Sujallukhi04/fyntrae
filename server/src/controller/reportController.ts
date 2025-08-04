@@ -7,6 +7,7 @@ import {
 } from "../helper/time";
 import crypto from "crypto";
 import { db } from "../prismaClient";
+import { createReportSchema } from "../schemas/report";
 
 export const createReport = async (
   req: Request,
@@ -14,30 +15,16 @@ export const createReport = async (
 ): Promise<void> => {
   try {
     const { organizationId } = req.params;
-    const {
-      name,
-      description,
-      isPublic = false,
-      publicUntil,
-      startDate,
-      endDate,
-      tags,
-      clients,
-      members,
-      tasks,
-      projects,
-      billable,
-      groups,
-    } = req.body;
-
     const userId = req.user?.id;
 
     if (!userId || !organizationId) {
       throw new ErrorHandler("User ID and Organization ID are required", 400);
     }
 
-    if (!name) {
-      throw new ErrorHandler("Report name is required", 400);
+    const validatedData = createReportSchema.safeParse(req.body);
+
+    if (!validatedData.success) {
+      throw new ErrorHandler(validatedData.error.errors[0].message, 400);
     }
 
     // const member = await assertAPIPermission(
@@ -64,6 +51,22 @@ export const createReport = async (
     //   member
     // );
 
+    const {
+      name,
+      description,
+      isPublic,
+      publicUntil,
+      groups,
+      startDate,
+      endDate,
+      members,
+      billable,
+      clients,
+      tasks,
+      projects,
+      tags,
+    } = validatedData.data;
+
     const shareSecret = isPublic ? crypto.randomUUID() : null;
 
     const report = await db.report.create({
@@ -71,7 +74,7 @@ export const createReport = async (
         name,
         description,
         isPublic,
-        publicUntil: isPublic ? new Date(publicUntil) : null,
+        publicUntil: isPublic && publicUntil ? new Date(publicUntil) : null,
         shareSecret,
         organizationId,
         properties: {
@@ -222,7 +225,7 @@ export const getPublicReportById = async (
         tasks: properties.tasks,
         projects: properties.projects,
         billable: properties.billable,
-        groups: ["date"], // Always group by date for history
+        groups: "date",
       },
       null,
       null
