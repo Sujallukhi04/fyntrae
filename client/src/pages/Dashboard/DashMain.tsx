@@ -56,12 +56,12 @@ const DashMain = () => {
   }, [user?.currentTeamId]);
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
-      <TimerHeader
+      {/* <TimerHeader
         getCurrencyIcon={getCurrencyIcon}
         projectsWithTasks={projectsWithTasks}
         tags={tags}
         showManualEntryButton={false}
-      />
+      /> */}
     </div>
   );
 };

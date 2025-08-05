@@ -15,4 +15,16 @@ router.get(
   protectRoute,
   reportController.getReports
 );
+
+router.put(
+  "/:organizationId/:reportId",
+  protectRoute,
+  reportController.updateReport
+);
+
+router.delete(
+  "/:organizationId/:reportId",
+  protectRoute,
+  reportController.deleteReport
+);
 export default router;

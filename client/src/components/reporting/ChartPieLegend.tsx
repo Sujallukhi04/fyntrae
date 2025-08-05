@@ -11,17 +11,15 @@ import { generateBlueTones } from "@/lib/utils";
 interface ChartPieLegendProps {
   groupedData: GroupRow[];
   groupBy: string;
-  getName: (type: string, id: string) => string;
 }
 
 export function ChartPieLegend({
   groupedData = [],
   groupBy = "members",
-  getName,
 }: ChartPieLegendProps) {
   const blueColors = generateBlueTones(groupedData.length);
   const chartData = groupedData.map((item, idx) => ({
-    name: getName(groupBy, item.key),
+    name: item.name || "Unknown",
     value: Math.round(((item.seconds || 0) / 3600) * 100) / 100,
     fill: blueColors[idx],
   }));

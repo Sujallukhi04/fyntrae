@@ -8,6 +8,35 @@ const allowedGroupFields = [
   "billable",
 ];
 
+export const updateReportSchema = z
+  .object({
+    name: z.string().min(1, "Report name cannot be empty"),
+    description: z
+      .string()
+      .max(500, "Description must be less than 500 characters")
+      .default(""),
+    isPublic: z.boolean().default(false),
+    publicUntil: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), {
+        message: "Public until must be in format yyyy-MM-dd",
+      })
+      .refine((val) => !val || !isNaN(Date.parse(val)), {
+        message: "Public until must be a valid date",
+      }),
+  })
+  .refine(
+    (data) => {
+      if (!data.isPublic) return true;
+      return !!data.publicUntil;
+    },
+    {
+      message: "Public until is required when report is public",
+      path: ["publicUntil"],
+    }
+  );
+
 export const createReportSchema = z
   .object({
     name: z.string().min(1, "Report name cannot be empty"),
@@ -24,10 +53,15 @@ export const createReportSchema = z
     billable: z
       .string()
       .optional()
-      .refine((val) => val === "true" || val === "false", {
+      .refine((val) => val === undefined || val === "true" || val === "false", {
         message: "Billable must be 'true' or 'false'",
       })
-      .transform((val) => val === "true"),
+      .transform((val) => {
+        if (val === "true") return true;
+        if (val === "false") return false;
+        return undefined;
+      }),
+
     publicUntil: z
       .string()
       .optional()
@@ -101,4 +135,14 @@ export const createReportSchema = z
   .refine((data) => new Date(data.endDate) <= new Date(), {
     message: "End date cannot be in the future",
     path: ["endTime"],
-  });
+  })
+  .refine(
+    (data) => {
+      if (!data.isPublic) return true;
+      return !!data.publicUntil;
+    },
+    {
+      message: "Public until is required when report is public",
+      path: ["publicUntil"],
+    }
+  );

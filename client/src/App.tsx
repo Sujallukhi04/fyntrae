@@ -25,6 +25,7 @@ import PermissionRoute from "./components/PermissionRoute";
 import { useOrganization } from "./providers/OrganizationProvider";
 import useTimesummary from "./hooks/useTimesummary";
 import Shared from "./pages/Dashboard/Shared";
+import ReportPublic from "./pages/ReportPublic";
 
 const App = () => {
   const { isLoading, isAuthenticated } = useAuthUser();
@@ -153,6 +154,8 @@ const App = () => {
         </Route>
 
         <Route path="/team-invite/:token" element={<TeamInvite />} />
+
+        <Route path="/public-report/:reportId" element={<ReportPublic />} />
 
         <Route
           path="/signup"

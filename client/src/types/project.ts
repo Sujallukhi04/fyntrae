@@ -123,5 +123,31 @@ export interface TimeEntryGroupProps {
   groupedData?: GroupRow[];
   groupBy1?: string;
   groupBy2?: string;
-  getName: (type: string, id: string) => string;
+}
+
+
+
+export interface Report {
+  id: string;
+  name: string;
+  description: string;
+  organizationId: string;
+  isPublic: boolean;
+  publicUntil: string | null;
+  shareSecret: string | null;
+  properties: ReportProperties;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReportProperties {
+  tags: string | null;
+  group: string;
+  tasks: string | null;
+  clients: string | null;
+  endDate: string; // "YYYY-MM-DD"
+  members: string | null;
+  billable: boolean;
+  projects: string | null;
+  startDate: string; // "YYYY-MM-DD"
 }

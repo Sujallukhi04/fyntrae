@@ -19,6 +19,7 @@ import { Edit, Trash2, MoreVertical, Link, ExternalLink } from "lucide-react";
 import NoData from "../NoData";
 import { Badge } from "../ui/badge";
 import { toast } from "sonner";
+import { ReportsSkeleton } from "../modals/Skeleton";
 
 interface Report {
   id: string;
@@ -31,7 +32,7 @@ interface Report {
 
 interface ReportTableProps {
   reports: Report[];
-  onEdit: (reportId: string) => void;
+  onEdit: (report: Report) => void;
   onDelete: (reportId: string) => void;
   isLoading: boolean;
   pagination: {
@@ -41,6 +42,8 @@ interface ReportTableProps {
     totalPages: number;
   } | null;
   onPageChange: (page: number) => void;
+  editLoading?: boolean;
+  deleteLoading?: boolean;
 }
 
 const ReportTable: React.FC<ReportTableProps> = ({
@@ -50,15 +53,13 @@ const ReportTable: React.FC<ReportTableProps> = ({
   isLoading,
   pagination,
   onPageChange,
+  editLoading = false,
+  deleteLoading = false,
 }) => {
   return (
     <>
       {isLoading ? (
-        <div className="py-12">
-          <p className="text-center text-muted-foreground">
-            Loading reports...
-          </p>
-        </div>
+        <ReportsSkeleton />
       ) : (
         <div className="rounded-md bg-muted/40 border border-muted">
           <Table>
@@ -119,7 +120,7 @@ const ReportTable: React.FC<ReportTableProps> = ({
                           size="sm"
                           className="h-7 px-2 inline-flex items-center gap-1 text-xs "
                           onClick={() => {
-                            const url = `${window.location.origin}/public/${report.shareSecret}`;
+                            const url = `${window.location.origin}/public-report/${report.shareSecret}`;
                             navigator.clipboard.writeText(url);
                             toast.success("Link copied to clipboard");
                           }}
@@ -145,13 +146,17 @@ const ReportTable: React.FC<ReportTableProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit(report.id)}>
+                          <DropdownMenuItem
+                            onClick={() => onEdit(report)}
+                            disabled={editLoading}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-500 hover:text-red-500 focus:text-red-500"
                             onClick={() => onDelete(report.id)}
+                            disabled={deleteLoading}
                           >
                             <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                             Delete

@@ -34,6 +34,9 @@ import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
 import { format } from "date-fns";
 import ChartFilterModal from "@/components/reporting/ChartFilterModal";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
+import { toast } from "sonner";
+import { ReportModal } from "@/components/report/AddEditReport";
+import useReport from "@/hooks/useReport";
 
 // Grouping options with icons
 const groupOptions = [
@@ -76,9 +79,13 @@ const Overview = () => {
   const [projects, setProjects] = useState<ProjectWithTasks[]>([]);
   const [tags, setTags] = useState<TagType[]>([]);
   const [groupData, setGroupData] = useState<any>(null);
+  const [groupData1, setGroupData1] = useState<any>(null);
+
   const [groupBy1, setGroupBy1] = useState("projects");
   const [groupBy2, setGroupBy2] = useState("members");
   const { role } = useOrgAccess();
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const { createReport, reportLoading } = useReport();
 
   useEffect(() => {
     const loadData = async () => {
@@ -117,6 +124,41 @@ const Overview = () => {
 
     if (user?.currentTeamId) loadData();
   }, [user?.currentTeamId]);
+
+  useEffect(() => {
+    if (!user?.currentTeamId || !date.from || !date.to) return;
+    const fetchData = async () => {
+      const result = await fetchGroupedSummary({
+        organizationId: user.currentTeamId,
+        startDate: format(date.from!, "yyyy-MM-dd"),
+        endDate: format(date.to!, "yyyy-MM-dd"),
+        groups: "date",
+        projectIds,
+        memberIds,
+        clientIds,
+        tagIds,
+        taskIds,
+        billable,
+      });
+
+      if (result) {
+        setGroupData1(result);
+      }
+    };
+
+    fetchData();
+  }, [
+    date.from,
+    date.to,
+    fetchGroupedSummary,
+    user?.currentTeamId,
+    projectIds,
+    memberIds,
+    clientIds,
+    tagIds,
+    billable,
+    taskIds,
+  ]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -184,29 +226,39 @@ const Overview = () => {
     }
   };
 
-  const getName = (type: string, id: string) => {
-    if (!id || id === "null") return `No ${type}`;
+  const handleReportSubmit = async (data: {
+    name: string;
+    description: string;
+    isPublic: boolean;
+    publicUntil?: Date;
+  }) => {
+    if (!user?.currentTeamId || !date.from || !date.to) return;
+    try {
+      const formatted = {
+        name: data.name.trim(),
+        description: data.description.trim(),
+        isPublic: data.isPublic,
+        publicUntil:
+          data.isPublic && data.publicUntil
+            ? format(data.publicUntil, "yyyy-MM-dd")
+            : undefined,
+        projects: projectIds.length ? projectIds.join(",") : null,
+        tasks: taskIds.length ? taskIds.join(",") : null,
+        tags: tagIds.length ? tagIds.join(",") : null,
+        clients: clientIds.length ? clientIds.join(",") : null,
+        members: memberIds.length ? memberIds.join(",") : null,
+        billable: typeof billable === "boolean" ? String(billable) : undefined,
+        groups: `${groupBy1},${groupBy2}`,
+        startDate: format(date.from, "yyyy-MM-dd"),
+        endDate: format(date.to, "yyyy-MM-dd"),
+      };
 
-    if (type === "members") {
-      const member = members.find((m) => m.id === id);
-      if (member) {
-        return member.user.name;
-      }
-      return user?.name || "Unknown Member";
+      await createReport(user.currentTeamId, formatted);
+
+      setIsReportModalOpen(false);
+    } catch (error) {
+      toast.error("Failed to create report.");
     }
-    if (type === "projects")
-      return projects.find((p) => p.id === id)?.name || id;
-    if (type === "clients") return clients.find((c) => c.id === id)?.name || id;
-    if (type === "tags") return projects.find((t) => t.id === id)?.name || id;
-    if (type === "tasks") {
-      for (const p of projects) {
-        const task = p.tasks.find((t) => t.id === id);
-        if (task) return task.name;
-      }
-      return id;
-    }
-    if (type === "billable") return id === "1" ? "Billable" : "Non-Billable";
-    return id;
   };
 
   return (
@@ -228,7 +280,11 @@ const Overview = () => {
               Export
             </Button>
             {role !== "EMPLOYEE" && (
-              <Button className="w-full md:w-auto" variant="outline">
+              <Button
+                className="w-full md:w-auto"
+                onClick={() => setIsReportModalOpen(true)}
+                variant="outline"
+              >
                 <Save className="h-5 w-5 mr-2" />
                 Save Report
               </Button>
@@ -241,16 +297,11 @@ const Overview = () => {
         {/* Chart Area Filters */}
         <div className="px-2">
           <ChartAreaInteractive
-            loading={loading}
+            loading={loading.group}
             setFilterOpen={setOpenFilter}
             date={date}
             setDate={setDate}
-            projectIds={projectIds}
-            taskIds={taskIds}
-            tagIds={tagIds}
-            memberIds={memberIds}
-            clientIds={clientIds}
-            billable={billable}
+            groupData={groupData1}
           />
         </div>
 
@@ -322,7 +373,6 @@ const Overview = () => {
               groupedData={groupData?.grouped_data || []}
               groupBy1={groupBy1}
               groupBy2={groupBy2}
-              getName={getName}
             />
           </div>
 
@@ -331,7 +381,6 @@ const Overview = () => {
             <ChartPieLegend
               groupedData={groupData?.grouped_data || []}
               groupBy={groupBy1}
-              getName={getName}
             />
           </div>
         </div>
@@ -366,6 +415,14 @@ const Overview = () => {
           setBillable(billable);
           setTaskIds(taskIds);
         }}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        onSubmit={handleReportSubmit}
+        mode="add"
+        loading={reportLoading.create}
       />
     </div>
   );

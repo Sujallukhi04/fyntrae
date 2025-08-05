@@ -7,7 +7,7 @@ import {
 } from "../helper/time";
 import crypto from "crypto";
 import { db } from "../prismaClient";
-import { createReportSchema } from "../schemas/report";
+import { createReportSchema, updateReportSchema } from "../schemas/report";
 
 export const createReport = async (
   req: Request,
@@ -271,6 +271,113 @@ export const getPublicReportById = async (
       success: true,
       data: responseData,
       message: "Public report retrieved successfully",
+    });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const updateReport = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { organizationId, reportId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId || !organizationId || !reportId) {
+      throw new ErrorHandler(
+        "User ID, Organization ID, and Report ID are required",
+        400
+      );
+    }
+
+    const validatedData = updateReportSchema.safeParse(req.body);
+
+    if (!validatedData.success) {
+      throw new ErrorHandler(validatedData.error.errors[0].message, 400);
+    }
+
+    const member = await assertAPIPermission(
+      userId,
+      organizationId,
+      "REPORTS",
+      "CREATE"
+    );
+
+    const { name, description, isPublic, publicUntil } = validatedData.data;
+
+    const existingReport = await db.report.findUnique({
+      where: { id: reportId },
+    });
+
+    if (!existingReport) {
+      throw new ErrorHandler("Report not found", 404);
+    }
+
+    let shareSecret: string | null = existingReport.shareSecret;
+
+    if (isPublic && !existingReport.isPublic && !existingReport.shareSecret) {
+      shareSecret = crypto.randomUUID();
+    }
+
+    const report = await db.report.update({
+      where: {
+        id: reportId,
+        organizationId: organizationId,
+      },
+      data: {
+        name,
+        description,
+        isPublic,
+        publicUntil: isPublic && publicUntil ? new Date(publicUntil) : null,
+        shareSecret: isPublic ? shareSecret : null,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: report,
+      message: "Report updated successfully",
+    });
+  } catch (error) {
+    throw new ErrorHandler(
+      error instanceof Error ? error.message : "Internal Server Error",
+      500
+    );
+  }
+};
+
+export const deleteReport = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { organizationId, reportId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId || !organizationId || !reportId) {
+      throw new ErrorHandler(
+        "User ID, Organization ID, and Report ID are required",
+        400
+      );
+    }
+
+    await assertAPIPermission(userId, organizationId, "REPORTS", "CREATE");
+
+    await db.report.delete({
+      where: {
+        id: reportId,
+        organizationId: organizationId,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Report deleted successfully",
     });
   } catch (error) {
     throw new ErrorHandler(

@@ -373,3 +373,48 @@ export const TasksSkeleton = () => (
     </Table>
   </div>
 );
+
+export const ReportsSkeleton = () => (
+  <div className="rounded-md bg-muted/40 border border-muted">
+    <Table>
+      <TableHeader>
+        <TableRow className="border-muted/50 hover:bg-muted/30">
+          <TableHead className="w-[25%] text-muted-foreground font-medium">
+            Name
+          </TableHead>
+          <TableHead className="w-[45%] text-muted-foreground font-medium">
+            Description
+          </TableHead>
+          <TableHead className="w-[15%] text-muted-foreground font-medium">
+            Visibility
+          </TableHead>
+          <TableHead className="w-[15%] text-muted-foreground font-medium">
+            Public URL
+          </TableHead>
+          <TableHead className="w-[10%]" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <TableRow key={index} className="border-muted/50">
+            <TableCell>
+              <Skeleton className="h-4 w-32 rounded" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-48 rounded" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-20 rounded-full" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-7 w-24 rounded" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-8 w-8 rounded-md mx-auto" />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);

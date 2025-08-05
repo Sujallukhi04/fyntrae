@@ -10,8 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, Clock, FolderOpen } from "lucide-react";
 import NoData from "../NoData";
-import type { Client, Member } from "@/types/oraganization";
-import type { ProjectWithTasks, TimeEntryGroupProps } from "@/types/project";
+import type { TimeEntryGroupProps } from "@/types/project";
 
 const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600);
@@ -23,7 +22,6 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
   groupedData = [],
   groupBy1 = "projects",
   groupBy2 = "members",
-  getName,
 }) => {
   const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -90,7 +88,7 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                           </Button>
 
                           <span className="font-medium text-sm">
-                            {getName(groupBy1, group.key)}
+                            {group.name || "Unknown"}
                           </span>
                         </div>
                       </TableCell>
@@ -106,7 +104,7 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                       group.grouped_data?.map((sub) => (
                         <TableRow key={sub.key} className="bg-muted/10">
                           <TableCell className="pl-12 text-sm text-muted-foreground py-3">
-                            {getName(groupBy2, sub.key)}
+                            {sub.name || "Unknown"}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground py-3">
                             {formatDuration(sub.seconds)}

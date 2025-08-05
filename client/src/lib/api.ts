@@ -649,4 +649,53 @@ export const reportApi = {
     const response = await axiosInstance.get(`/report/${screct}`);
     return response.data;
   },
+
+  createReport: async (
+    organizationId: string,
+    data: {
+      name: string;
+      description: string;
+      isPublic: boolean;
+      publicUntil?: string;
+      projects?: string | null;
+      tasks?: string | null;
+      tags?: string | null;
+      clients?: string | null;
+      billable?: string | null;
+      members?: string | null;
+      groups?: string | null;
+      startDate: string;
+      endDate: string;
+    }
+  ) => {
+    const response = await axiosInstance.post(
+      `/report/${organizationId}`,
+      data
+    );
+    return response.data;
+  },
+
+  editReport: async (
+    organizationId: string,
+    reportId: string,
+    data: {
+      name: string;
+      description?: string;
+      isPublic: boolean;
+      publicUntil?: string;
+    }
+  ) => {
+    const response = await axiosInstance.put(
+      `/report/${organizationId}/${reportId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteReport: async (organizationId: string, reportId: string) => {
+    const response = await axiosInstance.delete(
+      `/report/${organizationId}/${reportId}`
+    );
+    return response.data;
+  },
 };
