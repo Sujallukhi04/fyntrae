@@ -1,24 +1,22 @@
 import { Request, Response } from "express";
-import { db } from "../prismaClient";
+import { db } from "../../prismaClient";
 import {
   createOrganizationSchema,
   switchOrganizationSchema,
   updateOrganizationSchema,
-} from "../utils";
-import { ErrorHandler } from "../utils/errorHandler";
+} from "../../schemas/organization";
+import { ErrorHandler } from "../../utils/errorHandler";
 import {
   assertAPIPermission,
   getOrganization,
   hasPermission,
-} from "../helper/organization";
-import { getAuthUserData } from "../helper/user";
-import { updateBillableRate } from "../helper/billableRate";
+} from "../../helper/organization";
+import { getAuthUserData } from "../../helper/user";
+import { updateBillableRate } from "../../helper/billableRate";
+import { catchAsync } from "../../utils/catchAsync";
 
-export const switchOrganization = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const switchOrganization = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.body;
     const userId = req.user?.id;
 
@@ -26,14 +24,9 @@ export const switchOrganization = async (
       throw new ErrorHandler("User not authenticated", 401);
     }
 
-    const validatedData = switchOrganizationSchema.safeParse({
+    const validatedData = switchOrganizationSchema.parse({
       organizationId,
     });
-
-    if (!validatedData.success) {
-      const messages = validatedData.error.errors[0].message;
-      throw new ErrorHandler(messages, 400);
-    }
 
     await assertAPIPermission(userId, organizationId, "ORGANIZATION", "VIEW");
 
@@ -49,19 +42,11 @@ export const switchOrganization = async (
       message: "Organization switched successfully",
       user: currentUser,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const getCurrentOrganization = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getCurrentOrganization = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { organizationId } = req.params;
 
@@ -85,19 +70,11 @@ export const getCurrentOrganization = async (
       message: "Organization data retrieved successfully",
       organization,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const updateOrganization = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateOrganization = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -105,14 +82,13 @@ export const updateOrganization = async (
       throw new ErrorHandler("User not authenticated", 401);
     }
 
+    if (!organizationId) {
+      throw new ErrorHandler("Organization ID is required", 400);
+    }
+
     const data = req.body;
 
-    const validatedData = updateOrganizationSchema.safeParse(data);
-
-    if (!validatedData.success) {
-      const messages = validatedData.error.errors[0].message;
-      throw new ErrorHandler(messages, 400);
-    }
+    const validatedData = updateOrganizationSchema.parse(data);
 
     await assertAPIPermission(userId, organizationId, "ORGANIZATION", "UPDATE");
 
@@ -127,26 +103,26 @@ export const updateOrganization = async (
         id: organizationId,
       },
       data: {
-        name: validatedData.data.name,
-        currency: validatedData.data.currency,
-        dateFormat: validatedData.data.dateFormat,
-        timeFormat: validatedData.data.timeFormat,
-        intervalFormat: validatedData.data.intervalFormat,
-        numberFormat: validatedData.data.numberFormat,
+        name: validatedData.name,
+        currency: validatedData.currency,
+        dateFormat: validatedData.dateFormat,
+        timeFormat: validatedData.timeFormat,
+        intervalFormat: validatedData.intervalFormat,
+        numberFormat: validatedData.numberFormat,
         employeesCanSeeBillableRates:
-          validatedData.data.employeesCanSeeBillableRates,
+          validatedData.employeesCanSeeBillableRates,
         updatedAt: new Date(),
       },
     });
 
     if (
-      validatedData.data.billableRates !== undefined &&
-      validatedData.data.billableRates !== null
+      validatedData.billableRates !== undefined &&
+      validatedData.billableRates !== null
     ) {
       await updateBillableRate({
         source: "organization",
         sourceId: organizationId,
-        newRate: validatedData.data.billableRates,
+        newRate: validatedData.billableRates,
         applyToExisting: true,
         organizationId,
       });
@@ -156,19 +132,11 @@ export const updateOrganization = async (
       message: "Organization updated successfully",
       organization: await getOrganization(organizationId),
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const deleteOrganization = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deleteOrganization = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -216,7 +184,7 @@ export const deleteOrganization = async (
             },
           },
           orderBy: [
-            { organization: { personalTeam: "desc" } }, // Prioritize personal teams
+            { organization: { personalTeam: "desc" } },
             { createdAt: "asc" },
           ],
           take: 1,
@@ -247,19 +215,11 @@ export const deleteOrganization = async (
       message: "Organization deleted successfully",
       user: currentUser,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const createOrganization = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const createOrganization = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
 
     if (!userId) {
@@ -268,15 +228,10 @@ export const createOrganization = async (
 
     const { name } = req.body;
 
-    const validatedData = createOrganizationSchema.safeParse({ name });
-
-    if (!validatedData.success) {
-      const messages = validatedData.error.errors.map((err) => err.message);
-      throw new ErrorHandler(messages, 400);
-    }
+    const validatedData = createOrganizationSchema.parse({ name });
 
     const existingOrganization = await db.organizations.findFirst({
-      where: { userId, name: validatedData.data.name },
+      where: { userId, name: validatedData.name },
     });
 
     if (existingOrganization) {
@@ -288,7 +243,7 @@ export const createOrganization = async (
       const newOrganization = await tx.organizations.create({
         data: {
           userId,
-          name: validatedData.data.name,
+          name: validatedData.name,
           personalTeam: false,
           dateFormat: "MM/DD/YYYY",
           currency: "INR",
@@ -333,19 +288,11 @@ export const createOrganization = async (
       organization: result,
       user,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const getOrganizationMembers = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getOrganizationMembers = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -409,19 +356,11 @@ export const getOrganizationMembers = async (
             },
           }),
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const getOrganizationInvitations = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getOrganizationInvitations = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -492,19 +431,11 @@ export const getOrganizationInvitations = async (
         totalPages: Math.ceil(total / pageSize),
       },
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const deactiveMember = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deactiveMember = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, memberId } = req.params;
     const userId = req.user?.id;
 
@@ -618,19 +549,11 @@ export const deactiveMember = async (
       member: updatedMember,
       user: currentUser,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const deleteMember = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deleteMember = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, memberId } = req.params;
     const userId = req.user?.id;
 
@@ -751,19 +674,11 @@ export const deleteMember = async (
       } has been permanently removed from the organization`,
       user: currentUser,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const deleteInvitation = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deleteInvitation = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { organizationId, invitationId } = req.params;
 
@@ -800,10 +715,5 @@ export const deleteInvitation = async (
     res.status(200).json({
       message: "Invitation deleted successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);

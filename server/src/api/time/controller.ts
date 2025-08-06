@@ -1,20 +1,24 @@
 import { Request, Response } from "express";
-import { db } from "../prismaClient";
-import { ErrorHandler } from "../utils/errorHandler";
-import { assertAPIPermission, getOrganization } from "../helper/organization";
+import { db } from "../../prismaClient";
+import { ErrorHandler } from "../../utils/errorHandler";
+import {
+  assertAPIPermission,
+  getOrganization,
+} from "../../helper/organization";
 import {
   calculateBillableRate,
   getLocalDateRangeInUTC,
   recalculateProjectSpentTime,
   recalculateTaskSpentTime,
-} from "../helper/billableRate";
+} from "../../helper/billableRate";
 import {
   bulkDeleteTimeEntriesSchema,
   bulkUpdateTimeEntriesSchema,
   createTimeEntrySchema,
   startTimerSchema,
   updatesTimeEntrySchema,
-} from "../schemas/time";
+} from "../../schemas/time";
+import { catchAsync } from "../../utils/catchAsync";
 
 const calculateDuration = (start: Date, end: Date | null) => {
   if (!end) return null;
@@ -104,11 +108,8 @@ const checkOverlappingEntries = async (
   });
 };
 
-export const createTimeEntry = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const createTimeEntry = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -116,11 +117,9 @@ export const createTimeEntry = async (
       throw new ErrorHandler("User ID and Organization ID are required", 400);
     }
 
-    const parsed = createTimeEntrySchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw new ErrorHandler(parsed.error.errors[0].message, 400);
-    }
-    const data = parsed.data;
+    const parsed = createTimeEntrySchema.parse(req.body);
+
+    const data = parsed;
 
     const member = await assertAPIPermission(
       userId,
@@ -259,27 +258,17 @@ export const createTimeEntry = async (
       },
       message: "Time entry created successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const startTimer = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const startTimer = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
-    const parsed = startTimerSchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw new ErrorHandler(parsed.error.errors[0].message, 400);
-    }
-    const data = parsed.data;
+    const parsed = startTimerSchema.parse(req.body);
+
+    const data = parsed;
 
     if (!userId || !organizationId) {
       throw new ErrorHandler("User ID and Organization ID are required", 400);
@@ -415,16 +404,11 @@ export const startTimer = async (
       },
       message: "Timer started successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const stopTimer = async (req: Request, res: Response): Promise<void> => {
-  try {
+export const stopTimer = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, timeEntryId } = req.params;
     const userId = req.user?.id;
 
@@ -500,19 +484,11 @@ export const stopTimer = async (req: Request, res: Response): Promise<void> => {
       },
       message: "Timer stopped successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getRunningTimer = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getRunningTimer = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -565,19 +541,11 @@ export const getRunningTimer = async (
       },
       message: "Running timer retrieved successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const updateTimeEntry = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateTimeEntry = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, timeEntryId } = req.params;
     const userId = req.user?.id;
 
@@ -588,12 +556,9 @@ export const updateTimeEntry = async (
       );
     }
 
-    const parsed = updatesTimeEntrySchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw new ErrorHandler(parsed.error.errors[0].message, 400);
-    }
+    const parsed = updatesTimeEntrySchema.parse(req.body);
 
-    const data = parsed.data;
+    const data = parsed;
 
     const org = await getOrganization(organizationId);
     if (!org) throw new ErrorHandler("Organization not found", 404);
@@ -818,19 +783,11 @@ export const updateTimeEntry = async (
       },
       message: "Time entry updated successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const deleteTimeEntry = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deleteTimeEntry = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, timeEntryId } = req.params;
     const userId = req.user?.id;
 
@@ -873,19 +830,11 @@ export const deleteTimeEntry = async (
       success: true,
       message: "Time entry deleted successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const bulkUpdateTimeEntries = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const bulkUpdateTimeEntries = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -893,12 +842,9 @@ export const bulkUpdateTimeEntries = async (
       throw new ErrorHandler("User ID and Organization ID are required", 400);
     }
 
-    const parsed = bulkUpdateTimeEntriesSchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw new ErrorHandler(parsed.error.errors[0].message, 400);
-    }
+    const parsed = bulkUpdateTimeEntriesSchema.parse(req.body);
 
-    const data = parsed.data;
+    const data = parsed;
 
     const org = await getOrganization(organizationId);
     if (!org) throw new ErrorHandler("Organization not found", 404);
@@ -1061,19 +1007,11 @@ export const bulkUpdateTimeEntries = async (
       success: true,
       message: `${data.timeEntryIds.length} time entries updated successfully`,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const bulkDeleteTimeEntries = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const bulkDeleteTimeEntries = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -1081,12 +1019,9 @@ export const bulkDeleteTimeEntries = async (
       throw new ErrorHandler("User ID and Organization ID are required", 400);
     }
 
-    const parsed = bulkDeleteTimeEntriesSchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw new ErrorHandler(parsed.error.errors[0].message, 400);
-    }
+    const parsed = bulkDeleteTimeEntriesSchema.parse(req.body);
 
-    const data = parsed.data;
+    const data = parsed;
 
     const org = await getOrganization(organizationId);
     if (!org) throw new ErrorHandler("Organization not found", 404);
@@ -1141,19 +1076,11 @@ export const bulkDeleteTimeEntries = async (
       success: true,
       message: `${data.timeEntryIds.length} time entries deleted successfully`,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getTimeEntries = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getTimeEntries = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
     const {
@@ -1294,19 +1221,11 @@ export const getTimeEntries = async (
         totalPages: Math.ceil(totalCount / limitNumber),
       },
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getAllProjectWithTasks = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getAllProjectWithTasks = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -1348,10 +1267,5 @@ export const getAllProjectWithTasks = async (
       })),
       message: "Projects with tasks and members retrieved successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);

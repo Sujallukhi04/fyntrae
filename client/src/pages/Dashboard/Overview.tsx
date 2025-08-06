@@ -37,6 +37,7 @@ import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import { toast } from "sonner";
 import { ReportModal } from "@/components/report/AddEditReport";
 import useReport from "@/hooks/useReport";
+import { useOrganization } from "@/providers/OrganizationProvider";
 
 // Grouping options with icons
 const groupOptions = [
@@ -57,6 +58,7 @@ const Overview = () => {
     fetchTags,
     fetchGroupedSummary,
   } = useTimesummary();
+  const { organization } = useOrganization();
 
   const today = new Date();
   const lastWeek = new Date();
@@ -373,6 +375,7 @@ const Overview = () => {
               groupedData={groupData?.grouped_data || []}
               groupBy1={groupBy1}
               groupBy2={groupBy2}
+              currncy={organization?.currency || "USD"}
             />
           </div>
 

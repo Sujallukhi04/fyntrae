@@ -1,12 +1,9 @@
 import { z } from "zod";
+
 export const createProjectSchema = z
   .object({
-    name: z
-      .string({ required_error: "Project name is required" })
-      .min(1, "Project name cannot be empty"),
-    color: z
-      .string({ required_error: "Project color is required" })
-      .min(1, "Project color cannot be empty"),
+    name: z.string().min(1, "Project name cannot be empty"),
+    color: z.string().min(1, "Project color cannot be empty"),
     billable: z.boolean({
       required_error: "Please specify if the project is billable",
     }),
@@ -34,16 +31,12 @@ export const createProjectSchema = z
   );
 
 export const addProjectMemberSchema = z.object({
-  memberId: z
-    .string({ required_error: "Member ID is required" })
-    .min(1, "Member ID cannot be empty"),
+  memberId: z.string().cuid("Invalid member ID format"),
   billableRate: z.number().nullable().optional(),
 });
 
 export const createProjectTaskSchema = z.object({
-  name: z
-    .string({ required_error: "Task name is required" })
-    .min(1, "Task name cannot be empty"),
+  name: z.string().min(1, "Task name cannot be empty"),
   estimatedTime: z
     .number()
     .optional()
@@ -57,10 +50,13 @@ export const updateProjectMemberSchema = z.object({
 });
 
 export const updateTaskSchema = z.object({
-  name: z
-    .string({ required_error: "Task name is required" })
-    .min(1, "Task name cannot be empty"),
-  estimatedTime: z.number().optional(),
+  name: z.string().min(1, "Task name cannot be empty"),
+  estimatedTime: z
+    .number()
+    .optional()
+    .refine((val) => val === undefined || val >= 0, {
+      message: "Estimated time must be a non-negative number",
+    }),
 });
 
 export const updateTaskStatusSchema = z.object({

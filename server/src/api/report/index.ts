@@ -1,6 +1,6 @@
 import express from "express";
-import * as reportController from "../controller/reportController";
-import { protectRoute } from "../middleware/auth";
+import * as reportController from "./controller";
+import { protectRoute } from "../../middleware/auth";
 const router = express.Router();
 
 router.post("/:organizationId", protectRoute, reportController.createReport);

@@ -1,6 +1,6 @@
 import express from "express";
-import * as tagController from "../controller/tagController";
-import { protectRoute } from "../middleware/auth";
+import * as tagController from "./controller";
+import { protectRoute } from "../../middleware/auth";
 
 const router = express.Router();
 

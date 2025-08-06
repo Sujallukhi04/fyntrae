@@ -123,9 +123,8 @@ export interface TimeEntryGroupProps {
   groupedData?: GroupRow[];
   groupBy1?: string;
   groupBy2?: string;
+  currncy: string;
 }
-
-
 
 export interface Report {
   id: string;

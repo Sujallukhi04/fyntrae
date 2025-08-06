@@ -1,21 +1,18 @@
 import { Request, Response } from "express";
-import { loginSchema, signupSchema } from "../utils";
-import { ErrorHandler } from "../utils/errorHandler";
+import { loginSchema, signupSchema } from "../../schemas/auth";
+import { ErrorHandler } from "../../utils/errorHandler";
 import bcrypt from "bcryptjs";
-import { db } from "../prismaClient";
-import { generateToken } from "../utils/jwt";
+import { db } from "../../prismaClient";
+import { generateToken } from "../../utils/jwt";
 import { WeekStart } from "@prisma/client";
-import { getAuthUserData, getUserByEmail } from "../helper/user";
+import { getAuthUserData, getUserByEmail } from "../../helper/user";
+import { catchAsync } from "../../utils/catchAsync";
 
-export const login = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, password } = req.body;
+export const login = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const validatedData = loginSchema.parse(req.body);
 
-    const validatedData = loginSchema.safeParse({ email, password });
-    if (!validatedData.success) {
-      const messages = validatedData.error.errors.map((err) => err.message);
-      throw new ErrorHandler(messages.join(", "), 400);
-    }
+    const { email, password } = validatedData;
 
     const existingUser = await getUserByEmail(email);
     if (!existingUser) throw new ErrorHandler("User does not exist", 401);
@@ -94,23 +91,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           }
         : null,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const register = async (req: Request, res: Response): Promise<void> => {
-  try {
+export const register = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { name, email, password, weekStart = "monday" } = req.body;
 
-    const validatedData = signupSchema.safeParse({ name, email, password });
-    if (!validatedData.success) {
-      const messages = validatedData.error.errors.map((err) => err.message);
-      throw new ErrorHandler(messages.join(", "), 400);
-    }
+    const validatedData = signupSchema.parse({ name, email, password });
 
     const existingUser = await getUserByEmail(email);
     if (existingUser) throw new ErrorHandler("Email already exists", 400);
@@ -205,19 +193,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         role: "OWNER",
       },
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof Error ? 400 : 500
-    );
   }
-};
+);
 
-export const getAuthUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getAuthUser = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const user = req.user;
     if (!user) {
       throw new ErrorHandler("Unauthorized - User not found", 404);
@@ -228,10 +208,5 @@ export const getAuthUser = async (
       message: "User fetched successfully",
       user: currentUser,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof Error ? 400 : 500
-    );
   }
-};
+);

@@ -1,6 +1,6 @@
 import express from "express";
-import * as timeSummaryController from "../controller/timesummaryController";
-import { protectRoute } from "../middleware/auth";
+import * as timeSummaryController from "./controller";
+import { protectRoute } from "../../middleware/auth";
 
 const router = express.Router();
 

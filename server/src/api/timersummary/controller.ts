@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import { ErrorHandler } from "../utils/errorHandler";
-import { assertAPIPermission } from "../helper/organization";
-import { generateTimeSummaryGroupData } from "../helper/time";
+import { ErrorHandler } from "../../utils/errorHandler";
+import { assertAPIPermission } from "../../helper/organization";
+import { generateTimeSummaryGroupData } from "../../helper/time";
+import { catchAsync } from "../../utils/catchAsync";
 
 // export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
 //   const { organizationId } = req.params;
@@ -238,14 +239,14 @@ import { generateTimeSummaryGroupData } from "../helper/time";
 //   }
 // };
 
-export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
-  const { organizationId } = req.params;
-  const userId = req.user?.id;
+export const getTimeSummaryGrouped = catchAsync(
+  async (req: Request, res: Response) => {
+    const { organizationId } = req.params;
+    const userId = req.user?.id;
 
-  if (!userId || !organizationId)
-    throw new ErrorHandler("User ID and Organization ID are required", 400);
+    if (!userId || !organizationId)
+      throw new ErrorHandler("User ID and Organization ID are required", 400);
 
-  try {
     const member = await assertAPIPermission(
       userId,
       organizationId,
@@ -263,22 +264,17 @@ export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
     res.status(200).json({
       data: groupData,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof Error ? 500 : 400
-    );
   }
-};
+);
 
-export const exportTimeSummary = async (req: Request, res: Response) => {
-  const { organizationId } = req.params;
-  const userId = req.user?.id;
+export const exportTimeSummary = catchAsync(
+  async (req: Request, res: Response) => {
+    const { organizationId } = req.params;
+    const userId = req.user?.id;
 
-  if (!userId || !organizationId)
-    throw new ErrorHandler("User ID and Organization ID are required", 400);
+    if (!userId || !organizationId)
+      throw new ErrorHandler("User ID and Organization ID are required", 400);
 
-  try {
     // const filters = parseQueryFilters(req.query);
     // const reportData = await generateReportData(
     //   organizationId,
@@ -287,10 +283,5 @@ export const exportTimeSummary = async (req: Request, res: Response) => {
     //   member
     // );
     // res.json({ success: true, data: reportData });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof Error ? 500 : 500
-    );
   }
-};
+);

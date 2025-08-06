@@ -22,6 +22,7 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
   groupedData = [],
   groupBy1 = "projects",
   groupBy2 = "members",
+  currncy = "USD",
 }) => {
   const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -96,7 +97,9 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                         {formatDuration(group.seconds)}
                       </TableCell>
                       <TableCell className="text-sm  py-3">
-                        {group.cost || "--"}
+                        {typeof group.cost === "number" && group.cost > 0
+                          ? `${group.cost} ${currncy}`
+                          : "--"}
                       </TableCell>
                     </TableRow>
 
@@ -110,7 +113,9 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                             {formatDuration(sub.seconds)}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground py-3">
-                            {sub.cost || "--"}
+                            {typeof sub.cost === "number" && sub.cost > 0
+                              ? `${sub.cost} ${currncy}`
+                              : "--"}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -121,7 +126,11 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                 <TableRow className="bg-muted/30 font-semibold">
                   <TableCell>Total</TableCell>
                   <TableCell>{formatDuration(totalSeconds)}</TableCell>
-                  <TableCell>{totalCost || "--"}</TableCell>
+                  <TableCell>
+                    {typeof totalCost === "number" && totalCost > 0
+                      ? `${totalCost} ${currncy}`
+                      : "--"}
+                  </TableCell>
                 </TableRow>
               </>
             )}

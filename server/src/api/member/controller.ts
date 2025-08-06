@@ -1,38 +1,33 @@
-import { updateBillableRate } from "../helper/billableRate";
-import { emailTemplates, sendMail } from "../helper/mailer";
+import { updateBillableRate } from "../../helper/billableRate";
+import { emailTemplates, sendMail } from "../../helper/mailer";
 import {
   assertAPIPermission,
   hasPermission,
   isUserActiveMember,
   sendInvitationEmail,
   validateRoleChange,
-} from "../helper/organization";
-import { getUserByEmail } from "../helper/user";
-import { db } from "../prismaClient";
-import { inviteUserSchema, updateMemberRoleSchema } from "../utils";
-import { ErrorHandler } from "../utils/errorHandler";
+} from "../../helper/organization";
+import { getUserByEmail } from "../../helper/user";
+import { db } from "../../prismaClient";
+import {
+  inviteUserSchema,
+  updateMemberRoleSchema,
+} from "../../schemas/organization";
+import { catchAsync } from "../../utils/catchAsync";
+import { ErrorHandler } from "../../utils/errorHandler";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 
-const VALID_ROLES = ["OWNER", "ADMIN", "MANAGER", "EMPLOYEE"] as const;
-type ValidRole = (typeof VALID_ROLES)[number];
+export const inviteNewMember = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    const { organizationId } = req.params;
+    const { email, role } = req.body;
 
-export const inviteNewMember = async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const { organizationId } = req.params;
-  const { email, role } = req.body;
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
 
-  if (!userId) throw new ErrorHandler("User not authenticated", 401);
+    const validated = inviteUserSchema.parse({ email, role });
 
-  const validated = inviteUserSchema.safeParse({ email, role });
-  if (!validated.success)
-    throw new ErrorHandler(validated.error.errors[0].message, 400);
-
-  if (role && !VALID_ROLES.includes(role as ValidRole)) {
-    throw new ErrorHandler(`Invalid role.`, 400);
-  }
-
-  try {
     await assertAPIPermission(
       userId,
       organizationId,
@@ -158,15 +153,10 @@ export const inviteNewMember = async (req: Request, res: Response) => {
       message: "Invitation sent successfully",
       invitation,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const resendInvite = async (req: Request, res: Response) => {
+export const resendInvite = catchAsync(async (req: Request, res: Response) => {
   const { invitationId, organizationId } = req.params;
   const userId = req.user?.id;
 
@@ -179,112 +169,105 @@ export const resendInvite = async (req: Request, res: Response) => {
     );
   }
 
-  try {
-    await assertAPIPermission(
-      userId,
-      organizationId,
-      "ORGANIZATION",
-      "INVITE_MEMBERS"
-    );
+  await assertAPIPermission(
+    userId,
+    organizationId,
+    "ORGANIZATION",
+    "INVITE_MEMBERS"
+  );
 
-    const organization = await db.organizations.findUnique({
-      where: { id: organizationId },
-      select: { id: true, name: true, personalTeam: true },
-    });
+  const organization = await db.organizations.findUnique({
+    where: { id: organizationId },
+    select: { id: true, name: true, personalTeam: true },
+  });
 
-    if (!organization) {
-      throw new ErrorHandler("Organization not found", 404);
-    }
+  if (!organization) {
+    throw new ErrorHandler("Organization not found", 404);
+  }
 
-    const invitation = await db.organizationInvitation.findUnique({
-      where: { id: invitationId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-        expiresAt: true,
-        token: true,
-        lastReSentAt: true,
-        resendCount: true,
-      },
-    });
+  const invitation = await db.organizationInvitation.findUnique({
+    where: { id: invitationId },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      status: true,
+      expiresAt: true,
+      token: true,
+      lastReSentAt: true,
+      resendCount: true,
+    },
+  });
 
-    if (!invitation) {
-      throw new ErrorHandler("Invitation not found", 404);
-    }
+  if (!invitation) {
+    throw new ErrorHandler("Invitation not found", 404);
+  }
 
-    if (invitation.status === "PENDING" && invitation.expiresAt > new Date()) {
-      throw new ErrorHandler(
-        "This invitation is still pending and has not expired yet",
-        400
-      );
-    }
-
-    const updatedInvitation = await db.organizationInvitation.update({
-      where: { id: invitationId },
-      data: {
-        status: "PENDING",
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
-        token: uuidv4(),
-        resendCount: { increment: 1 },
-        lastReSentAt: new Date(),
-        updatedAt: new Date(),
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-        expiresAt: true,
-        token: true,
-      },
-    });
-
-    const inviteLink = `${process.env.FRONTEND_URL}/team-invite/${updatedInvitation.token}`;
-
-    try {
-      await sendInvitationEmail({
-        email: updatedInvitation.email,
-        inviterName: organization.name,
-        organizationName: organization.name,
-        inviteLink,
-        role: updatedInvitation.role,
-      });
-    } catch (emailError) {
-      // Revert the invitation status if email sending fails
-      await db.organizationInvitation.update({
-        where: { id: invitationId },
-        data: {
-          status: invitation.status,
-          expiresAt: invitation.expiresAt,
-          token: invitation.token,
-          lastReSentAt: invitation.lastReSentAt,
-          ...(invitation.resendCount > 0 && {
-            resendCount: { decrement: 1 },
-          }),
-        },
-      });
-      throw new ErrorHandler(
-        "Failed to resend invitation email. Please try again.",
-        500
-      );
-    }
-
-    res.status(200).json({
-      message: "Invitation resent successfully",
-      invitation: updatedInvitation,
-    });
-  } catch (error) {
+  if (invitation.status === "PENDING" && invitation.expiresAt > new Date()) {
     throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
+      "This invitation is still pending and has not expired yet",
+      400
     );
   }
-};
 
-export const reinviteInactiveMember = async (req: Request, res: Response) => {
+  const updatedInvitation = await db.organizationInvitation.update({
+    where: { id: invitationId },
+    data: {
+      status: "PENDING",
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+      token: uuidv4(),
+      resendCount: { increment: 1 },
+      lastReSentAt: new Date(),
+      updatedAt: new Date(),
+    },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      status: true,
+      expiresAt: true,
+      token: true,
+    },
+  });
+
+  const inviteLink = `${process.env.FRONTEND_URL}/team-invite/${updatedInvitation.token}`;
+
   try {
+    await sendInvitationEmail({
+      email: updatedInvitation.email,
+      inviterName: organization.name,
+      organizationName: organization.name,
+      inviteLink,
+      role: updatedInvitation.role,
+    });
+  } catch (emailError) {
+    // Revert the invitation status if email sending fails
+    await db.organizationInvitation.update({
+      where: { id: invitationId },
+      data: {
+        status: invitation.status,
+        expiresAt: invitation.expiresAt,
+        token: invitation.token,
+        lastReSentAt: invitation.lastReSentAt,
+        ...(invitation.resendCount > 0 && {
+          resendCount: { decrement: 1 },
+        }),
+      },
+    });
+    throw new ErrorHandler(
+      "Failed to resend invitation email. Please try again.",
+      500
+    );
+  }
+
+  res.status(200).json({
+    message: "Invitation resent successfully",
+    invitation: updatedInvitation,
+  });
+});
+
+export const reinviteInactiveMember = catchAsync(
+  async (req: Request, res: Response) => {
     const { memberId, organizationId } = req.params;
     const userId = req.user?.id;
     if (!userId) throw new ErrorHandler("User not authenticated", 401);
@@ -434,19 +417,11 @@ export const reinviteInactiveMember = async (req: Request, res: Response) => {
       message: "Reinvitation sent successfully",
       invitation,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const acceptInvitation = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const acceptInvitation = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { token } = req.params;
     const userId = req.user?.id;
 
@@ -560,19 +535,11 @@ export const acceptInvitation = async (
       organization: invitation.organization,
       inviter: invitation.inviter,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const updateMember = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateMember = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, memberId } = req.params;
     const userId = req.user?.id;
     const { role, billableRate } = req.body;
@@ -587,19 +554,10 @@ export const updateMember = async (
     }
 
     // Schema validation
-    const validatedData = updateMemberRoleSchema.safeParse({
+    const validatedData = updateMemberRoleSchema.parse({
       role,
       billableRate: billableRate,
     });
-
-    if (!validatedData.success) {
-      const messages = validatedData.error.errors[0].message;
-      throw new ErrorHandler(messages, 400);
-    }
-
-    if (role && !VALID_ROLES.includes(role as ValidRole)) {
-      throw new ErrorHandler(`Invalid role.`, 400);
-    }
 
     await assertAPIPermission(userId, organizationId, "MEMBER", "UPDATE");
 
@@ -679,19 +637,11 @@ export const updateMember = async (
       message: "Member updated successfully",
       member: getMember,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);
 
-export const transferOwnership = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const transferOwnership = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, newOwnerId } = req.params;
     const userId = req.user?.id;
 
@@ -785,10 +735,5 @@ export const transferOwnership = async (
         role: "OWNER",
       },
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      error instanceof ErrorHandler ? (error as any).statusCode : 500
-    );
   }
-};
+);

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ErrorHandler } from "../utils/errorHandler";
+import { ErrorHandler } from "../../utils/errorHandler";
 import {
   addProjectMemberSchema,
   createProjectSchema,
@@ -7,22 +7,18 @@ import {
   updateProjectMemberSchema,
   updateTaskSchema,
   updateTaskStatusSchema,
-} from "../schemas/project";
-import { db } from "../prismaClient";
+} from "../../schemas/project";
+import { db } from "../../prismaClient";
 import {
-  assertActivePermissionedMember,
   assertAPIPermission,
   assertProjectAccess,
   validateTaskInProject,
-} from "../helper/organization";
-import { Role } from "@prisma/client";
-import { updateBillableRate } from "../helper/billableRate";
+} from "../../helper/organization";
+import { updateBillableRate } from "../../helper/billableRate";
+import { catchAsync } from "../../utils/catchAsync";
 
-export const createProject = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const createProject = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { orgId } = req.params;
 
@@ -32,13 +28,9 @@ export const createProject = async (
     // Check permissions
     await assertAPIPermission(userId, orgId, "PROJECT", "CREATE");
 
-    const validated = createProjectSchema.safeParse(req.body);
-    if (!validated.success) {
-      const message = validated.error.errors[0].message;
-      throw new ErrorHandler(message, 400);
-    }
+    const validated = createProjectSchema.parse(req.body);
 
-    const data = validated.data;
+    const data = validated;
 
     const existingProject = await db.project.findFirst({
       where: { name: data.name, organizationId: orgId },
@@ -76,19 +68,11 @@ export const createProject = async (
     });
 
     res.status(201).json({ message: "Project created successfully", project });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getAllProjects = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getAllProjects = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { orgId } = req.params;
     const { page = 1, pageSize = 10, type = "active" } = req.query;
@@ -139,19 +123,11 @@ export const getAllProjects = async (
         totalPages: Math.ceil(total / size),
       },
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getProjectsByOrgId = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getProjectsByOrgId = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { projectId, orgId } = req.params;
     const userId = req.user?.id;
 
@@ -174,19 +150,11 @@ export const getProjectsByOrgId = async (
     if (!project) throw new ErrorHandler("Project not found", 404);
 
     res.status(200).json({ project });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const updateProject = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateProject = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { projectId, organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -197,13 +165,9 @@ export const updateProject = async (
     // Check permissions
     await assertProjectAccess(userId, organizationId, projectId, "UPDATE");
 
-    const validated = createProjectSchema.safeParse(req.body);
-    if (!validated.success) {
-      const message = validated.error.errors[0].message;
-      throw new ErrorHandler(message, 400);
-    }
+    const validated = createProjectSchema.parse(req.body);
 
-    const data = validated.data;
+    const data = validated;
 
     if (data.name) {
       const nameConflict = await db.project.findFirst({
@@ -269,19 +233,11 @@ export const updateProject = async (
       message: "Project updated successfully",
       project: getproject,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const archiveProject = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const archiveProject = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { projectId, organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -301,19 +257,11 @@ export const archiveProject = async (
     });
 
     res.status(200).json({ message: "Project archived successfully", project });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const unarchiveProject = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const unarchiveProject = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId } = req.params;
 
@@ -335,19 +283,11 @@ export const unarchiveProject = async (
     res
       .status(200)
       .json({ message: "Project unarchived successfully", project });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const deleteProject = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deleteProject = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { projectId, organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -391,45 +331,36 @@ export const deleteProject = async (
     res.status(200).json({
       message: "Project deleted successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getClientsByOrganizationId = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { organizationId } = req.params;
-  const userId = req.user?.id;
+export const getClientsByOrganizationId = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const { organizationId } = req.params;
+    const userId = req.user?.id;
 
-  if (!organizationId)
-    throw new ErrorHandler("Organization ID is required", 400);
-  if (!userId) throw new ErrorHandler("User not authenticated", 401);
+    if (!organizationId)
+      throw new ErrorHandler("Organization ID is required", 400);
+    if (!userId) throw new ErrorHandler("User not authenticated", 401);
 
-  await assertAPIPermission(userId, organizationId, "CLIENT", "VIEW");
+    await assertAPIPermission(userId, organizationId, "CLIENT", "VIEW");
 
-  const clients = await db.client.findMany({
-    where: { organizationId: organizationId },
-    select: {
-      id: true,
-      name: true,
-      archivedAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+    const clients = await db.client.findMany({
+      where: { organizationId: organizationId },
+      select: {
+        id: true,
+        name: true,
+        archivedAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-  res.status(200).json({ clients });
-};
+    res.status(200).json({ clients });
+  }
+);
 
-export const addProjectMember = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const addProjectMember = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId } = req.params;
 
@@ -448,12 +379,9 @@ export const addProjectMember = async (
       "MANAGE_MEMBERS"
     );
 
-    const validated = addProjectMemberSchema.safeParse(req.body);
-    if (!validated.success) {
-      throw new ErrorHandler(validated.error.errors[0].message, 400);
-    }
+    const validated = addProjectMemberSchema.parse(req.body);
 
-    const { memberId, billableRate } = validated.data;
+    const { memberId, billableRate } = validated;
 
     const member = await db.member.findFirst({
       where: {
@@ -544,19 +472,11 @@ export const addProjectMember = async (
       message: "Member added to project successfully",
       projectMember: getMember,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getProjectMembers = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getProjectMembers = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId } = req.params;
 
@@ -600,19 +520,11 @@ export const getProjectMembers = async (
     });
 
     res.status(200).json({ projectMembers });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const updateProjectMember = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateProjectMember = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId, memberId } = req.params;
 
@@ -631,12 +543,9 @@ export const updateProjectMember = async (
       "MANAGE_MEMBERS"
     );
 
-    const validated = updateProjectMemberSchema.safeParse(req.body);
-    if (!validated.success) {
-      throw new ErrorHandler(validated.error.errors[0].message, 400);
-    }
+    const validated = updateProjectMemberSchema.parse(req.body);
 
-    const { billableRate } = validated.data;
+    const { billableRate } = validated;
 
     const projectMember = await db.projectMember.update({
       where: {
@@ -705,19 +614,11 @@ export const updateProjectMember = async (
       message: "Project member updated successfully",
       projectMember: getMember,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const removeProjectMember = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const removeProjectMember = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId, memberId } = req.params;
 
@@ -763,19 +664,11 @@ export const removeProjectMember = async (
     res.status(200).json({
       message: "Member removed from project successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getMembersByOrganizationId = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getMembersByOrganizationId = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const { projectId } = req.query;
     const userId = req.user?.id;
@@ -831,19 +724,11 @@ export const getMembersByOrganizationId = async (
     });
 
     res.status(200).json({ members });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getProjectTasks = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getProjectTasks = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId } = req.params;
     const { status } = req.query;
@@ -873,19 +758,11 @@ export const getProjectTasks = async (
     });
 
     res.status(200).json({ tasks });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const createProjectTask = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const createProjectTask = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId } = req.params;
     if (!userId) throw new ErrorHandler("User not authenticated", 401);
@@ -898,13 +775,9 @@ export const createProjectTask = async (
     // Centralized project access check
     await assertProjectAccess(userId, organizationId, projectId, "ADD_TASKS");
 
-    const validated = createProjectTaskSchema.safeParse(req.body);
-    if (!validated.success) {
-      const message = validated.error.errors[0].message;
-      throw new ErrorHandler(message, 400);
-    }
+    const validated = createProjectTaskSchema.parse(req.body);
 
-    const { name, estimatedTime } = validated.data;
+    const { name, estimatedTime } = validated;
 
     const existingTask = await db.task.findFirst({
       where: {
@@ -932,19 +805,11 @@ export const createProjectTask = async (
       message: "Task created successfully",
       task,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const updateProjectTask = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateProjectTask = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId, taskId } = req.params;
 
@@ -955,12 +820,9 @@ export const updateProjectTask = async (
         400
       );
 
-    const validated = updateTaskSchema.safeParse(req.body);
-    if (!validated.success) {
-      throw new ErrorHandler(validated.error.errors[0].message, 400);
-    }
+    const validated = updateTaskSchema.parse(req.body);
 
-    const { name, estimatedTime } = validated.data;
+    const { name, estimatedTime } = validated;
 
     await assertProjectAccess(userId, organizationId, projectId, "ADD_TASKS");
 
@@ -997,19 +859,11 @@ export const updateProjectTask = async (
       message: "Task updated successfully",
       task: updatedTask,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const updateTaskStatus = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateTaskStatus = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { projectId, organizationId, taskId } = req.params;
 
@@ -1021,12 +875,9 @@ export const updateTaskStatus = async (
         400
       );
 
-    const validated = updateTaskStatusSchema.safeParse(req.body);
-    if (!validated.success) {
-      throw new ErrorHandler(validated.error.errors[0].message, 400);
-    }
+    const validated = updateTaskStatusSchema.parse(req.body);
 
-    const { status } = validated.data;
+    const { status } = validated;
 
     await assertProjectAccess(userId, organizationId, projectId, "ADD_TASKS");
 
@@ -1041,19 +892,11 @@ export const updateTaskStatus = async (
       message: `Task marked as ${status.toLowerCase()}`,
       task: updatedTask,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const deleteTask = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deleteTask = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const { taskId, projectId, organizationId } = req.params;
 
@@ -1077,10 +920,5 @@ export const deleteTask = async (
     res.status(200).json({
       message: "Task deleted successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);

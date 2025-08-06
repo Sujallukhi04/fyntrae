@@ -3,15 +3,12 @@ import { NextFunction, Request, Response } from "express";
 import { TokenPayload } from "../types";
 import { ErrorHandler } from "../utils/errorHandler";
 import { getUserById } from "../helper/user";
+import { catchAsync } from "../utils/catchAsync";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export const protectRoute = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
+export const protectRoute = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const token = req.cookies.token;
 
     if (!token) {
@@ -34,10 +31,5 @@ export const protectRoute = async (
     req.user = user;
 
     next();
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Unauthorized - Invalid token",
-      404
-    );
   }
-};
+);

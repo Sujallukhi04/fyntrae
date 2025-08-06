@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import { ErrorHandler } from "../utils/errorHandler";
-import { assertAPIPermission } from "../helper/organization";
-import { db } from "../prismaClient";
+import { ErrorHandler } from "../../utils/errorHandler";
+import { assertAPIPermission } from "../../helper/organization";
+import { db } from "../../prismaClient";
+import { catchAsync } from "../../utils/catchAsync";
 
-export const createTag = async (req: Request, res: Response): Promise<void> => {
-  try {
+export const createTag = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const { name } = req.body;
     const userId = req.user?.id;
@@ -47,19 +48,11 @@ export const createTag = async (req: Request, res: Response): Promise<void> => {
       message: "Tag created successfully",
       tag,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getAllTags = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getAllTags = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -86,16 +79,11 @@ export const getAllTags = async (
       message: "Tags retrieved successfully",
       tags,
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const deleteTag = async (req: Request, res: Response): Promise<void> => {
-  try {
+export const deleteTag = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, tagId } = req.params;
     const userId = req.user?.id;
     if (!organizationId || !tagId || !userId) {
@@ -142,10 +130,5 @@ export const deleteTag = async (req: Request, res: Response): Promise<void> => {
       success: true,
       message: "Tag deleted successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);

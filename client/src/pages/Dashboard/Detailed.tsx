@@ -22,7 +22,7 @@ import {
   Filter,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
@@ -109,6 +109,44 @@ const Detailed = () => {
   const allTasks = projectsWithTasks.flatMap((p) =>
     (p.tasks || []).map((t) => ({ ...t, projectId: p.id }))
   );
+
+  const refreshTimeEntries = useCallback(async () => {
+    if (!user?.currentTeamId) return;
+
+    const formattedDate = format(date, "yyyy-MM-dd");
+    const pageSize = timeEntriesPagination?.pageSize || 10;
+    const totalEntries = timeEntriesPagination?.total || 0;
+    const currentEntries = timeEntries.length;
+
+    if (currentEntries === 0 || totalEntries > pageSize * currentPage) {
+      await getTimeEntries(user.currentTeamId, {
+        page: currentPage,
+        limit: pageSize,
+        date: formattedDate,
+        all: true,
+        projectIds,
+        memberIds,
+        clientIds,
+        tagIds,
+        taskIds,
+        billable,
+      });
+    }
+  }, [
+    user?.currentTeamId,
+    date,
+    timeEntriesPagination?.pageSize,
+    timeEntriesPagination?.total,
+    timeEntries.length,
+    currentPage,
+    getTimeEntries,
+    projectIds,
+    memberIds,
+    clientIds,
+    tagIds,
+    taskIds,
+    billable,
+  ]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -254,7 +292,15 @@ const Detailed = () => {
 
     try {
       await deleteTimeEntry(user.currentTeamId, entryId);
+
       setSelectedEntries((prev) => prev.filter((id) => id !== entryId));
+
+      if (timeEntries.length === 1 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        setCurrentPage(newPage);
+      }
+
+      await refreshTimeEntries();
     } catch (error) {
       console.error("Failed to delete time entry:", error);
     }
@@ -266,6 +312,15 @@ const Detailed = () => {
     try {
       await bulkDeleteTimeEntries(user.currentTeamId, selectedEntries);
       setSelectedEntries([]);
+
+      const currentTimeentrys = timeEntries.length - selectedEntries.length;
+
+      if (currentTimeentrys === 0 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        setCurrentPage(newPage);
+      }
+
+      await refreshTimeEntries();
     } catch (error) {
       console.error("Failed to delete time entries:", error);
     }

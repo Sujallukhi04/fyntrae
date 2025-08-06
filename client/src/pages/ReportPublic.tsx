@@ -86,6 +86,7 @@ const ReportPublic = () => {
               groupedData={data.grouped_data || []}
               groupBy1={properties.group.split(",")[0] || "projects"}
               groupBy2={properties.group.split(",")[1] || "members"}
+              currncy={reportData.currency || "USD"}
             />
           </div>
 

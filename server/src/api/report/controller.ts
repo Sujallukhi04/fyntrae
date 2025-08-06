@@ -1,19 +1,17 @@
 import { Request, Response } from "express";
-import { ErrorHandler } from "../utils/errorHandler";
-import { assertAPIPermission } from "../helper/organization";
+import { ErrorHandler } from "../../utils/errorHandler";
+import { assertAPIPermission } from "../../helper/organization";
 import {
   generateReportData,
   generateTimeSummaryGroupData,
-} from "../helper/time";
+} from "../../helper/time";
 import crypto from "crypto";
-import { db } from "../prismaClient";
-import { createReportSchema, updateReportSchema } from "../schemas/report";
+import { db } from "../../prismaClient";
+import { createReportSchema, updateReportSchema } from "../../schemas/report";
+import { catchAsync } from "../../utils/catchAsync";
 
-export const createReport = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const createReport = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId } = req.params;
     const userId = req.user?.id;
 
@@ -21,35 +19,7 @@ export const createReport = async (
       throw new ErrorHandler("User ID and Organization ID are required", 400);
     }
 
-    const validatedData = createReportSchema.safeParse(req.body);
-
-    if (!validatedData.success) {
-      throw new ErrorHandler(validatedData.error.errors[0].message, 400);
-    }
-
-    // const member = await assertAPIPermission(
-    //   userId,
-    //   organizationId,
-    //   "REPORTS",
-    //   "CREATE"
-    // );
-
-    // const reportData = await generateReportData(
-    //   organizationId,
-    //   {
-    //     startDate,
-    //     endDate,
-    //     tags,
-    //     clients,
-    //     members,
-    //     tasks,
-    //     projects,
-    //     billable,
-    //     groups,
-    //   },
-    //   userId,
-    //   member
-    // );
+    const validatedData = createReportSchema.parse(req.body);
 
     const {
       name,
@@ -65,7 +35,7 @@ export const createReport = async (
       tasks,
       projects,
       tags,
-    } = validatedData.data;
+    } = validatedData;
 
     const shareSecret = isPublic ? crypto.randomUUID() : null;
 
@@ -96,31 +66,23 @@ export const createReport = async (
       data: report,
       message: "Report created successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getReports = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { organizationId } = req.params;
-  const { page = "1", limit = "10" } = req.query;
+export const getReports = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const { organizationId } = req.params;
+    const { page = "1", limit = "10" } = req.query;
 
-  const userId = req.user?.id;
-  if (!userId) {
-    throw new ErrorHandler("User not authenticated", 401);
-  }
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new ErrorHandler("User not authenticated", 401);
+    }
 
-  const pageNumber = parseInt(page as string, 10);
-  const pageSize = parseInt(limit as string, 10);
-  const skip = (pageNumber - 1) * pageSize;
+    const pageNumber = parseInt(page as string, 10);
+    const pageSize = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * pageSize;
 
-  try {
     const [reports, totalCount] = await Promise.all([
       db.report.findMany({
         where: {
@@ -152,19 +114,11 @@ export const getReports = async (
         totalPages: Math.ceil(totalCount / pageSize),
       },
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const getPublicReportById = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const getPublicReportById = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { publicSecret } = req.params;
 
     if (!publicSecret) {
@@ -272,19 +226,11 @@ export const getPublicReportById = async (
       data: responseData,
       message: "Public report retrieved successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const updateReport = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const updateReport = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, reportId } = req.params;
     const userId = req.user?.id;
 
@@ -295,11 +241,7 @@ export const updateReport = async (
       );
     }
 
-    const validatedData = updateReportSchema.safeParse(req.body);
-
-    if (!validatedData.success) {
-      throw new ErrorHandler(validatedData.error.errors[0].message, 400);
-    }
+    const validatedData = updateReportSchema.parse(req.body);
 
     const member = await assertAPIPermission(
       userId,
@@ -308,7 +250,7 @@ export const updateReport = async (
       "CREATE"
     );
 
-    const { name, description, isPublic, publicUntil } = validatedData.data;
+    const { name, description, isPublic, publicUntil } = validatedData;
 
     const existingReport = await db.report.findUnique({
       where: { id: reportId },
@@ -343,19 +285,11 @@ export const updateReport = async (
       data: report,
       message: "Report updated successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);
 
-export const deleteReport = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
+export const deleteReport = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const { organizationId, reportId } = req.params;
     const userId = req.user?.id;
 
@@ -379,10 +313,5 @@ export const deleteReport = async (
       success: true,
       message: "Report deleted successfully",
     });
-  } catch (error) {
-    throw new ErrorHandler(
-      error instanceof Error ? error.message : "Internal Server Error",
-      500
-    );
   }
-};
+);

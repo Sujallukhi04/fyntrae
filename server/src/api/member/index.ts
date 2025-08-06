@@ -1,6 +1,6 @@
 import express from "express";
-import { protectRoute } from "../middleware/auth";
-import * as memberController from "../controller/memberController";
+import { protectRoute } from "../../middleware/auth";
+import * as memberController from "./controller";
 
 const router = express.Router();
 

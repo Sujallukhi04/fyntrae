@@ -1,11 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
+import { ZodError } from "zod";
 
 class ErrorHandler extends Error {
   statusCode: number;
-
-  constructor(message: string | string[], statusCode: number) {
-    super(Array.isArray(message) ? message.join(", ") : message);
+  constructor(message: string | string[], statusCode: number = 500) {
+    super(
+      Array.isArray(message)
+        ? message.join(", ")
+        : message || "Something went wrong"
+    );
     this.statusCode = statusCode;
     Error.captureStackTrace(this, this.constructor);
   }
@@ -17,40 +21,51 @@ const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  err.statusCode = err.statusCode || 500;
-  err.message = err.message || "Internal Server Error";
+  let customError = err;
 
+  if (err instanceof ZodError) {
+    customError = new ErrorHandler(err.errors[0].message, 400);
+  }
+
+  // Prisma known request errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === "P2002") {
-      const target = (err.meta?.target as string[])?.join(", ");
-      err = new ErrorHandler(`Duplicate field value: ${target}`, 400);
-    }
-
-    if (err.code === "P2003") {
-      err = new ErrorHandler(`Foreign key constraint failed`, 400);
-    }
-
-    if (err.code === "P2025") {
-      err = new ErrorHandler(`Record not found`, 404);
+    switch (err.code) {
+      case "P2002":
+        const target = (err.meta?.target as string[])?.join(", ");
+        customError = new ErrorHandler(`Duplicate field value: ${target}`, 400);
+        break;
+      case "P2003":
+        customError = new ErrorHandler(`Foreign key constraint failed`, 400);
+        break;
+      case "P2025":
+        customError = new ErrorHandler(`Record not found`, 404);
+        break;
     }
   }
 
+  // Prisma validation error
   if (err instanceof Prisma.PrismaClientValidationError) {
-    err = new ErrorHandler(`Validation failed: ${err.message}`, 400);
+    customError = new ErrorHandler(`Validation failed: ${err.message}`, 400);
   }
 
+  // Prisma unknown errors
   if (err instanceof Prisma.PrismaClientUnknownRequestError) {
-    err = new ErrorHandler(`Something went wrong with the database.`, 500);
+    customError = new ErrorHandler(`Unknown database error occurred`, 500);
   }
 
   if (err instanceof TypeError) {
-    err = new ErrorHandler(`Type Error: ${err.message}`, 500);
+    customError = new ErrorHandler(`Type Error: ${err.message}`, 500);
   }
 
-  res.status(err.statusCode).json({
+  const statusCode = customError.statusCode || 500;
+  const message = customError.message || "Internal Server Error";
+
+  res.status(statusCode).json({
     success: false,
-    message: err.message,
+    message,
+    ...(process.env.NODE_ENV !== "production" && {
+      stack: customError.stack,
+    }),
   });
 };
-
 export { ErrorHandler, errorHandler };
