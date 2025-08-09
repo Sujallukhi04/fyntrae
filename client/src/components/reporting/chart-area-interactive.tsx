@@ -28,7 +28,7 @@ import type { GroupRow } from "@/types/project";
 const chartConfig = {
   desktop: {
     label: "Desktop",
-    color: "#2563eb",
+    color: "#2563eb", 
   },
 };
 
