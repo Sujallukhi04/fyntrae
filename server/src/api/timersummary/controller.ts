@@ -3,6 +3,8 @@ import { ErrorHandler } from "../../utils/errorHandler";
 import { assertAPIPermission } from "../../helper/organization";
 import { generateTimeSummaryGroupData } from "../../helper/time";
 import { catchAsync } from "../../utils/catchAsync";
+import { exportTimeSummarySchema } from "../../schemas/time";
+import { db } from "../../prismaClient";
 
 // export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
 //   const { organizationId } = req.params;
@@ -275,13 +277,102 @@ export const exportTimeSummary = catchAsync(
     if (!userId || !organizationId)
       throw new ErrorHandler("User ID and Organization ID are required", 400);
 
-    // const filters = parseQueryFilters(req.query);
-    // const reportData = await generateReportData(
-    //   organizationId,
-    //   filters,
-    //   userId,
-    //   member
-    // );
-    // res.json({ success: true, data: reportData });
+    await assertAPIPermission(userId, organizationId, "TIME_SUMMARY", "EXPORT");
+
+    const validatedData = exportTimeSummarySchema.parse(req.query);
+
+    const {
+      groups,
+      startDate,
+      endDate,
+      members,
+      billable,
+      clients,
+      tasks,
+      projects,
+      tags,
+    } = validatedData;
+
+    const reportGroupData = await generateTimeSummaryGroupData(
+      organizationId,
+      {
+        startDate: startDate,
+        endDate: endDate,
+        tags: tags || undefined,
+        clients: clients || undefined,
+        members: members || undefined,
+        tasks: tasks || undefined,
+        projects: projects || undefined,
+        billable: billable !== undefined ? billable.toString() : undefined,
+        groups: groups || undefined,
+      },
+      null, // userId is null for public reports
+      null // member is null for public reports
+    );
+
+    const historyData = await generateTimeSummaryGroupData(
+      organizationId,
+      {
+        startDate: startDate,
+        endDate: endDate,
+        tags: tags || undefined,
+        clients: clients || undefined,
+        members: members || undefined,
+        tasks: tasks || undefined,
+        projects: projects || undefined,
+        billable: billable !== undefined ? billable.toString() : undefined,
+        groups: "day",
+      },
+      null,
+      null
+    );
+
+    const organization = await db.organizations.findUnique({
+      where: { id: organizationId },
+      select: { currency: true },
+    });
+
+    if (!organization) {
+      throw new ErrorHandler("Organization not found", 404);
+    }
+
+    const responseData = {
+      name: "report",
+      description: "",
+
+      currency: organization.currency,
+      properties: {
+        group: groups,
+        history_group: "day",
+        start: startDate
+          ? new Date(startDate + "T18:30:00Z").toISOString()
+          : null,
+        end: endDate ? new Date(endDate + "T18:29:59Z").toISOString() : null,
+      },
+      data: {
+        seconds: reportGroupData.seconds,
+        cost: reportGroupData.cost,
+        grouped_type: reportGroupData.grouped_type,
+        grouped_data:
+          reportGroupData.grouped_data?.map((item: any, index: number) => ({
+            ...item,
+          })) || [],
+      },
+      history_data: {
+        seconds: historyData.seconds,
+        cost: historyData.cost,
+        grouped_type: historyData.grouped_type,
+        grouped_data:
+          historyData.grouped_data?.map((item: any) => ({
+            ...item,
+          })) || [],
+      },
+    };
+
+    res.json({
+      success: true,
+      data: responseData,
+      message: "report retrieved successfully",
+    });
   }
 );

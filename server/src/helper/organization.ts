@@ -65,7 +65,6 @@ export const API_PERMISSIONS = {
   },
   REPORTS: {
     CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER],
-   
   },
 };
 

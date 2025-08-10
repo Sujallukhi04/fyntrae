@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChartNoAxesColumnDecreasing,
   ChevronRight,
@@ -30,7 +30,7 @@ import useTimesummary from "@/hooks/useTimesummary";
 import { useAuth } from "@/providers/AuthProvider";
 
 import type { Client, Member } from "@/types/oraganization";
-import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
+import type { ProjectWithTasks, Report, Tag as TagType } from "@/types/project";
 import { format } from "date-fns";
 import ChartFilterModal from "@/components/reporting/ChartFilterModal";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
@@ -38,6 +38,13 @@ import { toast } from "sonner";
 import { ReportModal } from "@/components/report/AddEditReport";
 import useReport from "@/hooks/useReport";
 import { useOrganization } from "@/providers/OrganizationProvider";
+import TimeTrackingPdfButton from "@/components/pdf/ReportPDF";
+import { DownloadModal } from "@/components/modals/shared/DownloadModal";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Grouping options with icons
 const groupOptions = [
@@ -57,6 +64,7 @@ const Overview = () => {
     fetchProjectWiTasks,
     fetchTags,
     fetchGroupedSummary,
+    fetchReport,
   } = useTimesummary();
   const { organization } = useOrganization();
 
@@ -88,6 +96,15 @@ const Overview = () => {
   const { role } = useOrgAccess();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const { createReport, reportLoading } = useReport();
+
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [exportData, setExportData] = useState<any>(null);
+
+  const [selectedExportType, setSelectedExportType] = useState<string | null>(
+    null
+  );
+
+  const appRef = useRef<{ generatePdf: () => Promise<void> }>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -263,6 +280,56 @@ const Overview = () => {
     }
   };
 
+  const handleExportOption = async (type: string) => {
+    if (!user?.currentTeamId || !date.from || !date.to) return;
+
+    setSelectedExportType(type);
+    setIsDownloadModalOpen(true);
+
+    try {
+      const response = await fetchReport(user.currentTeamId, {
+        startDate: format(date.from, "yyyy-MM-dd"),
+        endDate: format(date.to, "yyyy-MM-dd"),
+        projectIds,
+        memberIds,
+        clientIds,
+        tagIds,
+        billable,
+        taskIds,
+        groups: `${groupBy1},${groupBy2}`,
+      });
+
+      setExportData(response);
+    } catch (error) {
+      setIsDownloadModalOpen(false);
+      toast.error("Failed to export data.");
+    }
+  };
+
+  const handleDownload = () => {
+    if (!exportData) return;
+
+    switch (selectedExportType) {
+      case "pdf":
+        appRef.current?.generatePdf();
+        break;
+      case "excel":
+        // Implement downloadExcel(exportData)
+        console.log("Downloading Excel...");
+        break;
+      case "csv":
+        // Implement downloadCSV(exportData)
+        console.log("Downloading CSV...");
+        break;
+      case "ods":
+        // Implement downloadODS(exportData)
+        console.log("Downloading ODS...");
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <div className="flex flex-col gap-3 pt-1">
@@ -277,10 +344,34 @@ const Overview = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <Button className="w-full md:w-auto" variant="outline">
-              <Download className="h-5 w-5 mr-2" />
-              Export
-            </Button>
+            {exportData && (
+              <TimeTrackingPdfButton
+                ref={appRef}
+                timeTrackingData={exportData}
+              />
+            )}
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full md:w-auto">
+                  <Download className="h-5 w-5 mr-2" />
+                  Export
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-38 p-1 flex flex-col space-y-1">
+                {["PDF", "Excel", "CSV", "ODS"].map((type) => (
+                  <Button
+                    key={type}
+                    variant="ghost"
+                    className="justify-start w-full"
+                    onClick={() => handleExportOption(type.toLowerCase())}
+                  >
+                    Export as {type}
+                  </Button>
+                ))}
+              </PopoverContent>
+            </Popover>
+
             {role !== "EMPLOYEE" && (
               <Button
                 className="w-full md:w-auto"
@@ -418,6 +509,16 @@ const Overview = () => {
           setBillable(billable);
           setTaskIds(taskIds);
         }}
+      />
+
+      <DownloadModal
+        isOpen={isDownloadModalOpen}
+        onClose={() => {
+          setIsDownloadModalOpen(false);
+          setExportData(null);
+        }}
+        isLoading={loading.report}
+        onDownload={handleDownload}
       />
 
       <ReportModal

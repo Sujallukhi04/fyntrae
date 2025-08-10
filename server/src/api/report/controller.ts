@@ -19,6 +19,8 @@ export const createReport = catchAsync(
       throw new ErrorHandler("User ID and Organization ID are required", 400);
     }
 
+    await assertAPIPermission(userId, organizationId, "REPORTS", "CREATE");
+
     const validatedData = createReportSchema.parse(req.body);
 
     const {
@@ -78,6 +80,8 @@ export const getReports = catchAsync(
     if (!userId) {
       throw new ErrorHandler("User not authenticated", 401);
     }
+
+    await assertAPIPermission(userId, organizationId, "REPORTS", "CREATE");
 
     const pageNumber = parseInt(page as string, 10);
     const pageSize = parseInt(limit as string, 10);

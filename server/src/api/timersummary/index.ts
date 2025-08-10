@@ -11,7 +11,7 @@ router.get(
 );
 
 router.get(
-  "/:organizationId/export",
+  "/export/:organizationId",
   protectRoute,
   timeSummaryController.exportTimeSummary
 );

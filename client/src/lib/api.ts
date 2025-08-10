@@ -628,6 +628,41 @@ export const timeSummaryApi = {
     );
     return response.data;
   },
+  getReport: async (
+    organizationId: string,
+    params?: {
+      startDate?: string;
+      endDate?: string;
+      projectIds?: string[];
+      memberIds?: string[];
+      taskIds?: string[];
+      billable?: boolean;
+      tagIds?: string[];
+      clientIds?: string[];
+      tasks?: string[];
+      groups?: string | string[];
+    }
+  ) => {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.projectIds)
+      queryParams.append("projects", params.projectIds.join(","));
+    if (params?.memberIds)
+      queryParams.append("members", params.memberIds.join(","));
+    if (params?.taskIds) queryParams.append("tasks", params.taskIds.join(","));
+    if (params?.billable !== undefined)
+      queryParams.append("billable", String(params.billable));
+    if (params?.tagIds) queryParams.append("tags", params.tagIds.join(","));
+    if (params?.clientIds)
+      queryParams.append("clients", params.clientIds.join(","));
+    if (params?.groups) queryParams.append("groups", String(params.groups));
+
+    const response = await axiosInstance.get(
+      `/timesummary/export/${organizationId}?${queryParams.toString()}`
+    );
+    return response.data;
+  },
 };
 
 export const reportApi = {
