@@ -302,7 +302,7 @@ const Overview = () => {
       setExportData(response);
     } catch (error) {
       setIsDownloadModalOpen(false);
-      toast.error("Failed to export data.");
+      setExportData(null);
     }
   };
 

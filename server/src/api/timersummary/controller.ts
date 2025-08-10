@@ -277,7 +277,12 @@ export const exportTimeSummary = catchAsync(
     if (!userId || !organizationId)
       throw new ErrorHandler("User ID and Organization ID are required", 400);
 
-    await assertAPIPermission(userId, organizationId, "TIME_SUMMARY", "EXPORT");
+    const member = await assertAPIPermission(
+      userId,
+      organizationId,
+      "TIME_SUMMARY",
+      "EXPORT"
+    );
 
     const validatedData = exportTimeSummarySchema.parse(req.query);
 
@@ -306,8 +311,8 @@ export const exportTimeSummary = catchAsync(
         billable: billable !== undefined ? billable.toString() : undefined,
         groups: groups || undefined,
       },
-      null, // userId is null for public reports
-      null // member is null for public reports
+      userId,
+      member
     );
 
     const historyData = await generateTimeSummaryGroupData(
@@ -323,8 +328,8 @@ export const exportTimeSummary = catchAsync(
         billable: billable !== undefined ? billable.toString() : undefined,
         groups: "day",
       },
-      null,
-      null
+      userId,
+      member
     );
 
     const organization = await db.organizations.findUnique({
