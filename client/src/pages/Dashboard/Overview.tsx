@@ -38,13 +38,14 @@ import { toast } from "sonner";
 import { ReportModal } from "@/components/report/AddEditReport";
 import useReport from "@/hooks/useReport";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import TimeTrackingPdfButton from "@/components/pdf/ReportPDF";
+import TimeTrackingPdfButton from "@/components/export/ReportPDF";
 import { DownloadModal } from "@/components/modals/shared/DownloadModal";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { downloadCSV, downloadODS, downloadXLSX } from "@/utils/exportUtils";
 
 // Grouping options with icons
 const groupOptions = [
@@ -284,46 +285,62 @@ const Overview = () => {
     if (!user?.currentTeamId || !date.from || !date.to) return;
 
     setSelectedExportType(type);
-    setIsDownloadModalOpen(true);
 
-    try {
-      const response = await fetchReport(user.currentTeamId, {
-        startDate: format(date.from, "yyyy-MM-dd"),
-        endDate: format(date.to, "yyyy-MM-dd"),
-        projectIds,
-        memberIds,
-        clientIds,
-        tagIds,
-        billable,
-        taskIds,
-        groups: `${groupBy1},${groupBy2}`,
-      });
+    if (type === "pdf") {
+      try {
+        const response = await fetchReport(user.currentTeamId, {
+          startDate: format(date.from, "yyyy-MM-dd"),
+          endDate: format(date.to, "yyyy-MM-dd"),
+          projectIds,
+          memberIds,
+          clientIds,
+          tagIds,
+          billable,
+          taskIds,
+          groups: `${groupBy1},${groupBy2}`,
+        });
 
-      setExportData(response);
-    } catch (error) {
-      setIsDownloadModalOpen(false);
-      setExportData(null);
+        setExportData(response);
+        setIsDownloadModalOpen(true);
+      } catch (error) {
+        setIsDownloadModalOpen(false);
+        setExportData(null);
+      }
+    } else {
+      if (!groupData) {
+        toast.error("No data available for export.");
+        setExportData(null);
+        setIsDownloadModalOpen(false);
+        return;
+      }
+      setExportData(groupData);
+      setIsDownloadModalOpen(true);
     }
   };
 
   const handleDownload = () => {
-    if (!exportData) return;
+    if (!exportData || !exportData.grouped_data) {
+      toast.error("No data available to download.");
+      return;
+    }
+
+    const clientHeader = exportData.grouped_type || "Group 1";
+    const taskHeader = exportData.grouped_data?.[0]?.grouped_type || "Group 2";
+
+    const groupedData = exportData.grouped_data;
 
     switch (selectedExportType) {
       case "pdf":
         appRef.current?.generatePdf();
         break;
       case "excel":
-        // Implement downloadExcel(exportData)
-        console.log("Downloading Excel...");
+        downloadXLSX(groupedData, clientHeader, taskHeader);
         break;
       case "csv":
-        // Implement downloadCSV(exportData)
-        console.log("Downloading CSV...");
+        downloadCSV(groupedData, clientHeader, taskHeader);
         break;
       case "ods":
-        // Implement downloadODS(exportData)
-        console.log("Downloading ODS...");
+        downloadODS(groupedData, clientHeader, taskHeader);
         break;
       default:
         break;
@@ -344,7 +361,7 @@ const Overview = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            {exportData && (
+            {exportData && selectedExportType === "pdf" && (
               <TimeTrackingPdfButton
                 ref={appRef}
                 timeTrackingData={exportData}

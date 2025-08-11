@@ -29,8 +29,8 @@ export function getValueByGroupKey(
     case "day": {
       if (!entry.start) return null;
       const d = new Date(entry.start);
-      d.setMinutes(d.getMinutes() - offset);
-      return d.toISOString().slice(0, 10);
+      const adjusted = new Date(d.getTime() + offset * 60 * 1000);
+      return adjusted.toISOString().split("T")[0];
     }
     case "members":
       return entry.memberId || null;
@@ -65,13 +65,18 @@ export const generateColors = (count: number) => {
   return Array.from({ length: count }, (_, i) => colors[i % colors.length]);
 };
 
-export function getNameByGroupKey(entry: any, key: string): string | null {
+export function getNameByGroupKey(
+  entry: any,
+  key: string,
+  offset = 0
+): string | null {
   switch (key) {
     case "date":
     case "day": {
       if (!entry.start) return null;
       const d = new Date(entry.start);
-      return d.toLocaleDateString("en-US", {
+      const adjusted = new Date(d.getTime() + offset * 60 * 1000);
+      return adjusted.toLocaleDateString("en-US", {
         weekday: "short",
         year: "numeric",
         month: "short",
@@ -118,7 +123,7 @@ export function groupByMultiple(
     const name =
       key === "null"
         ? "No " + currentKey.charAt(0).toUpperCase() + currentKey.slice(1, -1)
-        : getNameByGroupKey(groupEntries[0], currentKey);
+        : getNameByGroupKey(groupEntries[0], currentKey, offset);
     return {
       key,
       name,
@@ -595,12 +600,14 @@ export async function generateTimeSummaryGroupData(
   if (startDate && endDate) {
     const { startUTC } = getLocalDateRangeInUTC(startDate, offset);
     const { endUTC } = getLocalDateRangeInUTC(endDate, offset);
+
     utcRange = {
       start: {
         gte: startUTC,
         lt: endUTC,
       },
     };
+    console.log(startUTC, endUTC);
   }
 
   // Parse filters
@@ -663,7 +670,6 @@ export async function generateTimeSummaryGroupData(
     where.project = { clientId: { in: clientIds } };
   }
 
-  // Fetch time entries
   const timeEntries = await db.timeEntry.findMany({
     where,
     select: {

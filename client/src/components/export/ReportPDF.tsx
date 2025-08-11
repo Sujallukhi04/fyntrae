@@ -114,7 +114,6 @@ Chart.register(externalLabelsPlugin);
 
 const ReportPdf = forwardRef(
   ({ timeTrackingData }: { timeTrackingData: TimeTrackingData }, ref) => {
-    
     useImperativeHandle(ref, () => ({
       generatePdf,
     }));
@@ -588,7 +587,7 @@ const ReportPdf = forwardRef(
       } catch (err) {
         console.error("Failed to generate PDF", err);
         alert("Failed to generate PDF. See console for details.");
-      } 
+      }
     };
 
     return (
