@@ -17,7 +17,8 @@ interface TimeEntry {
 
 export function generateCustomReportPDF(
   timeEntries: TimeEntry[],
-  date: string
+  date: string,
+  currency: string = "USD"
 ): void {
   const doc = new jsPDF();
 
@@ -35,7 +36,7 @@ export function generateCustomReportPDF(
   const totalSeconds = timeEntries.reduce((acc, item) => acc + item.seconds, 0);
   const totalCost = timeEntries.reduce((acc, item) => acc + item.cost, 0);
   const durationStr = formatDuration(totalSeconds);
-  const costStr = `${Math.round(totalCost)} INR`;
+  const costStr = `${Math.round(totalCost)} ${currency}`;
 
   doc.setDrawColor(220);
   doc.setFillColor(245, 245, 245);
@@ -131,7 +132,7 @@ export function generateCustomReportPDF(
     },
   });
 
-  doc.save("custom_report.pdf");
+  doc.save("detailed_report.pdf");
 
   // Helpers
   function formatDuration(seconds: number): string {

@@ -379,7 +379,11 @@ const Detailed = () => {
 
     switch (selectedExportType) {
       case "pdf":
-        generateCustomReportPDF(data, format(date, "yyyy-MM-dd"));
+        generateCustomReportPDF(
+          data,
+          format(date, "yyyy-MM-dd"),
+          organization?.currency
+        );
         break;
 
       case "excel":
@@ -389,7 +393,7 @@ const Detailed = () => {
         rows = addExampleTotalRow(rows);
         exportToExcel(
           rows,
-          "ExampleReport",
+          "detailed_report",
           selectedExportType === "excel" ? "xlsx" : selectedExportType
         );
         break;

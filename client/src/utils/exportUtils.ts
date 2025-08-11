@@ -114,7 +114,7 @@ export const downloadXLSX = (
   data: GroupedData[],
   clientHeader: string,
   taskHeader: string,
-  filename = "TimeReport.xlsx"
+  filename = "report.xlsx"
 ): void => {
   let rows = flattenForExport(data, clientHeader, taskHeader);
   rows = addTotalRow(rows, clientHeader, taskHeader);
@@ -137,7 +137,7 @@ export const downloadCSV = (
   data: GroupedData[],
   clientHeader: string,
   taskHeader: string,
-  filename = "TimeReport.csv"
+  filename = "report.csv"
 ): void => {
   let rows = flattenForExport(data, clientHeader, taskHeader);
   rows = addTotalRow(rows, clientHeader, taskHeader);
@@ -154,7 +154,7 @@ export const downloadODS = (
   data: GroupedData[],
   clientHeader: string,
   taskHeader: string,
-  filename = "TimeReport.ods"
+  filename = "report.ods"
 ): void => {
   let rows = flattenForExport(data, clientHeader, taskHeader);
   rows = addTotalRow(rows, clientHeader, taskHeader);

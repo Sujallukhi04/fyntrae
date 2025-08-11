@@ -30,21 +30,20 @@ interface HistoryDataItem {
 }
 
 interface TimeTrackingData {
+  name: string;
+  currency: string;
   data: {
-    name: string;
-    data: {
-      grouped_data: GroupedDataItem[];
-      seconds: number;
-      cost: number;
-    };
-    history_data: {
-      grouped_data: HistoryDataItem[];
-    };
-    properties: {
-      start: string;
-      end: string;
-      group: string;
-    };
+    grouped_data: GroupedDataItem[];
+    seconds: number;
+    cost: number;
+  };
+  history_data: {
+    grouped_data: HistoryDataItem[];
+  };
+  properties: {
+    start: string;
+    end: string;
+    group: string;
   };
 }
 
@@ -118,6 +117,8 @@ const ReportPdf = forwardRef(
       generatePdf,
     }));
 
+    console.log(timeTrackingData);
+
     const hslToRgb = (
       h: number,
       s: number,
@@ -149,13 +150,15 @@ const ReportPdf = forwardRef(
         return hslToRgb(baseHue, saturation, lightness);
       });
     };
+
     const formatDuration = (seconds: number): string => {
       const h = Math.floor(seconds / 3600);
       const m = Math.floor((seconds % 3600) / 60);
       return `${h}h ${m.toString().padStart(2, "0")}m`;
     };
 
-    const formatCost = (cost: number): string => `${Math.round(cost)} INR`;
+    const formatCost = (cost: number): string =>
+      `${Math.round(cost)} ${timeTrackingData.currency || "INR"}`;
 
     const formatDate = (dateString: string): string => {
       const date = parseISO(dateString);
@@ -172,12 +175,12 @@ const ReportPdf = forwardRef(
     const pieCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const pieChartInstance = useRef<Chart<"doughnut"> | null>(null);
 
-    const projects = timeTrackingData.data.data.grouped_data;
+    const projects = timeTrackingData.data.grouped_data;
     const projectNames = projects.map((proj) => proj.name || "No Project");
 
     const projectSeconds = projects.map((proj) => proj.seconds);
     const bluePalette = generateBlueTones(projects.length);
-    const groupLevels = timeTrackingData.data.properties.group.split(",");
+    const groupLevels = timeTrackingData.properties.group.split(",");
     const formatGroupLabel = (str: string) =>
       str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     const level1Group = formatGroupLabel(groupLevels[0]);
@@ -187,7 +190,7 @@ const ReportPdf = forwardRef(
 
     useEffect(() => {
       if (dailyTimeCanvasRef.current && !dailyTimeChartRef.current) {
-        const historyData = timeTrackingData.data.history_data.grouped_data;
+        const historyData = timeTrackingData.history_data.grouped_data;
         const labels = historyData.map((d) => d.key);
         const data = historyData.map((d) => d.seconds / 3600);
 
@@ -341,8 +344,8 @@ const ReportPdf = forwardRef(
         };
 
         const reportPeriod = `${formatDate(
-          timeTrackingData.data.properties.start
-        )} - ${formatDate(timeTrackingData.data.properties.end)}`;
+          timeTrackingData.properties.start
+        )} - ${formatDate(timeTrackingData.properties.end)}`;
         let cursorY = header("Report", reportPeriod);
 
         const dailyTimeCanvas = dailyTimeCanvasRef.current;
@@ -385,12 +388,12 @@ const ReportPdf = forwardRef(
 
         doc.setFontSize(15).setTextColor(0);
         doc.text(
-          formatDuration(timeTrackingData.data.data.seconds),
+          formatDuration(timeTrackingData.data.seconds),
           cardX + cardPadding,
           cardY + 14
         );
         doc.text(
-          formatCost(timeTrackingData.data.data.cost),
+          formatCost(timeTrackingData.data.cost),
           cardX + 37,
           cardY + 14
         );
@@ -407,7 +410,7 @@ const ReportPdf = forwardRef(
           dailyTimeChartHeight
         );
 
-        cursorY += cardHeight - 5;
+        cursorY += cardHeight;
 
         const pieSize = 80;
         const startY = cursorY;
@@ -504,7 +507,7 @@ const ReportPdf = forwardRef(
         const tableHeight = (projects.length + 2) * rowHeight; // your existing table height calc
         const pieChartBottom = startY + pieSize;
         const tableBottom = currentY + tableHeight;
-        const padding = -5;
+        const padding = 5;
         const finalY = Math.max(pieChartBottom, tableBottom) + padding;
 
         // Clamp so finalY never goes above startY (or some min)
@@ -584,9 +587,7 @@ const ReportPdf = forwardRef(
           doc.text(pageStr, pageWidth - marginX - textWidth, pageHeight - 8);
         }
 
-        doc.save(
-          `${timeTrackingData.data.name.replace(/\s+/g, "_")}_report.pdf`
-        );
+        doc.save(`${timeTrackingData.name.replace(/\s+/g, "_")}.pdf`);
       } catch (err) {
         console.error("Failed to generate PDF", err);
         alert("Failed to generate PDF. See console for details.");

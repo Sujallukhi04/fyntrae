@@ -302,7 +302,7 @@ const Overview = () => {
           groups: `${groupBy1},${groupBy2}`,
         });
 
-        setExportData(response);
+        setExportData(response.data);
         setIsDownloadModalOpen(true);
       } catch (error) {
         setIsDownloadModalOpen(false);
