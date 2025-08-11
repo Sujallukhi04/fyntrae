@@ -607,7 +607,6 @@ export async function generateTimeSummaryGroupData(
         lt: endUTC,
       },
     };
-    console.log(startUTC, endUTC);
   }
 
   // Parse filters

@@ -5,6 +5,7 @@ import { generateTimeSummaryGroupData } from "../../helper/time";
 import { catchAsync } from "../../utils/catchAsync";
 import { exportTimeSummarySchema } from "../../schemas/time";
 import { db } from "../../prismaClient";
+import { getLocalDateRangeInUTC } from "../../helper/billableRate";
 
 // export const getTimeSummaryGrouped = async (req: Request, res: Response) => {
 //   const { organizationId } = req.params;
@@ -378,6 +379,148 @@ export const exportTimeSummary = catchAsync(
       success: true,
       data: responseData,
       message: "report retrieved successfully",
+    });
+  }
+);
+
+export const exportDetailedTimeSummary = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const { organizationId } = req.params;
+    const userId = req.user?.id;
+    const { date, tags, clients, members, tasks, projects, billable } =
+      req.query;
+
+    if (!userId || !organizationId) {
+      throw new ErrorHandler("User ID and Organization ID are required", 400);
+    }
+
+    const member = await assertAPIPermission(
+      userId,
+      organizationId,
+      "TIME_SUMMARY",
+      "EXPORT"
+    );
+
+    const isEmployee = member.role === "EMPLOYEE";
+    const fetchAll = !isEmployee;
+
+    let projectIds = projects
+      ? Array.isArray(projects)
+        ? projects
+        : (projects as string).split(",")
+      : undefined;
+
+    let tagIds = tags
+      ? Array.isArray(tags)
+        ? tags
+        : (tags as string).split(",")
+      : undefined;
+
+    let clientIds = clients
+      ? Array.isArray(clients)
+        ? clients
+        : (clients as string).split(",")
+      : undefined;
+
+    let memberIds = members
+      ? Array.isArray(members)
+        ? members
+        : (members as string).split(",")
+      : undefined;
+
+    let taskIds = tasks
+      ? Array.isArray(tasks)
+        ? tasks
+        : (tasks as string).split(",")
+      : undefined;
+    const billableFilter =
+      billable !== undefined ? billable === "true" : undefined;
+
+    const whereClause: any = {
+      organizationId,
+      end: { not: null },
+      ...(projectIds && { projectId: { in: projectIds } }),
+      ...(taskIds && { taskId: { in: taskIds } }),
+      ...(billableFilter !== undefined && { billable: billableFilter }),
+    };
+
+    if (!fetchAll) {
+      whereClause.memberId = member.id;
+    } else if (memberIds) {
+      whereClause.memberId = { in: memberIds };
+    }
+
+    if (tagIds) {
+      whereClause.tags = { some: { tagId: { in: tagIds } } };
+    }
+
+    if (clientIds && !isEmployee) {
+      whereClause.project = { clientId: { in: clientIds } };
+    }
+
+    if (date) {
+      const userTimezoneOffset = new Date().getTimezoneOffset() * -1; // Dynamic offset in minutes
+      const { startUTC, endUTC } = getLocalDateRangeInUTC(
+        date as string,
+        userTimezoneOffset
+      );
+
+      whereClause.start = {
+        gte: startUTC,
+        lt: endUTC,
+      };
+    }
+
+    const entries = await db.timeEntry.findMany({
+      where: whereClause,
+      orderBy: { start: "desc" },
+      include: {
+        project: {
+          select: {
+            name: true,
+            client: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        tags: {
+          select: {
+            tag: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+        user: {
+          select: {
+            name: true,
+          },
+        },
+        task: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: entries.map((entry) => ({
+        id: entry.id,
+        description: entry.description || "-",
+        task: entry.task?.name || undefined,
+        project: entry.project?.name || undefined,
+        client: entry.project?.client?.name || undefined,
+        user: entry.user?.name || "-",
+        start: entry.start,
+        end: entry.end,
+        seconds: entry.duration || 0,
+        billable: entry.billable ?? false,
+        tags: entry.tags.map((t) => t.tag.name),
+        cost: ((entry.billableRate ?? 0) * (entry.duration ?? 0)) / 3600,
+      })),
     });
   }
 );

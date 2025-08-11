@@ -501,14 +501,17 @@ const ReportPdf = forwardRef(
 
         doc.setFont("helvetica", "bold");
 
-        // Calculate table height
-        const tableHeight = (projects.length + 2) * rowHeight; // +2 for header and total
+        const tableHeight = (projects.length + 2) * rowHeight; // your existing table height calc
+        const pieChartBottom = startY + pieSize;
+        const tableBottom = currentY + tableHeight;
+        const padding = -5;
+        const finalY = Math.max(pieChartBottom, tableBottom) + padding;
 
-        // Final vertical position: leave space after whichever is taller
-        const finalY = Math.max(startY + pieSize, currentY);
+        // Clamp so finalY never goes above startY (or some min)
+        const minY = startY;
+        const adjustedY = finalY < minY ? minY : finalY;
 
-        // Add space before next section (optional 10px padding)
-        currentY = finalY;
+        currentY = adjustedY;
 
         projects.forEach((proj) => {
           const groupedData = proj.grouped_data;

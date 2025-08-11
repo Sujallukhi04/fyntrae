@@ -468,6 +468,7 @@ export const timeApi = {
       taskIds?: string[];
       billable?: boolean;
       tagIds?: string[];
+      clientIds?: string[];
       all?: boolean;
     }
   ) => {
@@ -483,6 +484,8 @@ export const timeApi = {
     if (params?.billable !== undefined)
       queryParams.append("billable", String(params.billable));
     if (params?.all) queryParams.append("all", "true");
+    if (params?.clientIds)
+      queryParams.append("clients", params.clientIds.join(","));
 
     const response = await axiosInstance.get(
       `/time/${organizationId}?${queryParams.toString()}`
@@ -661,6 +664,36 @@ export const timeSummaryApi = {
     const response = await axiosInstance.get(
       `/timesummary/export/${organizationId}?${queryParams.toString()}`
     );
+    return response.data;
+  },
+  getTimeData: async (
+    organizationId: string,
+    params?: {
+      date?: string;
+      projectIds?: string[];
+      memberIds?: string[];
+      taskIds?: string[];
+      billable?: boolean;
+      tagIds?: string[];
+      clientIds?: string[];
+    }
+  ) => {
+    const queryParams = new URLSearchParams();
+    if (params?.date) queryParams.append("date", params.date);
+    if (params?.projectIds)
+      queryParams.append("projects", params.projectIds.join(","));
+    if (params?.memberIds)
+      queryParams.append("members", params.memberIds.join(","));
+    if (params?.taskIds) queryParams.append("tasks", params.taskIds.join(","));
+    if (params?.billable !== undefined)
+      queryParams.append("billable", String(params.billable));
+    if (params?.clientIds)
+      queryParams.append("clients", params.clientIds.join(","));
+
+    const response = await axiosInstance.get(
+      `/timesummary/detailed/export/${organizationId}?${queryParams.toString()}`
+    );
+
     return response.data;
   },
 };

@@ -91,6 +91,24 @@ export const addTotalRow = (
   ];
 };
 
+// 🔧 Auto column width helper
+const getAutoColumnWidths = (
+  rows: Array<Record<string, string | number>>
+): XLSX.ColInfo[] => {
+  const headers = Object.keys(rows[0] || {});
+  return headers.map((header) => {
+    const maxLength = Math.max(
+      header.length,
+      ...rows.map((row) =>
+        row[header] !== null && row[header] !== undefined
+          ? row[header].toString().length
+          : 0
+      )
+    );
+    return { wch: maxLength + 2 }; // +2 for padding
+  });
+};
+
 // Download XLSX file
 export const downloadXLSX = (
   data: GroupedData[],
@@ -102,8 +120,11 @@ export const downloadXLSX = (
   rows = addTotalRow(rows, clientHeader, taskHeader);
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
+  worksheet["!cols"] = getAutoColumnWidths(rows); // 📏 set column widths
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Time Report");
+
   const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
   const blob = new Blob([excelBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -122,6 +143,7 @@ export const downloadCSV = (
   rows = addTotalRow(rows, clientHeader, taskHeader);
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
+  // Note: !cols is ignored in CSV
   const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
   const blob = new Blob([csvOutput], { type: "text/csv;charset=utf-8;" });
   saveAs(blob, filename);
@@ -131,15 +153,18 @@ export const downloadCSV = (
 export const downloadODS = (
   data: GroupedData[],
   clientHeader: string,
-  taskHeader: string,   
+  taskHeader: string,
   filename = "TimeReport.ods"
 ): void => {
   let rows = flattenForExport(data, clientHeader, taskHeader);
   rows = addTotalRow(rows, clientHeader, taskHeader);
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
+  worksheet["!cols"] = getAutoColumnWidths(rows); // 📏 set column widths
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Time Report");
+
   const odsBuffer = XLSX.write(workbook, { bookType: "ods", type: "array" });
   const blob = new Blob([odsBuffer], {
     type: "application/vnd.oasis.opendocument.spreadsheet",

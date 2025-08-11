@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 
 import { useCallback, useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
 import type {
@@ -38,6 +38,14 @@ import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
 import useTimesummary from "@/hooks/useTimesummary";
 import type { Client, Member } from "@/types/oraganization";
 import ChartFilterModal from "@/components/reporting/ChartFilterModal";
+import { DownloadModal } from "@/components/modals/shared/DownloadModal";
+import { toast } from "sonner";
+import { generateCustomReportPDF } from "@/utils/DetailedPdf";
+import {
+  addExampleTotalRow,
+  exportToExcel,
+  formatExampleData,
+} from "@/utils/exportDTime";
 
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
@@ -85,6 +93,7 @@ const Detailed = () => {
     loading,
     fetchClients,
     fetchMembers,
+    fetchTimeData,
   } = useTimesummary();
   const {
     getTimeEntriesLoading,
@@ -105,6 +114,12 @@ const Detailed = () => {
     type: null,
     data: null,
   });
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [exportData, setExportData] = useState<any>(null);
+
+  const [selectedExportType, setSelectedExportType] = useState<string | null>(
+    null
+  );
 
   const allTasks = projectsWithTasks.flatMap((p) =>
     (p.tasks || []).map((t) => ({ ...t, projectId: p.id }))
@@ -228,6 +243,10 @@ const Detailed = () => {
     }
   }, [user?.currentTeamId]);
 
+  useEffect(() => {
+    if (!user?.currentTeamId) return;
+  }, [user?.currentTeamId]);
+
   const handleSelectEntry = (entryId: string) => {
     setSelectedEntries((prevSelected) =>
       prevSelected.includes(entryId)
@@ -326,6 +345,65 @@ const Detailed = () => {
     }
   };
 
+  const handleExportOption = async (type: string) => {
+    if (!user?.currentTeamId || !date) return;
+
+    setSelectedExportType(type);
+
+    try {
+      const response = await fetchTimeData(user.currentTeamId, {
+        date: format(date, "yyyy-MM-dd"),
+        projectIds,
+        memberIds,
+        clientIds,
+        tagIds,
+        billable,
+        taskIds,
+      });
+
+      setExportData(response);
+      setIsDownloadModalOpen(true);
+    } catch (error) {
+      setIsDownloadModalOpen(false);
+      setExportData(null);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!exportData || !exportData.data || exportData.data.length === 0) {
+      toast.error("No data available for download.");
+      return;
+    }
+
+    const data = exportData.data;
+
+    switch (selectedExportType) {
+      case "pdf":
+        generateCustomReportPDF(data, format(date, "yyyy-MM-dd"));
+        break;
+
+      case "excel":
+      case "csv":
+      case "ods": {
+        let rows = formatExampleData(data);
+        rows = addExampleTotalRow(rows);
+        exportToExcel(
+          rows,
+          "ExampleReport",
+          selectedExportType === "excel" ? "xlsx" : selectedExportType
+        );
+        break;
+      }
+
+      default:
+        toast.error("Unsupported export format.");
+    }
+
+    setIsDownloadModalOpen(false);
+    setExportData(null);
+    setSelectedExportType(null);
+  };
+
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <div className="flex flex-col gap-3  pt-1">
@@ -344,10 +422,26 @@ const Detailed = () => {
               </span>
             </h1>
           </div>
-          <Button className="w-full md:w-auto" variant="outline">
-            <Download className=" h-8 w-8" />
-            Export
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full md:w-auto">
+                <Download className="h-5 w-5 mr-2" />
+                Export
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-38 p-1 flex flex-col space-y-1">
+              {["PDF", "Excel", "CSV", "ODS"].map((type) => (
+                <Button
+                  key={type}
+                  variant="ghost"
+                  className="justify-start w-full"
+                  onClick={() => handleExportOption(type.toLowerCase())}
+                >
+                  Export as {type}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
         </div>
         <Separator />
       </div>
@@ -465,6 +559,16 @@ const Detailed = () => {
           runningTimer={!!runningTimer}
           showMember={true}
           members={members}
+        />
+
+        <DownloadModal
+          isOpen={isDownloadModalOpen}
+          onClose={() => {
+            setIsDownloadModalOpen(false);
+            setExportData(null);
+          }}
+          isLoading={loading.report}
+          onDownload={handleDownload}
         />
 
         <ChartFilterModal

@@ -31,7 +31,7 @@ import { useAuth } from "@/providers/AuthProvider";
 
 import type { Client, Member } from "@/types/oraganization";
 import type { ProjectWithTasks, Report, Tag as TagType } from "@/types/project";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import ChartFilterModal from "@/components/reporting/ChartFilterModal";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import { toast } from "sonner";
@@ -104,6 +104,7 @@ const Overview = () => {
   const [selectedExportType, setSelectedExportType] = useState<string | null>(
     null
   );
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const appRef = useRef<{ generatePdf: () => Promise<void> }>(null);
 
@@ -288,6 +289,7 @@ const Overview = () => {
 
     if (type === "pdf") {
       try {
+        setIsGeneratingPdf(true);
         const response = await fetchReport(user.currentTeamId, {
           startDate: format(date.from, "yyyy-MM-dd"),
           endDate: format(date.to, "yyyy-MM-dd"),
@@ -305,6 +307,9 @@ const Overview = () => {
       } catch (error) {
         setIsDownloadModalOpen(false);
         setExportData(null);
+        setIsGeneratingPdf(false);
+      } finally {
+        setIsGeneratingPdf(false);
       }
     } else {
       if (!groupData) {
@@ -315,11 +320,12 @@ const Overview = () => {
       }
       setExportData(groupData);
       setIsDownloadModalOpen(true);
+      setIsGeneratingPdf(false);
     }
   };
 
-  const handleDownload = () => {
-    if (!exportData || !exportData.grouped_data) {
+  const handleDownload = async () => {
+    if (!exportData) {
       toast.error("No data available to download.");
       return;
     }
@@ -331,7 +337,11 @@ const Overview = () => {
 
     switch (selectedExportType) {
       case "pdf":
-        appRef.current?.generatePdf();
+        if (appRef.current?.generatePdf) {
+          await appRef.current.generatePdf();
+        } else {
+          toast.error("PDF generation not available.");
+        }
         break;
       case "excel":
         downloadXLSX(groupedData, clientHeader, taskHeader);
@@ -343,8 +353,12 @@ const Overview = () => {
         downloadODS(groupedData, clientHeader, taskHeader);
         break;
       default:
-        break;
+        toast.error("Unsupported export format.");
     }
+
+    setIsDownloadModalOpen(false);
+    setExportData(null);
+    setSelectedExportType(null);
   };
 
   return (

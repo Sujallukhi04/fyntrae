@@ -29,6 +29,7 @@ const useTimesummary = () => {
     tag: false,
     group: false,
     report: false,
+    timeData: false,
   });
 
   const fetchGroupedSummary = useCallback(async (params: TimeSummaryParams) => {
@@ -103,7 +104,21 @@ const useTimesummary = () => {
   };
 
   const fetchReport = useCallback(
-    async (organizationId: string, params: any) => {
+    async (
+      organizationId: string,
+      params: {
+        startDate?: string;
+        endDate?: string;
+        projectIds?: string[];
+        memberIds?: string[];
+        taskIds?: string[];
+        billable?: boolean;
+        tagIds?: string[];
+        clientIds?: string[];
+        tasks?: string[];
+        groups?: string | string[];
+      }
+    ) => {
       try {
         setLoading((prev) => ({ ...prev, report: true }));
         const response = await timeSummaryApi.getReport(organizationId, params);
@@ -112,6 +127,34 @@ const useTimesummary = () => {
         throw error;
       } finally {
         setLoading((prev) => ({ ...prev, report: false }));
+      }
+    },
+    []
+  );
+  const fetchTimeData = useCallback(
+    async (
+      organizationId: string,
+      params: {
+        date?: string;
+        projectIds?: string[];
+        memberIds?: string[];
+        taskIds?: string[];
+        billable?: boolean;
+        tagIds?: string[];
+        clientIds?: string[];
+      }
+    ) => {
+      try {
+        setLoading((prev) => ({ ...prev, timeData: true }));
+        const response = await timeSummaryApi.getTimeData(
+          organizationId,
+          params
+        );
+        return response;
+      } catch (error) {
+        throw error;
+      } finally {
+        setLoading((prev) => ({ ...prev, timeData: false }));
       }
     },
     []
@@ -125,6 +168,7 @@ const useTimesummary = () => {
     fetchProjectWiTasks,
     fetchTags,
     fetchReport,
+    fetchTimeData,
   };
 };
 
