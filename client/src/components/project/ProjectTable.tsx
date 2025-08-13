@@ -179,15 +179,15 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                         <div className="flex flex-col gap-1">
                           {project.estimatedTime ? (
                             <>
-                              <div className="w-28 h-1.5 bg-muted rounded overflow-hidden">
+                              <div className="w-28 h-1 bg-muted rounded overflow-hidden">
                                 <div
-                                  className="h-2"
+                                  className="h-1"
                                   style={{
                                     width: `${Math.min(progressPercent, 100)}%`,
                                     background:
                                       progressPercent > 100
                                         ? "#e53e3e"
-                                        : "#6B7280",
+                                        : "#3B82F6",
                                   }}
                                 />
                               </div>

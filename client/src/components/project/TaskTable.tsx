@@ -89,15 +89,15 @@ const TasksTable: React.FC<TasksTableProps> = ({
         </TableHeader>
         <TableBody>
           {filteredTasks.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5}>
-                  <NoData
-                    icon={Inbox}
-                    title={emptyMessage}
-                    description="Tasks will appear here when available."
-                  />
-                </TableCell>
-              </TableRow>
+            <TableRow>
+              <TableCell colSpan={5}>
+                <NoData
+                  icon={Inbox}
+                  title={emptyMessage}
+                  description="Tasks will appear here when available."
+                />
+              </TableCell>
+            </TableRow>
           ) : (
             filteredTasks.map((task) => {
               const progressPercent = getProgressPercent(
@@ -124,7 +124,7 @@ const TasksTable: React.FC<TasksTableProps> = ({
                         "--"
                       ) : (
                         <>
-                          <div className="w-24 h-1.5 bg-muted rounded overflow-hidden">
+                          <div className="w-24 h-1 bg-muted rounded overflow-hidden">
                             <div
                               className="h-full transition-all duration-300"
                               style={{
@@ -141,7 +141,7 @@ const TasksTable: React.FC<TasksTableProps> = ({
                                     task?.estimatedTime || 0
                                   ) > 100
                                     ? "#e53e3e"
-                                    : "#6B7280",
+                                    : "#3B82F6",
                               }}
                             />
                           </div>

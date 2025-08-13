@@ -1,11 +1,28 @@
+import ActivityGraph from "@/components/dashboard/ActivityGraph";
+import ChartMain from "@/components/dashboard/ChartMain";
+import DashboardCard from "@/components/dashboard/DashboardCard";
+import Last7Days from "@/components/dashboard/Last7Days";
+import { PieChartMain } from "@/components/dashboard/PieChartMain";
+import RecentTimeEntries from "@/components/dashboard/RecentTimeEntries";
+import TeamActivity from "@/components/dashboard/TeamActivity";
 import TimerHeader from "@/components/time/TimerHeader";
+import { Separator } from "@/components/ui/separator";
 import useTime from "@/hooks/useTime";
 import useTimesummary from "@/hooks/useTimesummary";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
 import { format } from "date-fns";
-import { DollarSign, Euro, IndianRupee, PoundSterling } from "lucide-react";
+import {
+  ChartNoAxesColumnIncreasing,
+  Clock,
+  DollarSign,
+  Euro,
+  IndianRupee,
+  PoundSterling,
+  ReceiptText,
+  Wallet,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 const getCurrencyIcon = (
@@ -86,18 +103,6 @@ const DashMain = () => {
     }
   };
 
-  const sampleData = [
-    { date: "2025-07-20", count: 0 },
-    { date: "2025-07-21", count: 1 },
-    { date: "2025-07-22", count: 2 },
-    { date: "2025-07-23", count: 3 },
-    { date: "2025-07-24", count: 4 },
-    { date: "2025-07-25", count: 0 },
-    { date: "2025-07-26", count: 2 },
-    { date: "2025-07-27", count: 1 },
-    { date: "2025-07-28", count: 0 },
-  ];
-
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <TimerHeader
@@ -111,8 +116,53 @@ const DashMain = () => {
         showManualEntryButton={false}
       />
 
-      <div className="px-5">
-        <div className="w-1/4"></div>
+      <div className="px-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
+        <RecentTimeEntries />
+        <Last7Days />
+
+        <TeamActivity />
+      </div>
+
+      <Separator className="my-6" />
+
+      <div className="px-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <h1 className="font-semibold">This Week</h1>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_250px] gap-5 items-start">
+          <ChartMain />
+
+          <div className="space-y-6">
+            <DashboardCard
+              title="Spent Time"
+              value="1h 15min"
+              // icon={Clock}
+              // className="text-blue-500"
+            />
+            <DashboardCard
+              title="Billable Time"
+              value="1h 11min"
+              // icon={ChartNoAxesColumnIncreasing}
+              className="text-blue-500"
+            />
+            <DashboardCard
+              title="Billable Amount"
+              value="1,19 INR"
+              className="text-green-500"
+              // icon={Wallet}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* <Separator className="my-6" /> */}
+
+      <div className="px-5 flex flex-col items-center sm:flex-row sm:justify-end">
+        <div className="w-full sm:w-[60%] md:w-[50%] lg:w-[40%] mt-3">
+          <PieChartMain />
+        </div>
       </div>
     </div>
   );

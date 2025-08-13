@@ -330,7 +330,7 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
         </div>
       </div>
 
-      <Separator />
+      <Separator className="" />
     </div>
   );
 };

@@ -365,8 +365,9 @@ const Overview = () => {
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <div className="flex flex-col gap-3 pt-1">
         {/* Header */}
-        <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-5 w-full">
+          {/* Left: Title / Breadcrumb */}
+          <div className="w-full md:w-auto">
             <h1 className="text-md font-semibold flex items-center gap-2">
               <ChartNoAxesColumnDecreasing className="h-5 w-5 text-muted-foreground" />
               <span className="text-muted-foreground">Reporting</span>
@@ -374,7 +375,10 @@ const Overview = () => {
               <span className="text-foreground">Detailed</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Right: Export Actions */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 w-full md:w-auto">
+            {/* PDF Export Button (conditionally rendered) */}
             {exportData && selectedExportType === "pdf" && (
               <TimeTrackingPdfButton
                 ref={appRef}
@@ -382,6 +386,7 @@ const Overview = () => {
               />
             )}
 
+            {/* Export Popover */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full md:w-auto">
@@ -389,7 +394,7 @@ const Overview = () => {
                   Export
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-38 p-1 flex flex-col space-y-1">
+              <PopoverContent className="w-40 p-1 flex flex-col space-y-1">
                 {["PDF", "Excel", "CSV", "ODS"].map((type) => (
                   <Button
                     key={type}
@@ -403,6 +408,7 @@ const Overview = () => {
               </PopoverContent>
             </Popover>
 
+            {/* Save Report (for non-EMPLOYEE roles) */}
             {role !== "EMPLOYEE" && (
               <Button
                 className="w-full md:w-auto"
@@ -430,10 +436,10 @@ const Overview = () => {
         </div>
 
         {/* Main Content */}
-        <div className="w-full flex px-5 gap-5">
+        <div className="w-full flex flex-col lg:flex-row px-5 gap-5">
           {/* Left: Table + Group by */}
-          <div className="lg:w-[60%] w-full space-y-4">
-            <div className="flex items-center gap-2 bg-muted/40 p-2 border rounded-md">
+          <div className="w-full lg:w-[60%] space-y-4">
+            <div className="flex flex-wrap items-center gap-2 bg-muted/40 p-2 border rounded-md">
               <span className="text-sm font-medium text-muted-foreground">
                 Group by
               </span>
@@ -502,7 +508,7 @@ const Overview = () => {
           </div>
 
           {/* Right: Chart */}
-          <div className="lg:w-[40%] w-full">
+          <div className="w-full lg:w-[40%]">
             <ChartPieLegend
               groupedData={groupData?.grouped_data || []}
               groupBy={groupBy1}
