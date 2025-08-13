@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 interface DashboardCardProps {
   title: string;
-  value: string;
+  value: number | string;
   icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>; // lucide-react icons fit here
   className?: string;
 }

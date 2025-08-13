@@ -9,7 +9,6 @@ import { generateBlueTones } from "@/lib/utils";
 
 interface ChartPieLegendProps {
   groupedData?: { name: string; seconds: number }[];
-  groupBy?: string;
 }
 
 // Dummy data for demonstration
@@ -19,10 +18,7 @@ const dummyData: { name: string; seconds: number }[] = [
   { name: "Project C", seconds: 3600 }, // 1 hour
 ];
 
-export function PieChartMain({
-  groupedData = [],
-  groupBy = "members",
-}: ChartPieLegendProps) {
+export function PieChartMain({ groupedData = [] }: ChartPieLegendProps) {
   const isEmpty = groupedData.length === 0;
   const dataToUse = isEmpty ? dummyData : groupedData;
 

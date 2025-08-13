@@ -30,6 +30,7 @@ const useTimesummary = () => {
     group: false,
     report: false,
     timeData: false,
+    dashboardData: false,
   });
 
   const fetchGroupedSummary = useCallback(async (params: TimeSummaryParams) => {
@@ -160,6 +161,18 @@ const useTimesummary = () => {
     []
   );
 
+  const fetchDashboardData = useCallback(async (organizationId: string) => {
+    try {
+      setLoading((prev) => ({ ...prev, dashboardData: true }));
+      const response = await timeSummaryApi.getDashBoardData(organizationId);
+      return response;
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading((prev) => ({ ...prev, dashboardData: false }));
+    }
+  }, []);
+
   return {
     loading,
     fetchGroupedSummary,
@@ -169,6 +182,7 @@ const useTimesummary = () => {
     fetchTags,
     fetchReport,
     fetchTimeData,
+    fetchDashboardData,
   };
 };
 

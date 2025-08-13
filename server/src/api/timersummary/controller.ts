@@ -524,3 +524,229 @@ export const exportDetailedTimeSummary = catchAsync(
     });
   }
 );
+
+export const getDashboardTimeSummary = catchAsync(
+  async (req: Request, res: Response) => {
+    const { organizationId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId || !organizationId)
+      throw new ErrorHandler("User ID and Organization ID are required", 400);
+
+    const member = await assertAPIPermission(
+      userId,
+      organizationId,
+      "TIME_SUMMARY",
+      "VIEW"
+    );
+
+    const isEmployee = member.role === "EMPLOYEE";
+
+    // Get timezone offset
+    const userTimezoneOffset = new Date().getTimezoneOffset() * -1;
+    const offset = Number(userTimezoneOffset) || 0;
+
+    // Get last 7 days range
+    const endDate = new Date().toISOString().split("T")[0];
+    const startDate = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
+    // Convert to UTC with timezone offset
+    const { startUTC } = getLocalDateRangeInUTC(startDate, offset);
+    const { endUTC } = getLocalDateRangeInUTC(endDate, offset);
+
+    const orgMembers = await db.member.findMany({
+      where: {
+        organizationId,
+        ...(isEmployee && { id: member.id }),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    const runningEntries = await db.timeEntry.findMany({
+      where: {
+        organizationId,
+        ...(isEmployee && { memberId: member.id }),
+      },
+      include: {
+        member: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { start: "desc" },
+    });
+
+    const membersWithRunningEntries = orgMembers.map((orgMember) => {
+      const latestRunningEntry = runningEntries.find(
+        (entry) => entry.memberId === orgMember.id
+      );
+
+      return {
+        id: orgMember.id,
+        name: orgMember.user.name,
+        runningEntry: latestRunningEntry
+          ? {
+              id: latestRunningEntry.id,
+              description: latestRunningEntry.description,
+              start: latestRunningEntry.start,
+              end: latestRunningEntry.end,
+            }
+          : null,
+      };
+    });
+    // Get last 7 days data
+    const timeEntries = await db.timeEntry.findMany({
+      where: {
+        organizationId,
+        ...(isEmployee && { userId }),
+        start: {
+          gte: startUTC,
+          lt: endUTC,
+        },
+        end: { not: null },
+      },
+      include: {
+        project: { select: { name: true, color: true } },
+        task: { select: { name: true } },
+        user: { select: { name: true } },
+      },
+      orderBy: { start: "desc" },
+    });
+
+    const projectEntries = await db.timeEntry.findMany({
+      where: {
+        organizationId,
+        ...(isEmployee && { userId }),
+        start: {
+          gte: startUTC,
+          lt: endUTC,
+        },
+        end: { not: null },
+        projectId: { not: null },
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { start: "desc" },
+    });
+
+    const projectSummaries = projectEntries.reduce((acc, entry) => {
+      if (!entry.project) return acc;
+
+      const projectId = entry.project.id;
+      if (!acc[projectId]) {
+        acc[projectId] = {
+          id: projectId,
+          name: entry.project.name,
+          totalDuration: 0,
+        };
+      }
+
+      acc[projectId].totalDuration += entry.duration || 0;
+      return acc;
+    }, {} as Record<string, any>);
+
+    const sortedProjects = Object.values(projectSummaries).sort(
+      (a, b) => b.totalDuration - a.totalDuration
+    );
+
+    const dailySummary = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(startUTC);
+      date.setDate(date.getDate() + i);
+      const dayStart = new Date(date.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+
+      const dayEntries = timeEntries.filter(
+        (entry) => entry.start >= dayStart && entry.start <= dayEnd
+      );
+
+      return {
+        date: date.toISOString().split("T")[0],
+        totalTime: dayEntries.reduce(
+          (sum, entry) => sum + (entry.duration || 0),
+          0
+        ),
+        billableTime: dayEntries
+          .filter((entry) => entry.billable)
+          .reduce((sum, entry) => sum + (entry.duration || 0), 0),
+        billableAmount: dayEntries
+          .filter((entry) => entry.billable)
+          .reduce(
+            (sum, entry) =>
+              sum + ((entry.duration || 0) * (entry.billableRate || 0)) / 3600,
+            0
+          ),
+      };
+    });
+
+    // Calculate totals
+    const weeklyTotals = {
+      totalTime: timeEntries.reduce(
+        (sum, entry) => sum + (entry.duration || 0),
+        0
+      ),
+      billableTime: timeEntries
+        .filter((entry) => entry.billable)
+        .reduce((sum, entry) => sum + (entry.duration || 0), 0),
+      billableAmount: timeEntries
+        .filter((entry) => entry.billable)
+        .reduce(
+          (sum, entry) =>
+            sum + ((entry.duration || 0) * (entry.billableRate || 0)) / 3600,
+          0
+        ),
+    };
+
+    // Get recent entries
+    const recentEntries = timeEntries.slice(0, 5);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        runningEntries: membersWithRunningEntries,
+        recentEntries: recentEntries.map((entry) => ({
+          id: entry.id,
+          description: entry.description,
+          project: entry.project?.name,
+          color: entry.project?.color,
+          task: entry.task?.name,
+          user: entry.user?.name,
+          start: entry.start,
+          end: entry.end,
+          duration: entry.duration,
+        })),
+        dailySummary,
+        weeklyTotals,
+        projects: sortedProjects.map((project) => ({
+          id: project.id,
+          name: project.name,
+          totalDuration: project.totalDuration,
+        })),
+        dateRange: {
+          start: startDate,
+          end: endDate,
+        },
+      },
+    });
+  }
+);

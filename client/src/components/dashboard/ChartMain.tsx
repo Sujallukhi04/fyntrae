@@ -19,27 +19,11 @@ const chartConfig = {
   },
 };
 
-interface ChartAreaInteractiveProps {}
+interface ChartAreaInteractiveProps {
+  chartData: { date: string; desktop: number }[];
+}
 
-export default function ChartMain({}: ChartAreaInteractiveProps) {
-  const generateDummyChartData = (days: number = 7) => {
-    const data = [];
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-
-      data.push({
-        date: date.toISOString(), // ISO format for consistent formatting later
-        desktop: parseFloat((Math.random() * 8).toFixed(2)), // up to 8 hours
-      });
-    }
-
-    return data;
-  };
-
-  const chartData = generateDummyChartData();
-
+export default function ChartMain({ chartData }: ChartAreaInteractiveProps) {
   return (
     <div className="w-full mx-auto">
       <Card className="">

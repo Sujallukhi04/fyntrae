@@ -18,4 +18,6 @@ router.get(
 
 router.get("/detailed/export/:organizationId", protectRoute, timeSummaryController.exportDetailedTimeSummary);
 
+router.get("/dashboard/:organizationId", protectRoute, timeSummaryController.getDashboardTimeSummary);
+
 export default router;

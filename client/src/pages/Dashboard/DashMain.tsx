@@ -5,13 +5,19 @@ import Last7Days from "@/components/dashboard/Last7Days";
 import { PieChartMain } from "@/components/dashboard/PieChartMain";
 import RecentTimeEntries from "@/components/dashboard/RecentTimeEntries";
 import TeamActivity from "@/components/dashboard/TeamActivity";
+import { SkeletonBox } from "@/components/modals/Skeleton";
 import TimerHeader from "@/components/time/TimerHeader";
 import { Separator } from "@/components/ui/separator";
 import useTime from "@/hooks/useTime";
 import useTimesummary from "@/hooks/useTimesummary";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
+import type {
+  ProjectWithTasks,
+  RecentTimeEntry,
+  RunningTimeEntry,
+  Tag as TagType,
+} from "@/types/project";
 import { format } from "date-fns";
 import {
   ChartNoAxesColumnIncreasing,
@@ -44,14 +50,77 @@ const getCurrencyIcon = (
 
 const DashMain = () => {
   const { user } = useAuth();
-  const { fetchProjectWiTasks, fetchTags } = useTimesummary();
+  const { fetchProjectWiTasks, fetchTags, fetchDashboardData, loading } =
+    useTimesummary();
   const { startTimer, stopTimer, startTimerLoading, stopTimerLoading } =
     useTime();
-  const { runningTimer } = useOrganization();
+  const { runningTimer, organization } = useOrganization();
   const [projectsWithTasks, setProjectsWithTasks] = useState<
     ProjectWithTasks[]
   >([]);
   const [tags, setTags] = useState<TagType[]>([]);
+  const [recentTimeEntries, setRecentTimeEntries] = useState<RecentTimeEntry[]>(
+    []
+  );
+  const [runningTimeEntrys, setRunningTimeEntrys] = useState<
+    RunningTimeEntry[]
+  >([]);
+
+  const [dailySummary, setDailySummary] = useState<
+    {
+      date: string;
+      totalTime: number;
+      billableTime: number;
+      billableAmount: number;
+    }[]
+  >([]);
+
+  const [weeklySummary, setWeeklySummary] = useState<{
+    totalTime: number;
+    billableTime: number;
+    billableAmount: number;
+  }>({
+    totalTime: 0,
+    billableTime: 0,
+    billableAmount: 0,
+  });
+
+  const [projectSummary, setProjectSummary] = useState<
+    {
+      id: string;
+      name: string;
+      totalDuration: number;
+    }[]
+  >([]);
+
+  const loadDashboardData = async () => {
+    if (!user?.currentTeamId) return;
+    try {
+      const response = await fetchDashboardData(user.currentTeamId);
+      const data = response.data;
+
+      setRecentTimeEntries(data.recentEntries);
+      setRunningTimeEntrys(data.runningEntries);
+      setDailySummary(data.dailySummary);
+      setWeeklySummary(data.weeklyTotals);
+      setProjectSummary(data.projects);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      setRecentTimeEntries([]);
+      setRunningTimeEntrys([]);
+      setDailySummary([]);
+      setWeeklySummary({
+        totalTime: 0,
+        billableTime: 0,
+        billableAmount: 0,
+      });
+      setProjectSummary([]);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.currentTeamId) loadDashboardData();
+  }, [user?.currentTeamId]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -88,6 +157,7 @@ const DashMain = () => {
 
     try {
       await startTimer(user.currentTeamId, data);
+      await loadDashboardData();
     } catch (error) {
       console.error("Failed to start timer:", error);
     }
@@ -98,10 +168,22 @@ const DashMain = () => {
 
     try {
       await stopTimer(user.currentTeamId, runningTimer.id, new Date());
+      await loadDashboardData();
     } catch (error) {
       console.error("Failed to stop timer:", error);
     }
   };
+
+  function formatDuration(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+
+    if (hours === 0 && minutes === 0) return "0min";
+    if (hours === 0) return `${minutes}min`;
+    if (minutes === 0) return `${hours}h`;
+
+    return `${hours}h ${minutes}min`;
+  }
 
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
@@ -117,10 +199,19 @@ const DashMain = () => {
       />
 
       <div className="px-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
-        <RecentTimeEntries />
-        <Last7Days />
-
-        <TeamActivity />
+        {loading.dashboardData ? (
+          <>
+            <SkeletonBox />
+            <SkeletonBox />
+            <SkeletonBox />
+          </>
+        ) : (
+          <>
+            <RecentTimeEntries entries={recentTimeEntries} />
+            <Last7Days dailySummary={dailySummary} />
+            <TeamActivity runningEntries={runningTimeEntrys} />
+          </>
+        )}
       </div>
 
       <Separator className="my-6" />
@@ -132,26 +223,32 @@ const DashMain = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_250px] gap-5 items-start">
-          <ChartMain />
-
+          {loading.dashboardData ? (
+            <SkeletonBox className="h-[360px]" />
+          ) : (
+            <ChartMain
+              chartData={dailySummary.map((item) => ({
+                date: item.date,
+                desktop: parseFloat((item.totalTime / 3600).toFixed(2)),
+              }))}
+            />
+          )}
           <div className="space-y-6">
             <DashboardCard
               title="Spent Time"
-              value="1h 15min"
-              // icon={Clock}
-              // className="text-blue-500"
+              value={formatDuration(weeklySummary.totalTime)}
             />
             <DashboardCard
               title="Billable Time"
-              value="1h 11min"
-              // icon={ChartNoAxesColumnIncreasing}
+              value={formatDuration(weeklySummary.billableTime)}
               className="text-blue-500"
             />
             <DashboardCard
               title="Billable Amount"
-              value="1,19 INR"
+              value={`${weeklySummary.billableAmount.toFixed(2)} ${
+                organization?.currency || ""
+              }`}
               className="text-green-500"
-              // icon={Wallet}
             />
           </div>
         </div>
@@ -161,7 +258,16 @@ const DashMain = () => {
 
       <div className="px-5 flex flex-col items-center sm:flex-row sm:justify-end">
         <div className="w-full sm:w-[60%] md:w-[50%] lg:w-[40%] mt-3">
-          <PieChartMain />
+          {loading.dashboardData ? (
+            <SkeletonBox className=" max-h-[350px]" />
+          ) : (
+            <PieChartMain
+              groupedData={projectSummary.map((project) => ({
+                name: project.name,
+                seconds: project.totalDuration,
+              }))}
+            />
+          )}
         </div>
       </div>
     </div>

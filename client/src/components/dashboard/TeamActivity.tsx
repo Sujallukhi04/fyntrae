@@ -1,48 +1,14 @@
 import React from "react";
 import { Users } from "lucide-react";
 import { Separator } from "../ui/separator";
+import type { RunningTimeEntry } from "@/types/project";
 
-const teamMembers = [
-  {
-    name: "Sujal",
-    status: "working",
-    description: "Fix login bug",
-    color: "#22c55e",
-  },
-  {
-    name: "Het",
-    status: "idle",
-    description: "",
-    color: "#6B7280",
-  },
-  {
-    name: "Priya",
-    status: "working",
-    description: "Prepare client deck",
-    color: "#3B82F6",
-  },
-  {
-    name: "Ravi",
-    status: "offline",
-    description: "",
-    color: "#EF4444",
-  },
-  {
-    name: "Aisha",
-    status: "working",
-    description: "Code review",
-    color: "#10B981",
-  },
-  {
-    name: "John",
-    status: "idle",
-    description: "",
-    color: "#6B7280",
-  },
-];
-
-const TeamActivity = () => {
-  const visibleMembers = teamMembers.slice(0, 5); // 👈 limit to top 5
+const TeamActivity = ({
+  runningEntries = [],
+}: {
+  runningEntries: RunningTimeEntry[];
+}) => {
+  const visibleEntries = runningEntries.slice(0, 5); // Show top 5
 
   return (
     <div className="space-y-2 h-full">
@@ -52,14 +18,14 @@ const TeamActivity = () => {
       </h2>
 
       <div className="bg-muted/50 border border-zinc-800 rounded-md py-3 max-h-[290px] h-full overflow-hidden space-y-3">
-        {visibleMembers.map((member, idx) => (
-          <React.Fragment key={idx}>
+        {visibleEntries.map((entry, idx) => (
+          <React.Fragment key={entry.id}>
             <div className="px-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-white truncate">
-                  {member.name}
+                  {entry.name}
                 </p>
-                {member.status === "working" && (
+                {!entry.runningEntry.end && (
                   <div className="flex items-center gap-1.5 text-green-500 text-xs font-medium">
                     <span className="relative flex items-center justify-center w-3 h-3">
                       <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
@@ -70,20 +36,20 @@ const TeamActivity = () => {
                 )}
               </div>
 
-              {member.description && (
+              {entry.runningEntry?.description && (
                 <p className="text-xs text-muted-foreground font-semibold mt-1 truncate">
-                  {member.description}
+                  {entry.runningEntry.description}
                 </p>
               )}
             </div>
 
-            {idx !== visibleMembers.length - 1 && (
+            {idx !== visibleEntries.length && (
               <Separator className="bg-muted/50" />
             )}
           </React.Fragment>
         ))}
 
-        {visibleMembers.length === 0 && (
+        {visibleEntries.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-3">
             No active members.
           </p>

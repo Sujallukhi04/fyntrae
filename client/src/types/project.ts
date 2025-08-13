@@ -150,3 +150,26 @@ export interface ReportProperties {
   projects: string | null;
   startDate: string; // "YYYY-MM-DD"
 }
+
+export interface RunningTimeEntry {
+  id: string;
+  name: string;
+  runningEntry: {
+    id: string;
+    description: string;
+    start: Date;
+    end: Date | null;
+  };
+}
+
+export interface RecentTimeEntry {
+  id: string;
+  start: Date;
+  end: Date;
+  duration: number;
+  description: string;
+  task?: string;
+  project?: string;
+  color?: string;
+  user: string;
+}

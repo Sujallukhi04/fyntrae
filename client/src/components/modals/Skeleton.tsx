@@ -9,6 +9,7 @@ import {
 } from "../ui/table";
 import { Skeleton } from "../ui/skeleton";
 import { Checkbox } from "../ui/checkbox";
+import { cn } from "@/lib/utils";
 
 export const MembersSkeleton = () => (
   <div className="rounded-md bg-muted/40 border border-muted ">
@@ -418,3 +419,14 @@ export const ReportsSkeleton = () => (
     </Table>
   </div>
 );
+
+export const SkeletonBox = ({ className = "" }: { className?: string }) => {
+  return (
+    <div
+      className={cn(
+        "bg-muted/50 border border-zinc-800 rounded-md animate-pulse h-[290px]",
+        className
+      )}
+    />
+  );
+};

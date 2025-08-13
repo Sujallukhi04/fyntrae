@@ -696,6 +696,12 @@ export const timeSummaryApi = {
 
     return response.data;
   },
+  getDashBoardData: async (organizationId: string) => {
+    const response = await axiosInstance.get(
+      `/timesummary/dashboard/${organizationId}`
+    );
+    return response.data;
+  },
 };
 
 export const reportApi = {
