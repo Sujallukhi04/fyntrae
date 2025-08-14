@@ -1,7 +1,8 @@
 import React from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Clock } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { format, differenceInCalendarDays } from "date-fns";
+import { formatTimeDuration } from "@/lib/utils";
 
 const formatTime = (seconds: number) => {
   const h = Math.floor(seconds / 3600);
@@ -26,8 +27,10 @@ const getLabel = (dateStr: string) => {
 
 const Last7Days = ({
   dailySummary = [],
+  intervalFormat,
 }: {
   dailySummary: { date: string; totalTime: number }[];
+  intervalFormat: "12h" | "decimal";
 }) => {
   const sortedData = [...dailySummary]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -46,7 +49,7 @@ const Last7Days = ({
             <div className="flex justify-between items-center px-3 py-2.5">
               <span className="text-white">{getLabel(entry.date)}</span>
               <span className="text-muted-foreground">
-                {formatTime(entry.totalTime)}
+                {formatTimeDuration(entry.totalTime, intervalFormat)}
               </span>
             </div>
             {idx !== sortedData.length - 1 && (
@@ -56,9 +59,10 @@ const Last7Days = ({
         ))}
 
         {sortedData.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-3">
-            No data for the last 7 days.
-          </p>
+          <div className="flex w-full h-full flex-col items-center justify-center text-muted-foreground">
+            <Clock className="h-8 w-8" />
+            <p className="mt-2 text-sm">No Recent time entry</p>
+          </div>
         )}
       </div>
     </div>

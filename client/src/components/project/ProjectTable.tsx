@@ -29,7 +29,11 @@ import PaginationControls, {
 import NoData from "@/components/NoData";
 import { ProjectsSkeleton } from "../modals/Skeleton";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { formatNumber } from "@/lib/utils";
+import {
+  formatDurationFromSeconds,
+  formatNumber,
+  formatTimeDuration,
+} from "@/lib/utils";
 import { useNavigate } from "react-router";
 
 interface ProjectTableProps {
@@ -116,12 +120,9 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
               ) : (
                 projects.map((project) => {
                   // Example calculations
-                  const totalMinutes = project.spentTime
-                    ? Math.floor(project.spentTime / 60)
-                    : 0;
-                  const estimatedMinutes = (project.estimatedTime ?? 0) * 60;
+                  const estimatedMinutes = (project.estimatedTime ?? 0) * 3600;
                   const progressPercent = estimatedMinutes
-                    ? Math.round((totalMinutes / estimatedMinutes) * 100)
+                    ? Math.round((project.spentTime / estimatedMinutes) * 100)
                     : 0;
                   return (
                     <TableRow
@@ -172,7 +173,12 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                       </TableCell>
                       {/* Total Time */}
                       <TableCell>
-                        {totalMinutes > 0 ? formatTime(totalMinutes) : "--"}
+                        {project.spentTime > 0
+                          ? formatTimeDuration(
+                              project.spentTime,
+                              organization?.intervalFormat || "12h"
+                            )
+                          : "--"}
                       </TableCell>
                       {/* Progress bar and percent */}
                       <TableCell>

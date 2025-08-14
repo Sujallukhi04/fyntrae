@@ -25,11 +25,12 @@ import {
 import NoData from "@/components/NoData";
 import type { ProjectMember } from "@/types/project";
 import { ProjectMembersSkeleton } from "../modals/Skeleton";
+import { formatNumber, getFormat } from "@/lib/utils";
+import { useOrganization } from "@/providers/OrganizationProvider";
 
 interface ProjectMembersTableProps {
   projectMembers: ProjectMember[];
   isLoading?: boolean;
-  currency?: string;
   onAddMember: () => void;
   onEditMember: (member: ProjectMember) => void;
   onRemoveMember: (memberId: string) => void;
@@ -40,13 +41,13 @@ interface ProjectMembersTableProps {
 const ProjectMembersTable: React.FC<ProjectMembersTableProps> = ({
   projectMembers,
   isLoading = false,
-  currency = "USD",
   onAddMember,
   onEditMember,
   onRemoveMember,
   updateMemberLoading = false,
   removeMemberLoading = false,
 }) => {
+  const { organization } = useOrganization();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -101,12 +102,16 @@ const ProjectMembersTable: React.FC<ProjectMembersTableProps> = ({
                         <span>{member.user.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground">
                       {member.billableRate !== null
-                        ? `${member.billableRate} ${currency}`
+                        ? formatNumber(
+                            member.billableRate ?? 0,
+                            organization?.numberFormat || "1 000.00",
+                            organization?.currency || "USD"
+                          )
                         : "--"}
                     </TableCell>
-                    <TableCell>{member.member.role}</TableCell>
+                    <TableCell>{getFormat(member?.member.role)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

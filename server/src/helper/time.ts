@@ -132,7 +132,7 @@ export function groupByMultiple(
         (sum, e) =>
           sum +
           (e.billable && e.billableRate
-            ? Math.round((e.duration / 3600) * e.billableRate)
+            ? Math.round((e.duration / 3600) * e.billableRate * 100) / 100
             : 0),
         0
       ),
@@ -738,14 +738,17 @@ export async function generateTimeSummaryGroupData(
     (sum, e) => sum + (e.duration || 0),
     0
   );
-  const totalCost = timeEntries.reduce(
-    (sum, e) =>
-      sum +
-      (e.billable && e.billableRate
-        ? Math.round((e.duration / 3600) * e.billableRate)
-        : 0),
-    0
-  );
+  const totalCost =
+    Math.round(
+      timeEntries.reduce(
+        (sum, e) =>
+          sum +
+          (e.billable && e.billableRate
+            ? (e.duration / 3600) * e.billableRate
+            : 0),
+        0
+      ) * 100
+    ) / 100;
 
   // Handle special case for date/day grouping with date range
   if (

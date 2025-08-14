@@ -50,9 +50,10 @@ const TeamActivity = ({
         ))}
 
         {visibleEntries.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-3">
-            No active members.
-          </p>
+          <div className="flex w-full h-full flex-col items-center justify-center text-muted-foreground">
+            <Users className="h-8 w-8" />
+            <p className="mt-2 text-sm">No Active Member Activity</p>
+          </div>
         )}
       </div>
     </div>

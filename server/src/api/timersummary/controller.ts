@@ -335,7 +335,12 @@ export const exportTimeSummary = catchAsync(
 
     const organization = await db.organizations.findUnique({
       where: { id: organizationId },
-      select: { currency: true },
+      select: {
+        currency: true,
+        numberFormat: true,
+        intervalFormat: true,
+        dateFormat: true,
+      },
     });
 
     if (!organization) {
@@ -345,8 +350,10 @@ export const exportTimeSummary = catchAsync(
     const responseData = {
       name: "report",
       description: "",
-
       currency: organization.currency,
+      numberFormat: organization.numberFormat,
+      intervalFormat: organization.intervalFormat,
+      dateFormat: organization.dateFormat,
       properties: {
         group: groups,
         history_group: "day",
@@ -505,6 +512,8 @@ export const exportDetailedTimeSummary = catchAsync(
       },
     });
 
+    // console.log(entries, "hi");
+
     res.status(200).json({
       success: true,
       data: entries.map((entry) => ({
@@ -519,7 +528,10 @@ export const exportDetailedTimeSummary = catchAsync(
         seconds: entry.duration || 0,
         billable: entry.billable ?? false,
         tags: entry.tags.map((t) => t.tag.name),
-        cost: ((entry.billableRate ?? 0) * (entry.duration ?? 0)) / 3600,
+        cost:
+          Math.round(
+            (((entry.billableRate ?? 0) * (entry.duration ?? 0)) / 3600) * 100
+          ) / 100,
       })),
     });
   }

@@ -20,8 +20,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { useOrganization } from "@/providers/OrganizationProvider";
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -54,6 +55,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [publicUntil, setPublicUntil] = useState<Date | null>(null);
+  const { organization } = useOrganization();
 
   useEffect(() => {
     if (isOpen && initialData) {
@@ -157,7 +159,12 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {publicUntil ? format(publicUntil, "PPP") : "Pick a date"}
+                    {publicUntil
+                      ? formatDate(
+                          publicUntil,
+                          organization?.dateFormat || "MM/DD/YYYY"
+                        )
+                      : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">

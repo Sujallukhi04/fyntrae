@@ -48,6 +48,7 @@ const FORMAT_OPTIONS = {
     { value: "1,000.00", label: "1,111.11" },
     { value: "1.000,00", label: "1.111,11" },
     { value: "1 000.00", label: "1 111.11" },
+    { value: "1,00,000.00", label: "1,11,111.11" },
   ],
   dateFormat: [
     { value: "MM/DD/YYYY", label: "MM/DD/YYYY" },
@@ -84,7 +85,7 @@ interface FormData {
   dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
   timeFormat: "12h" | "24h";
   intervalFormat: "12h" | "decimal";
-  numberFormat: "1,000.00" | "1.000,00" | "1 000.00";
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00" | "1,00,000.00";
   billableRates: number;
   employeesCanSeeBillableRates: boolean;
 }
@@ -281,7 +282,12 @@ const TeamSetting = () => {
     const allowedDateFormats = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"];
     const allowedTimeFormats = ["12h", "24h"];
     const allowedIntervalFormats = ["12h", "decimal"];
-    const allowedNumberFormats = ["1,000.00", "1.000,00", "1 000.00"];
+    const allowedNumberFormats = [
+      "1,000.00",
+      "1.000,00",
+      "1 000.00",
+      "1,00,000.00",
+    ];
 
     switch (section) {
       case SECTION_TYPES.MAIN:

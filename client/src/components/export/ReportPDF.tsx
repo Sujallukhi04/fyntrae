@@ -10,6 +10,11 @@ import "jspdf-autotable";
 import { Chart, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { format, parseISO } from "date-fns";
+import {
+  formatRateNumber,
+  formatTimeDuration,
+  formatDate as newFomateDate,
+} from "@/lib/utils";
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -32,6 +37,9 @@ interface HistoryDataItem {
 interface TimeTrackingData {
   name: string;
   currency: string;
+  intervalFormat: "12h" | "decimal";
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00" | "1,00,000.00";
+  dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
   data: {
     grouped_data: GroupedDataItem[];
     seconds: number;
@@ -55,18 +63,20 @@ const externalLabelsPlugin = {
     const centerX = (chartArea.left + chartArea.right) / 2;
     const centerY = (chartArea.top + chartArea.bottom) / 2;
 
-    // Scale factor (assumes base size was 200px; adapt if needed)
     const scale = chart.width / 200;
+    const total = data.datasets[0].data.reduce(
+      (a: number, b: number) => a + b,
+      0
+    );
 
     meta.data.forEach((arc: any, index: number) => {
+      const value = data.datasets[0].data[index];
+      const percentage = (value / total) * 100;
+
+      // ❌ Skip label if too small (e.g., under 4%)
+      if (percentage < 4) return;
+
       const angle = (arc.startAngle + arc.endAngle) / 2;
-      const total = data.datasets[0].data.reduce(
-        (a: number, b: number) => a + b,
-        0
-      );
-      const percentage = ((data.datasets[0].data[index] / total) * 100).toFixed(
-        2
-      );
       const backgroundColor = data.datasets[0].backgroundColor[index];
 
       const pullOutLength = 15 * scale;
@@ -104,20 +114,18 @@ const externalLabelsPlugin = {
       ctx.fillStyle = "#333";
       ctx.textAlign = isRightSide ? "left" : "right";
       ctx.textBaseline = "middle";
-      ctx.fillText(`${percentage}%`, labelX, pullY);
+      ctx.fillText(`${percentage.toFixed(2)}%`, labelX, pullY);
     });
   },
 };
 
-Chart.register(externalLabelsPlugin);
+// Chart.register(externalLabelsPlugin);
 
 const ReportPdf = forwardRef(
   ({ timeTrackingData }: { timeTrackingData: TimeTrackingData }, ref) => {
     useImperativeHandle(ref, () => ({
       generatePdf,
     }));
-
-    console.log(timeTrackingData);
 
     const hslToRgb = (
       h: number,
@@ -151,23 +159,14 @@ const ReportPdf = forwardRef(
       });
     };
 
-    const formatDuration = (seconds: number): string => {
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor((seconds % 3600) / 60);
-      return `${h}h ${m.toString().padStart(2, "0")}m`;
-    };
-
     const formatCost = (cost: number): string =>
-      `${Math.round(cost)} ${timeTrackingData.currency || "INR"}`;
+      `${formatRateNumber(cost, timeTrackingData.numberFormat)} ${
+        timeTrackingData.currency || "INR"
+      }`;
 
     const formatDate = (dateString: string): string => {
       const date = parseISO(dateString);
-      return format(
-        new Date(
-          Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
-        ),
-        "yyyy-MM-dd"
-      );
+      return newFomateDate(date, timeTrackingData.dateFormat);
     };
 
     const dailyTimeChartRef = useRef<Chart<"bar"> | null>(null);
@@ -229,7 +228,17 @@ const ReportPdf = forwardRef(
                       : "rgba(0, 0, 0, 0.1)",
                 },
               },
-              x: { grid: { display: false } },
+              x: {
+                grid: { display: false },
+                ticks: {
+                  autoSkip: true,
+                  maxTicksLimit: 7, // You can adjust this number
+                  callback: function (value: any, index: number, ticks: any[]) {
+                    const label = this.getLabelForValue(value);
+                    return label; // Show formatted date
+                  },
+                },
+              },
             },
             plugins: {
               legend: { display: false },
@@ -244,17 +253,25 @@ const ReportPdf = forwardRef(
                 },
               },
               datalabels: {
-                display: true,
+                display: (context) =>
+                  context.dataset.data[context.dataIndex] > 0.1,
                 color: "#1f2937",
-                anchor: "end",
-                align: "top",
-                offset: 4,
+                anchor: "end", // Anchors outside the bar
+                align: "end", // Pushes label above the bar
+                offset: 2, // Space between bar and label
+                rotation: -90, // Keeps label vertical
+                clamp: true,
+                clip: false,
+                font: {
+                  weight: "semibold",
+                  size: 9,
+                },
                 formatter: (value) => {
+                  if (value <= 0) return "";
                   const hours = Math.floor(value);
                   const minutes = Math.round((value - hours) * 60);
                   return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
                 },
-                font: { weight: "semibold", size: 12 },
               },
             },
           },
@@ -285,11 +302,16 @@ const ReportPdf = forwardRef(
             radius: "45%",
             cutout: "55%",
             plugins: {
-              legend: { display: false },
-              datalabels: { display: false },
-              externalLabelsPlugin: true,
+              datalabels: {
+                display: false,
+              },
+              legend: {
+                display: false,
+              },
+              externalLabelsPlugin: false,
             },
           },
+          plugins: [],
         });
       }
 
@@ -300,6 +322,19 @@ const ReportPdf = forwardRef(
         pieChartInstance.current = null;
       };
     }, []);
+
+    const secondsToHHMMSS = (seconds: number = 0): string => {
+      const h = Math.floor(seconds / 3600)
+        .toString()
+        .padStart(2, "0");
+      const m = Math.floor((seconds % 3600) / 60)
+        .toString()
+        .padStart(2, "0");
+      const s = Math.floor(seconds % 60)
+        .toString()
+        .padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    };
 
     const waitForNextFrame = () =>
       new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -388,7 +423,10 @@ const ReportPdf = forwardRef(
 
         doc.setFontSize(15).setTextColor(0);
         doc.text(
-          formatDuration(timeTrackingData.data.seconds),
+          formatTimeDuration(
+            timeTrackingData.data.seconds,
+            timeTrackingData?.intervalFormat || "12h"
+          ),
           cardX + cardPadding,
           cardY + 14
         );
@@ -423,6 +461,45 @@ const ReportPdf = forwardRef(
         const pieImg = pieCanvas.toDataURL("image/png", 1.0);
 
         doc.addImage(pieImg, "PNG", leftX, startY, pieSize, pieSize);
+
+        const legendStartX = leftX;
+        let legendX = legendStartX + 15;
+        let legendY = startY + pieSize - 10;
+
+        const dotRadius = 1.5;
+        const dotTextGap = 2;
+        const itemSpacingX = 5;
+        const rowSpacingY = 7;
+        const maxLegendWidth = 70; // Adjust as needed
+
+        // Set font before loop
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+
+        projects.forEach((proj, i) => {
+          const label = proj.name;
+          const color = bluePalette[i];
+
+          const labelWidth =
+            doc.getTextWidth(label) + dotRadius * 2 + dotTextGap;
+
+          // Wrap to next row if current row is full
+          if (legendX + labelWidth > legendStartX + maxLegendWidth) {
+            legendX = legendStartX + 15;
+            legendY += rowSpacingY;
+          }
+
+          // Draw dot
+          doc.setFillColor(...color);
+          doc.circle(legendX + dotRadius, legendY - 1, dotRadius, "F");
+
+          // Draw text
+          doc.setTextColor(33, 37, 41);
+          doc.text(label, legendX + dotRadius * 2 + dotTextGap, legendY);
+
+          // Advance X for next item
+          legendX += labelWidth + itemSpacingX;
+        });
 
         const col1X = rightX;
         const col2X = col1X + 40;
@@ -475,7 +552,11 @@ const ReportPdf = forwardRef(
           doc.setFont("helvetica", "normal");
 
           doc.text(client, dotX + 2 * textOffset + dotRadius, currentY);
-          doc.text(formatDuration(proj.seconds), col2X, currentY);
+          doc.text(
+            formatTimeDuration(proj.seconds, timeTrackingData.intervalFormat),
+            col2X,
+            currentY
+          );
           doc.text(formatCost(proj.cost), col3X, currentY);
 
           currentY += rowHeight;
@@ -499,7 +580,11 @@ const ReportPdf = forwardRef(
         doc.setFont("helvetica", "normal");
         doc.setTextColor(0);
         doc.text("Total", col1X, currentY);
-        doc.text(formatDuration(totalSeconds), col2X, currentY);
+        doc.text(
+          formatTimeDuration(totalSeconds, timeTrackingData.intervalFormat),
+          col2X,
+          currentY
+        );
         doc.text(formatCost(totalCost), col3X, currentY);
 
         doc.setFont("helvetica", "bold");
@@ -522,8 +607,8 @@ const ReportPdf = forwardRef(
 
           const rows = groupedData.map((item) => [
             item.name,
-            formatDuration(item.seconds),
-            (item.seconds / 3600).toFixed(2),
+            secondsToHHMMSS(item.seconds),
+            formatTimeDuration(item.seconds, timeTrackingData.intervalFormat),
             formatCost(item.cost || 0),
           ]);
 

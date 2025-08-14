@@ -175,7 +175,7 @@ const Time = () => {
     currentPage,
     getTimeEntries,
   ]);
-  
+
   const handleBulkUpdate = async (data: {
     description?: string;
     projectId: string | null;

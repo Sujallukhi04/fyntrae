@@ -382,19 +382,21 @@ const Detailed = () => {
         generateCustomReportPDF(
           data,
           format(date, "yyyy-MM-dd"),
-          organization?.currency
+          organization?.currency,
+          organization?.timeFormat || "24h",
+          organization?.numberFormat || "1,000.00",
+          organization?.intervalFormat || "12h"
         );
         break;
 
       case "excel":
       case "csv":
       case "ods": {
-        let rows = formatExampleData(data);
-        rows = addExampleTotalRow(rows);
         exportToExcel(
-          rows,
+          data,
           "detailed_report",
-          selectedExportType === "excel" ? "xlsx" : selectedExportType
+          selectedExportType === "excel" ? "xlsx" : selectedExportType,
+          organization?.currency || "USD"
         );
         break;
       }

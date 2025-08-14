@@ -10,6 +10,7 @@ import TimerHeader from "@/components/time/TimerHeader";
 import { Separator } from "@/components/ui/separator";
 import useTime from "@/hooks/useTime";
 import useTimesummary from "@/hooks/useTimesummary";
+import { formatNumber, formatTimeDuration } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import type {
@@ -174,17 +175,6 @@ const DashMain = () => {
     }
   };
 
-  function formatDuration(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours === 0 && minutes === 0) return "0min";
-    if (hours === 0) return `${minutes}min`;
-    if (minutes === 0) return `${hours}h`;
-
-    return `${hours}h ${minutes}min`;
-  }
-
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <TimerHeader
@@ -208,7 +198,10 @@ const DashMain = () => {
         ) : (
           <>
             <RecentTimeEntries entries={recentTimeEntries} />
-            <Last7Days dailySummary={dailySummary} />
+            <Last7Days
+              dailySummary={dailySummary}
+              intervalFormat={organization?.intervalFormat || "12h"}
+            />
             <TeamActivity runningEntries={runningTimeEntrys} />
           </>
         )}
@@ -236,18 +229,26 @@ const DashMain = () => {
           <div className="space-y-6">
             <DashboardCard
               title="Spent Time"
-              value={formatDuration(weeklySummary.totalTime)}
+              value={formatTimeDuration(
+                weeklySummary.totalTime,
+                organization?.intervalFormat || "12h"
+              )}
             />
             <DashboardCard
               title="Billable Time"
-              value={formatDuration(weeklySummary.billableTime)}
+              value={formatTimeDuration(
+                weeklySummary.billableTime,
+                organization?.intervalFormat || "12h"
+              )}
               className="text-blue-500"
             />
             <DashboardCard
               title="Billable Amount"
-              value={`${weeklySummary.billableAmount.toFixed(2)} ${
-                organization?.currency || ""
-              }`}
+              value={formatNumber(
+                weeklySummary.billableAmount,
+                organization?.numberFormat || "1,000.00",
+                organization?.currency || "USD"
+              )}
               className="text-green-500"
             />
           </div>

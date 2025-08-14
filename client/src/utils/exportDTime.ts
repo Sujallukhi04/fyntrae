@@ -30,7 +30,7 @@ export interface FormattedRow {
   Task: string;
   Duration: string;
   "Duration (decimal)": number;
-  "Amount (INR)": number;
+  [key: string]: string | number;
   Billable: string;
   Tags: string;
 }
@@ -51,10 +51,15 @@ export const secondsToHHMMSS = (seconds: number = 0): string => {
   return `${h}:${m}:${s}`;
 };
 
+const roundToTwoDecimals = (num: number): number => Math.round(num * 100) / 100;
+
 // ----------------------------
 // Formats raw data for export
 // ----------------------------
-export const formatExampleData = (data: ExampleEntry[]): FormattedRow[] => {
+export const formatExampleData = (
+  data: ExampleEntry[],
+  currency: string = "USD"
+): FormattedRow[] => {
   return data.map((entry) => ({
     Description: entry.description ?? "-",
     User: entry.user ?? "",
@@ -65,7 +70,7 @@ export const formatExampleData = (data: ExampleEntry[]): FormattedRow[] => {
     Task: entry.task ?? "-",
     Duration: secondsToHHMMSS(entry.seconds ?? 0),
     "Duration (decimal)": +((entry.seconds ?? 0) / 3600).toFixed(2),
-    "Amount (INR)": +(entry.cost ?? 0).toFixed(2),
+    [`Amount (${currency})`]: +(entry.cost ?? 0).toFixed(2),
     Billable: entry.billable ? "Yes" : "No",
     Tags: entry.tags?.join(", ") ?? "",
   }));
@@ -74,15 +79,19 @@ export const formatExampleData = (data: ExampleEntry[]): FormattedRow[] => {
 // ----------------------------
 // Adds total row at the bottom
 // ----------------------------
-export const addExampleTotalRow = (rows: FormattedRow[]): FormattedRow[] => {
-  const totalSeconds = rows.reduce(
-    (sum, row) => sum + (row["Duration (decimal)"] ?? 0) * 3600,
-    0
-  );
-  const totalCost = rows.reduce(
-    (sum, row) => sum + (row["Amount (INR)"] ?? 0),
-    0
-  );
+export const addExampleTotalRow = (
+  rows: FormattedRow[],
+  currency: string = "INR",
+  data: ExampleEntry[]
+): FormattedRow[] => {
+  const amountKey = `Amount (${currency})`;
+  const totalSeconds = data.reduce((sum, row) => sum + (row.seconds ?? 0), 0);
+
+  const totalCost = rows.reduce((sum, row) => {
+    const isBillable = row.Billable === "Yes";
+    const cost = (row[amountKey] as number) ?? 0;
+    return sum + (isBillable ? cost : 0);
+  }, 0);
 
   return [
     ...rows,
@@ -95,8 +104,8 @@ export const addExampleTotalRow = (rows: FormattedRow[]): FormattedRow[] => {
       Client: "",
       Task: "",
       Duration: secondsToHHMMSS(totalSeconds),
-      "Duration (decimal)": +(totalSeconds / 3600).toFixed(2),
-      "Amount (INR)": +totalCost.toFixed(2),
+      "Duration (decimal)": +roundToTwoDecimals(totalSeconds / 3600),
+      [amountKey]: +roundToTwoDecimals(totalCost),
       Billable: "",
       Tags: "",
     },
@@ -107,23 +116,27 @@ export const addExampleTotalRow = (rows: FormattedRow[]): FormattedRow[] => {
 // Reusable export function
 // ----------------------------
 export const exportToExcel = (
-  jsonData: FormattedRow[],
+  jsonData: ExampleEntry[],
   fileName: string,
-  fileType: ExportFormat = "xlsx"
+  fileType: ExportFormat = "xlsx",
+  currency: string = "INR"
 ): void => {
-  const worksheet = XLSX.utils.json_to_sheet(jsonData);
+  const formatted = formatExampleData(jsonData, currency);
+  const rowsWithTotal = addExampleTotalRow(formatted, currency, jsonData);
+
+  const worksheet = XLSX.utils.json_to_sheet(rowsWithTotal);
 
   // Auto column widths
-  const columnWidths = Object.keys(jsonData[0]).map((key) => {
+  const columnWidths = Object.keys(rowsWithTotal[0]).map((key) => {
     const maxLength = Math.max(
       key.length,
-      ...jsonData.map((row) =>
-        row[key as keyof FormattedRow]
-          ? row[key as keyof FormattedRow]!.toString().length
+      ...rowsWithTotal.map((row) =>
+        row[key] !== null && row[key] !== undefined
+          ? row[key].toString().length
           : 0
       )
     );
-    return { wch: maxLength + 2 }; // padding
+    return { wch: maxLength + 2 };
   });
   worksheet["!cols"] = columnWidths;
 

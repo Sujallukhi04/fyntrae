@@ -1,3 +1,4 @@
+import { formatNumber, formatTime, formatTimeDuration } from "@/lib/utils";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
@@ -15,10 +16,26 @@ interface TimeEntry {
   cost: number;
 }
 
+export const secondsToHHMMSS = (seconds: number = 0): string => {
+  const h = Math.floor(seconds / 3600)
+    .toString()
+    .padStart(2, "0");
+  const m = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${h}:${m}:${s}`;
+};
+
 export function generateCustomReportPDF(
   timeEntries: TimeEntry[],
   date: string,
-  currency: string = "USD"
+  currency: string = "USD",
+  format: "12h" | "24h",
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00" | "1,00,000.00",
+  intervalFormat: "12h" | "decimal"
 ): void {
   const doc = new jsPDF();
 
@@ -35,8 +52,8 @@ export function generateCustomReportPDF(
   // === Summary Card with Rounded Border ===
   const totalSeconds = timeEntries.reduce((acc, item) => acc + item.seconds, 0);
   const totalCost = timeEntries.reduce((acc, item) => acc + item.cost, 0);
-  const durationStr = formatDuration(totalSeconds);
-  const costStr = `${Math.round(totalCost)} ${currency}`;
+  const durationStr = formatTimeDuration(totalSeconds, intervalFormat);
+  const costStr = formatNumber(totalCost, numberFormat, currency);
 
   doc.setDrawColor(220);
   doc.setFillColor(245, 245, 245);
@@ -67,7 +84,7 @@ export function generateCustomReportPDF(
       lines.join("\n"), // use new line for multiline cell
       entry.user || "-",
       formatTimeRange(entry.start, entry.end),
-      formatDuration(entry.seconds),
+      secondsToHHMMSS(entry.seconds),
       entry.billable ? "Yes" : "No",
       entry.tags?.join(", ") || "-",
     ];
@@ -134,18 +151,9 @@ export function generateCustomReportPDF(
 
   doc.save("detailed_report.pdf");
 
-  // Helpers
-  function formatDuration(seconds: number): string {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return `${h}h ${m.toString().padStart(2, "0")}m`;
-  }
-
   function formatTimeRange(start: string | Date, end: string | Date): string {
-    const startTime = new Date(start);
-    const endTime = new Date(end);
-    const startStr = startTime.toTimeString().slice(0, 5);
-    const endStr = endTime.toTimeString().slice(0, 5);
-    return `${startStr} - ${endStr}`;
+    const startTime = formatTime(start, format);
+    const endTime = formatTime(end, format);
+    return `${startTime} - ${endTime}`;
   }
 }

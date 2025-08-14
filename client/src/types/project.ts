@@ -124,6 +124,8 @@ export interface TimeEntryGroupProps {
   groupBy1?: string;
   groupBy2?: string;
   currncy: string;
+  format: "1,000.00" | "1.000,00" | "1 000.00" | "1,00,000.00";
+  intervalFormat: "12h" | "decimal";
 }
 
 export interface Report {

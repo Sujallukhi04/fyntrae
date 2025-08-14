@@ -11,6 +11,11 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, Clock, FolderOpen } from "lucide-react";
 import NoData from "../NoData";
 import type { TimeEntryGroupProps } from "@/types/project";
+import {
+  formatNumber,
+  formatRateNumber,
+  formatTimeDuration,
+} from "@/lib/utils";
 
 const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600);
@@ -23,6 +28,8 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
   groupBy1 = "projects",
   groupBy2 = "members",
   currncy = "USD",
+  format,
+  intervalFormat,
 }) => {
   const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -38,6 +45,8 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
     0
   );
   const totalCost = groupedData.reduce((sum, g) => sum + (g.cost || 0), 0);
+
+  console.log(totalSeconds)
 
   return (
     <div className="space-y-4">
@@ -94,11 +103,11 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                         </div>
                       </TableCell>
                       <TableCell className="text-sm  py-3">
-                        {formatDuration(group.seconds)}
+                        {formatTimeDuration(group.seconds, intervalFormat)}
                       </TableCell>
                       <TableCell className="text-sm  py-3">
                         {typeof group.cost === "number" && group.cost > 0
-                          ? `${group.cost} ${currncy}`
+                          ? formatNumber(group.cost, format, currncy)
                           : "--"}
                       </TableCell>
                     </TableRow>
@@ -110,11 +119,11 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                             {sub.name || "Unknown"}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground py-3">
-                            {formatDuration(sub.seconds)}
+                            {formatTimeDuration(sub.seconds, intervalFormat)}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground py-3">
                             {typeof sub.cost === "number" && sub.cost > 0
-                              ? `${sub.cost} ${currncy}`
+                              ? formatNumber(sub.cost, format, currncy)
                               : "--"}
                           </TableCell>
                         </TableRow>
@@ -125,10 +134,12 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
                 {/* Total row */}
                 <TableRow className="bg-muted/30 font-semibold">
                   <TableCell>Total</TableCell>
-                  <TableCell>{formatDuration(totalSeconds)}</TableCell>
+                  <TableCell>
+                    {formatTimeDuration(totalSeconds, intervalFormat)}
+                  </TableCell>
                   <TableCell>
                     {typeof totalCost === "number" && totalCost > 0
-                      ? `${totalCost} ${currncy}`
+                      ? formatNumber(totalCost, format, currncy)
                       : "--"}
                   </TableCell>
                 </TableRow>

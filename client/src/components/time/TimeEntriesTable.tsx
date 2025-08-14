@@ -18,7 +18,7 @@ import {
 import { Edit, Trash2, MoreVertical, ChevronRight, Clock } from "lucide-react";
 import NoData from "@/components/NoData";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatTime, formatTimeDuration } from "@/lib/utils";
 import type {
   OrganizationMember,
   ProjectWithTasks,
@@ -236,7 +236,7 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                                   <Badge
                                     key={index}
                                     variant="secondary"
-                                    className="text-xs"
+                                    className="text-xs "
                                   >
                                     {tagObj
                                       ? tagObj.name
@@ -263,8 +263,15 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                       <TableCell className="text-sm text-muted-foreground font-medium">
                         {entry.start && entry.end && (
                           <>
-                            {format(new Date(entry.start), "HH:mm")} -{" "}
-                            {format(new Date(entry.end), "HH:mm")}
+                            {formatTime(
+                              new Date(entry.start),
+                              organization?.timeFormat || "12h"
+                            )}{" "}
+                            -{" "}
+                            {formatTime(
+                              new Date(entry.end),
+                              organization?.timeFormat || "12h"
+                            )}
                           </>
                         )}
                       </TableCell>
@@ -280,7 +287,10 @@ const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
                         </div>
                       </TableCell>
                       <TableCell className="font-medium text-sm">
-                        {formatEntryDuration(entry.duration)}
+                        {formatTimeDuration(
+                          entry.duration,
+                          organization?.intervalFormat || "12h"
+                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

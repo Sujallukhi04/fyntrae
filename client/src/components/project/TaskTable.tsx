@@ -29,6 +29,8 @@ import type { Tasks } from "@/types/project";
 import { getStatusBadge } from "../PaginationControl";
 import { useState } from "react";
 import { TasksSkeleton } from "../modals/Skeleton";
+import { formatDurationFromSeconds, formatTimeDuration } from "@/lib/utils";
+import { useOrganization } from "@/providers/OrganizationProvider";
 
 interface TasksTableProps {
   tasks?: Tasks[];
@@ -52,13 +54,7 @@ const TasksTable: React.FC<TasksTableProps> = ({
   statusLoading = false,
 }) => {
   const [activeTab, setActiveTab] = useState<"active" | "done">("active");
-
-  const formatTimeInHours = (seconds: number | null) => {
-    if (!seconds) return "--";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return `${h}:${m < 10 ? "0" : ""}${m}h`;
-  };
+  const { organization } = useOrganization();
 
   const getProgressPercent = (
     spentTime: number | null,
@@ -71,7 +67,6 @@ const TasksTable: React.FC<TasksTableProps> = ({
       : 0;
   };
 
-  // Filter tasks based on status
   const activeTasks = tasks.filter((task) => task.status === "ACTIVE");
   const doneTasks = tasks.filter((task) => task.status === "DONE");
 
@@ -100,11 +95,6 @@ const TasksTable: React.FC<TasksTableProps> = ({
             </TableRow>
           ) : (
             filteredTasks.map((task) => {
-              const progressPercent = getProgressPercent(
-                task.spentTime,
-                task?.estimatedTime || 0
-              );
-
               return (
                 <TableRow key={task.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
@@ -114,7 +104,10 @@ const TasksTable: React.FC<TasksTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                      {formatTimeInHours(task.spentTime)}
+                      {formatTimeDuration(
+                        task.spentTime,
+                        organization?.intervalFormat || "12h"
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>

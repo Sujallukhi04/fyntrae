@@ -6,21 +6,27 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart";
 import { generateBlueTones } from "@/lib/utils";
+import { PieChartIcon } from "lucide-react";
 
 interface ChartPieLegendProps {
   groupedData?: { name: string; seconds: number }[];
 }
 
-// Dummy data for demonstration
-const dummyData: { name: string; seconds: number }[] = [
-  { name: "Project A", seconds: 5400 }, // 1.5 hours
-  { name: "Project B", seconds: 7200 }, // 2 hours
-  { name: "Project C", seconds: 3600 }, // 1 hour
-];
-
 export function PieChartMain({ groupedData = [] }: ChartPieLegendProps) {
-  const isEmpty = groupedData.length === 0;
-  const dataToUse = isEmpty ? dummyData : groupedData;
+  const dataToUse = groupedData;
+
+  const filteredData = groupedData.filter((item) => item.seconds > 0);
+
+  if (filteredData.length === 0) {
+    return (
+      <Card className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+        <CardContent className="flex flex-col items-center justify-center gap-2">
+          <PieChartIcon className="w-8 h-8" />
+          <p className="text-sm">No data to display</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const blueColors = generateBlueTones(dataToUse.length);
 

@@ -87,6 +87,8 @@ const ReportPublic = () => {
               groupBy1={properties.group.split(",")[0] || "projects"}
               groupBy2={properties.group.split(",")[1] || "members"}
               currncy={reportData.currency || "USD"}
+              format={reportData.numberFormat || "1,000.00"}
+              intervalFormat={reportData.intervalFormat || "12h"}
             />
           </div>
 

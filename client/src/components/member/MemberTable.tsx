@@ -15,7 +15,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, RefreshCcw, Trash2, User, MoreVertical, Users } from "lucide-react";
+import {
+  Edit,
+  RefreshCcw,
+  Trash2,
+  User,
+  MoreVertical,
+  Users,
+} from "lucide-react";
 import type { Member } from "@/types/oraganization";
 
 import NoData from "@/components/NoData";
@@ -23,7 +30,7 @@ import NoData from "@/components/NoData";
 import { MembersSkeleton } from "../modals/Skeleton";
 import PaginationControls, { getStatusBadge } from "../PaginationControl";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, formatRateNumber, getFormat } from "@/lib/utils";
 
 interface MemberTableProps {
   members: Member[];
@@ -50,9 +57,6 @@ const MemberTable: React.FC<MemberTableProps> = ({
   isUpdating,
   isReactivating,
 }) => {
-  const getFormat = (role: string) =>
-    role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-
   const { organization } = useOrganization();
   return (
     <>
@@ -119,7 +123,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
                       {member.billableRate
                         ? formatNumber(
                             member.billableRate ?? 0,
-                            organization?.numberFormat || "1,000.00",
+                            organization?.numberFormat || "1 000.00",
                             organization?.currency || "USD"
                           )
                         : "--"}

@@ -2,6 +2,7 @@ import React from "react";
 import { Separator } from "../ui/separator";
 import { ChevronRight, Clock } from "lucide-react";
 import type { RecentTimeEntry } from "@/types/project";
+import NoData from "../NoData";
 
 const RecentTimeEntries = ({
   entries = [],
@@ -64,16 +65,17 @@ const RecentTimeEntries = ({
             </div>
 
             {/* Render Separator only if not last item */}
-            {idx !== recentEntries.length - 1 && (
+            {idx !== recentEntries.length && idx < 3 && (
               <Separator className="bg-muted/50" />
             )}
           </React.Fragment>
         ))}
 
         {recentEntries.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center">
-            No recent entries found.
-          </p>
+          <div className="flex w-full h-full flex-col items-center justify-center text-muted-foreground">
+            <Clock className="h-8 w-8" />
+            <p className="mt-2 text-sm">No Recent time</p>
+          </div>
         )}
       </div>
     </div>

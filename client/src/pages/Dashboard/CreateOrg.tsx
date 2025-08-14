@@ -8,6 +8,7 @@ import useAuthUser from "@/hooks/useAuthUser";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { Avatar, AvatarFallback } from "@radix-ui/react-avatar";
 import { Label } from "@radix-ui/react-label";
+import { Settings } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -32,17 +33,17 @@ const CreateOrg = () => {
   };
 
   return (
-    <div className="max-w-6xl w-full mx-auto p-3 space-y-8">
-      <div className="flex gap-3 flex-col w-full">
-        <div className="flex items-center pt-2 justify-between">
-          <h1 className="text-xl font-bold">Create Organization</h1>
-          <Badge variant="outline" className="text-xs ml-3">
-            New Organization
-          </Badge>
+    <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
+      <div className="flex flex-col gap-3 py-2">
+        <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+            <h1 className="font-semibold">Create Organization</h1>
+          </div>
         </div>
-        <Separator className="mb-4 mt-2" />
+        <Separator />
 
-        <div className="flex gap-6 md:gap-12 w-full md:flex-row  flex-col ">
+        <div className="flex gap-6 md:gap-12 w-full md:flex-row mt-3 flex-col px-5">
           <div className="md:w-[35%]">
             <h1 className="text-lg font-bold">Organization Details</h1>
             <h1 className="text-sm">

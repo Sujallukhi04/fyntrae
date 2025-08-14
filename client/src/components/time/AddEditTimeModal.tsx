@@ -25,7 +25,7 @@ import ProjectTaskSelector from "./ProjectTaskSelect";
 import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatTime } from "@/lib/utils";
 import { Calendar } from "../ui/calendar";
 import { toast } from "sonner";
 
@@ -238,7 +238,13 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(startTime, "PPP p")}
+                    {`${formatDate(
+                      startTime,
+                      organization?.dateFormat || "MM/DD/YYYY"
+                    )} ${formatTime(
+                      startTime,
+                      organization?.timeFormat || "24h"
+                    )}`}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto flex flex-col gap-2">
@@ -285,7 +291,13 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
                     )}
                   >
                     <Clock className="mr-2 h-4 w-4" />
-                    {format(endTime, "PPP p")}
+                    {`${formatDate(
+                      endTime,
+                      organization?.dateFormat || "MM/DD/YYYY"
+                    )} ${formatTime(
+                      endTime,
+                      organization?.timeFormat || "24h"
+                    )}`}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto flex flex-col gap-2">

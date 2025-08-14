@@ -8,18 +8,18 @@ export interface Organization {
   billableRates: number | null;
   intervalFormat: "12h" | "decimal";
   timeFormat: "12h" | "24h";
-  numberFormat: "1,000.00" | "1.000,00" | "1 000.00";
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00" | "1,00,000.00";
   createdAt: string;
   updatedAt: string;
 }
 
-export interface  OrganizationUpdateData {
+export interface OrganizationUpdateData {
   name: string;
   currency: "INR" | "USD" | "EUR" | "GBP";
   dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
   timeFormat: "12h" | "24h";
   intervalFormat: "12h" | "decimal";
-  numberFormat: "1,000.00" | "1.000,00" | "1 000.00";
+  numberFormat: "1,000.00" | "1.000,00" | "1 000.00" | "1,00,000.00";
   billableRates: number;
   employeesCanSeeBillableRates: boolean;
 }

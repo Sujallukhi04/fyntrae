@@ -251,7 +251,7 @@ export const createOrganization = catchAsync(
           billableRates: 0,
           intervalFormat: "12h",
           timeFormat: "12h",
-          numberFormat: "1,000.00",
+          numberFormat: "1,00,000.00",
         },
       });
 

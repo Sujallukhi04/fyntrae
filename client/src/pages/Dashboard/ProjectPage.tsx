@@ -444,7 +444,6 @@ const ProjectIdPage = () => {
         <ProjectMembersTable
           projectMembers={projectMembers}
           isLoading={isLoading}
-          currency={organization?.currency || "$"}
           onAddMember={() => setIsAddMemberModalOpen(true)}
           onEditMember={openEditMemberModal}
           onRemoveMember={handleRemoveProjectMember}

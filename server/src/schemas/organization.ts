@@ -40,7 +40,7 @@ export const updateOrganizationSchema = z.object({
   intervalFormat: z.enum(["12h", "decimal"], {
     errorMap: () => ({ message: "Invalid interval format" }),
   }),
-  numberFormat: z.enum(["1,000.00", "1.000,00", "1 000.00"], {
+  numberFormat: z.enum(["1,000.00", "1.000,00", "1 000.00", "1,00,000.00"], {
     errorMap: () => ({ message: "Invalid number format" }),
   }),
   billableRates: z.number().optional(),

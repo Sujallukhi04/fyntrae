@@ -27,6 +27,7 @@ import { CustomAlertDialog } from "@/components/modals/shared/CustomAlertDialog"
 import { InviteMemberModal } from "@/components/member/InviteMemberModal";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { UpdateRateModal } from "@/components/modals/shared/UpdateRateModal";
 
 type RoleType = "OWNER" | "ADMIN" | "MANAGER" | "EMPLOYEE" | "PLACEHOLDER";
 
@@ -63,6 +64,7 @@ const Members: React.FC = () => {
       | "resendInvite"
       | "reinvite"
       | "deleteMember"
+      | "warning"
       | null;
     data: Member | Invitation | null;
   }>({ type: null, data: null });
@@ -109,6 +111,13 @@ const Members: React.FC = () => {
     reactivateMember,
     reactiveMember,
   } = useMember();
+
+  const [pendingUpdate, setPendingUpdate] = useState<{
+    memberId: string;
+    role: string;
+    billableRate: number | null;
+    memberName?: string;
+  } | null>(null);
 
   const filteredMembers = useMemo(
     () =>
@@ -263,6 +272,7 @@ const Members: React.FC = () => {
           billableRate,
         });
         setModalState({ type: null, data: null });
+        setPendingUpdate(null);
       } catch (error) {
         console.error("Failed to update member:", error);
       }
@@ -383,11 +393,28 @@ const Members: React.FC = () => {
           isOpen={true}
           onClose={() => setModalState({ type: null, data: null })}
           onSave={() => {
+            const member = modalState.data as Member;
             const memberId = (modalState.data as Member).id;
             const billable = formState.isBillableRateDefault
               ? null
               : Number(formState.billableRate || 0);
-            handleUpdateMember(memberId, formState.role, billable);
+
+            if (formState.billableRate !== member.billableRate) {
+              setPendingUpdate({
+                memberId,
+                role: formState.role,
+                billableRate: billable,
+              });
+
+              setModalState({ type: null, data: null });
+
+              setModalState({
+                type: "warning",
+                data: member,
+              });
+            } else {
+              handleUpdateMember(memberId, formState.role, billable);
+            }
           }}
           selectedMember={modalState.data as Member}
           formState={formState}
@@ -528,6 +555,25 @@ const Members: React.FC = () => {
           </ul>
         </div>
       </CustomAlertDialog>
+
+      {pendingUpdate && (
+        <UpdateRateModal
+          isOpen={modalState.type === "warning" && !!pendingUpdate}
+          onClose={() => setModalState({ type: null, data: null })}
+          isLoading={isUpdatingMember}
+          onSubmit={async () => {
+            if (!pendingUpdate) return;
+            await handleUpdateMember(
+              pendingUpdate.memberId,
+              pendingUpdate.role,
+              pendingUpdate.billableRate
+            );
+          }}
+          name={(modalState.data as Member)?.user?.name || "Member"}
+          forthing="Member"
+          rate={pendingUpdate?.billableRate || 0}
+        />
+      )}
 
       <Tabs
         value={activeTab}

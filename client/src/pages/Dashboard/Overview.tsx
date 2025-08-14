@@ -344,13 +344,31 @@ const Overview = () => {
         }
         break;
       case "excel":
-        downloadXLSX(groupedData, clientHeader, taskHeader);
+        downloadXLSX(
+          groupedData,
+          clientHeader,
+          taskHeader,
+          undefined,
+          organization?.currency || "USD",
+        );
         break;
       case "csv":
-        downloadCSV(groupedData, clientHeader, taskHeader);
+        downloadCSV(
+          groupedData,
+          clientHeader,
+          taskHeader,
+          undefined,
+          organization?.currency || "USD",
+        );
         break;
       case "ods":
-        downloadODS(groupedData, clientHeader, taskHeader);
+        downloadODS(
+          groupedData,
+          clientHeader,
+          taskHeader,
+          undefined,
+          organization?.currency || "USD",
+        );
         break;
       default:
         toast.error("Unsupported export format.");
@@ -504,6 +522,8 @@ const Overview = () => {
               groupBy1={groupBy1}
               groupBy2={groupBy2}
               currncy={organization?.currency || "USD"}
+              format={organization?.numberFormat || "1,000.00"}
+              intervalFormat={organization?.intervalFormat || "12h"}
             />
           </div>
 

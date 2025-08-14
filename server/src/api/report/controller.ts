@@ -141,6 +141,8 @@ export const getPublicReportById = catchAsync(
           select: {
             name: true,
             currency: true,
+            numberFormat: true,
+            intervalFormat: true,
           },
         },
       },
@@ -195,6 +197,8 @@ export const getPublicReportById = catchAsync(
       description: report.description,
       public_until: report.publicUntil,
       currency: report.organization.currency,
+      numberFormat: report.organization.numberFormat,
+      intervalFormat: report.organization.intervalFormat,
       properties: {
         group: properties.group || "projects",
         history_group: properties.history_group || "day",

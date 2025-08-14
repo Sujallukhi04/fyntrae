@@ -101,11 +101,7 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
       return initialData.billableRate;
     return 0;
   });
-  const [errors, setErrors] = useState<{
-    name?: string;
-    billableRate?: string;
-    estimatedTime?: string;
-  }>({});
+
   const [estimatedTime, setEstimatedTime] = useState(
     initialData?.estimatedTime !== undefined ? initialData.estimatedTime : 0
   );
