@@ -67,7 +67,7 @@ const InvitationTable: React.FC<InvitationTableProps> = ({
                 <TableHead className="text-muted-foreground font-medium w-[20%] min-w-[80px]">
                   Expires
                 </TableHead>
-                <TableHead className="w-[10%] min-w-[50px]" />
+                <TableHead className="w-[5%] min-w-[50px]" />
               </TableRow>
             </TableHeader>
             <TableBody>

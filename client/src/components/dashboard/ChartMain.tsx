@@ -42,7 +42,7 @@ export default function ChartMain({ chartData }: ChartAreaInteractiveProps) {
         </CardHeader>
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           {isEmpty ? (
-            <div className="flex h-[205px] w-full flex-col items-center justify-center text-muted-foreground">
+            <div className="flex h-[250px] w-full flex-col items-center justify-center text-muted-foreground">
               <BarChartIcon className="h-8 w-8" />
               <p className="mt-2 text-sm">No data to display</p>
             </div>

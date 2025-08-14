@@ -1,23 +1,22 @@
 import React from "react";
 import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-interface GeneralModalProps {
+interface PersistentModalProps {
   open: boolean;
   onOpenChange: (val: boolean) => void;
   title: string;
   description: string;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
   onCancel?: () => void;
   loading?: boolean;
   confirmLabel?: string;
@@ -26,7 +25,7 @@ interface GeneralModalProps {
   triggerButtonClassName?: string;
 }
 
-const GeneralModal: React.FC<GeneralModalProps> = ({
+const PersistentModal: React.FC<PersistentModalProps> = ({
   open,
   onOpenChange,
   title,
@@ -39,27 +38,37 @@ const GeneralModal: React.FC<GeneralModalProps> = ({
   triggerButtonLabel = "Open Modal",
   triggerButtonClassName = "w-fit",
 }) => {
+  const handleConfirm = async () => {
+    try {
+      await onConfirm();
+      onOpenChange(false); // Close only after successful confirm
+    } catch (error) {
+      console.error("Confirm failed:", error);
+      // Keep modal open on error
+    }
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogTrigger asChild>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
         <Button className={triggerButtonClassName}>{triggerButtonLabel}</Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
             {cancelLabel}
-          </AlertDialogCancel>
-          <AlertDialogAction disabled={loading} onClick={onConfirm}>
+          </Button>
+          <Button disabled={loading} onClick={handleConfirm}>
             {loading ? `${confirmLabel}...` : confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default GeneralModal;
+export default PersistentModal;

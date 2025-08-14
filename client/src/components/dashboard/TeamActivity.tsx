@@ -25,7 +25,7 @@ const TeamActivity = ({
                 <p className="text-sm font-medium text-white truncate">
                   {entry.name}
                 </p>
-                {!entry.runningEntry.end && (
+                {entry.runningEntry && !entry.runningEntry.end && (
                   <div className="flex items-center gap-1.5 text-green-500 text-xs font-medium">
                     <span className="relative flex items-center justify-center w-3 h-3">
                       <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />

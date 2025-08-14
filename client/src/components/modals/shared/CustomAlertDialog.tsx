@@ -1,5 +1,3 @@
-// components/modals/CustomAlertDialog.tsx
-
 import {
   AlertDialog,
   AlertDialogContent,
@@ -10,6 +8,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 import { ReactNode } from "react";
 
 interface CustomAlertDialogProps {
@@ -41,6 +40,16 @@ export const CustomAlertDialog = ({
   onConfirm,
   confirmClassName = "bg-red-600 hover:bg-red-700 focus:ring-red-600 text-white",
 }: CustomAlertDialogProps) => {
+  const handleConfirm = async () => {
+    try {
+      await onConfirm(); // Wait for confirmation logic to finish
+      onOpenChange(false); // Close modal only after that
+    } catch (error) {
+      console.error("Error during confirm:", error);
+      // Optional: Show error feedback
+    }
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="sm:max-w-[425px]">
@@ -71,13 +80,13 @@ export const CustomAlertDialog = ({
             {cancelText}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isLoading}
             className={confirmClassName}
           >
             {isLoading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <Loader2 />
                 Processing...
               </>
             ) : (
