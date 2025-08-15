@@ -65,6 +65,7 @@ const Members: React.FC = () => {
       | "reinvite"
       | "deleteMember"
       | "warning"
+      | "confirmOwnershipTransfer"
       | null;
     data: Member | Invitation | null;
   }>({ type: null, data: null });
@@ -110,6 +111,8 @@ const Members: React.FC = () => {
     deactiveMember,
     reactivateMember,
     reactiveMember,
+    transferOwner,
+    transferOwnership,
   } = useMember();
 
   const [pendingUpdate, setPendingUpdate] = useState<{
@@ -361,6 +364,24 @@ const Members: React.FC = () => {
     }
   }, [user?.currentTeamId, modalState, deleteMember]);
 
+  const handleTranserOwnership = useCallback(async () => {
+    if (
+      !user?.currentTeamId ||
+      !modalState.data ||
+      modalState.type !== "confirmOwnershipTransfer"
+    )
+      return;
+    try {
+      await transferOwnership(
+        user.currentTeamId,
+        (modalState.data as Member).userId
+      );
+      setModalState({ type: null, data: null });
+    } catch (error) {
+      console.error("Failed to delete member:", error);
+    }
+  }, [user?.currentTeamId, modalState, transferOwnership]);
+
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
       <div className="flex flex-col gap-3 pb-1 pt-1">
@@ -399,6 +420,28 @@ const Members: React.FC = () => {
               ? null
               : Number(formState.billableRate || 0);
 
+            const isChangingToOwner =
+              formState.role === "OWNER" && member.role !== "OWNER";
+            const currentUserAsMember = members.find(
+              (m) => m.user?.id === user?.id
+            );
+            const isCurrentUserOwner = currentUserAsMember?.role === "OWNER";
+
+            if (isChangingToOwner && isCurrentUserOwner) {
+              setPendingUpdate({
+                memberId: member.id,
+                role: formState.role,
+                billableRate: billable,
+                memberName: member.user?.name,
+              });
+
+              setModalState({
+                type: "confirmOwnershipTransfer",
+                data: member,
+              });
+              return;
+            }
+
             if (formState.billableRate !== member.billableRate) {
               setPendingUpdate({
                 memberId,
@@ -427,7 +470,7 @@ const Members: React.FC = () => {
       <CustomAlertDialog
         open={modalState.type === "deleteInvite"}
         onOpenChange={() => setModalState({ type: null, data: null })}
-        icon={<Trash2 className="h-6 w-6 text-red-600" />}
+        icon={<Trash2 className="h-6 w-6 text-red-500" />}
         title="Delete Invitation"
         description={
           <>
@@ -445,7 +488,7 @@ const Members: React.FC = () => {
         onConfirm={handleDeleteInvitation}
       >
         <div className="bg-red-600/10 border border-red-600/20 rounded-md p-3">
-          <p className="text-sm font-medium text-red-700 mb-2">
+          <p className="text-sm font-medium text-red-500 mb-2">
             This will permanently:
           </p>
           <ul className="text-sm text-red-600 space-y-1">
@@ -486,6 +529,37 @@ const Members: React.FC = () => {
         triggerButtonLabel=""
         triggerButtonClassName="hidden"
       />
+
+      {modalState.type === "confirmOwnershipTransfer" && pendingUpdate && (
+        <GeneralModal
+          open={modalState.type === "confirmOwnershipTransfer"}
+          onOpenChange={() => setModalState({ type: null, data: null })}
+          title="Transfer Ownership"
+          description={
+            <>
+              Are you sure you want to transfer ownership to{" "}
+              <span className="font-semibold text-foreground">
+                {pendingUpdate.memberName || "this member"}
+              </span>
+              ?<br />
+              You will lose owner permissions and this action cannot be undone.
+            </>
+          }
+          onConfirm={async () => {
+            await handleTranserOwnership();
+            setPendingUpdate(null);
+          }}
+          onCancel={() => {
+            setPendingUpdate(null);
+            setModalState({ type: null, data: null });
+          }}
+          loading={transferOwner}
+          confirmLabel="Transfer Ownership"
+          cancelLabel="Cancel"
+          triggerButtonLabel=""
+          triggerButtonClassName="hidden"
+        />
+      )}
 
       {/* resendinvite */}
       <GeneralModal

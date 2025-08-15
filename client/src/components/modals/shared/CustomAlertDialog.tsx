@@ -84,14 +84,8 @@ export const CustomAlertDialog = ({
             disabled={isLoading}
             className={confirmClassName}
           >
-            {isLoading ? (
-              <>
-                <Loader2 />
-                Processing...
-              </>
-            ) : (
-              confirmText
-            )}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

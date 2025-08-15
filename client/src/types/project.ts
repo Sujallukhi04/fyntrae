@@ -80,12 +80,11 @@ export interface ProjectWithTasks {
   id: string;
   name: string;
   color: string;
-  tasks: [
-    {
-      id: string;
-      name: string;
-    }
-  ];
+  tasks: {
+    id: string;
+    name: string;
+    status: "ACTIVE" | "DONE";
+  }[];
   members: string[];
 }
 

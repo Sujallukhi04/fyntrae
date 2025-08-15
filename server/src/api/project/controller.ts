@@ -913,6 +913,25 @@ export const deleteTask = catchAsync(
     // Validate task belongs to project
     await validateTaskInProject(taskId, projectId, organizationId);
 
+    const isActive = await db.task.findFirst({
+      where: {
+        id: taskId,
+        status: "ACTIVE",
+      },
+    });
+
+    if (isActive) throw new ErrorHandler("Task is Active not delete", 404);
+
+    const existsEntry = await db.timeEntry.findFirst({
+      where: {
+        taskId: taskId,
+      },
+    });
+
+    if (existsEntry) {
+      throw new ErrorHandler("Time entries exits for that task", 404);
+    }
+
     await db.task.delete({
       where: { id: taskId },
     });

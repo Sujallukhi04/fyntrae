@@ -505,6 +505,7 @@ const Detailed = () => {
                   }}
                   initialFocus
                   required={false}
+                  disabled={{ after: new Date() }}
                 />
               </PopoverContent>
             </Popover>

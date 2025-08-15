@@ -10,6 +10,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface PersistentModalProps {
   open: boolean;
@@ -63,7 +64,8 @@ const PersistentModal: React.FC<PersistentModalProps> = ({
             {cancelLabel}
           </Button>
           <Button disabled={loading} onClick={handleConfirm}>
-            {loading ? `${confirmLabel}...` : confirmLabel}
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

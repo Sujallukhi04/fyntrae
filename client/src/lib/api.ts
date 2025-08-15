@@ -141,6 +141,12 @@ export const organizationApi = {
     );
     return response.data;
   },
+  transferOwnerShip: async (organizationId: string, newOwnerId: string) => {
+    const response = await axiosInstance.post(
+      `/member/${organizationId}/members/${newOwnerId}/transfer-ownership`
+    );
+    return response.data;
+  },
 };
 
 export const clientApi = {

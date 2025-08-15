@@ -5,7 +5,7 @@ import React, { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 const useMember = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
@@ -18,6 +18,7 @@ const useMember = () => {
   const [isRemovingMember, setIsRemovingMember] = useState(false);
   const [isDeactivatingMember, setIsDeactivatingMember] = useState(false);
   const [reactivateMember, setReactivateMember] = useState(false);
+  const [transferOwner, setTransferOwner] = useState(false);
 
   const [membersPagination, setMembersPagination] = useState<{
     total: number;
@@ -362,6 +363,66 @@ const useMember = () => {
     []
   );
 
+  const transferOwnership = useCallback(
+    async (oraganizationId: string, newOwnerId: string) => {
+      setTransferOwner(true);
+
+      try {
+        const response = await organizationApi.transferOwnerShip(
+          oraganizationId,
+          newOwnerId
+        );
+
+        const { previousOwner, newOwner } = response;
+
+        setMembers((prev) =>
+          prev.map((member) => {
+            if (member.userId === previousOwner.id) {
+              return { ...member, role: previousOwner.role };
+            }
+            if (member.userId === newOwner.id) {
+              return { ...member, role: newOwner.role };
+            }
+            return member;
+          })
+        );
+
+        setUser((prev) => {
+          if (!prev) return prev;
+
+          const updatedOrganizations = prev.organizations.map((org) => {
+            if (org.id === oraganizationId) {
+              if (org.role === "OWNER" && prev.id === previousOwner.id) {
+                return { ...org, role: previousOwner.role };
+              }
+              // If current user is now the new owner
+              if (prev.id === newOwner.id) {
+                return { ...org, role: newOwner.role };
+              }
+            }
+            return org;
+          });
+
+          return {
+            ...prev,
+            organizations: updatedOrganizations,
+          };
+        });
+
+        toast.success("transfer owner successfully");
+        return response;
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message || "Failed to transfer ownership";
+        toast.error(errorMessage);
+        throw error;
+      } finally {
+        setTransferOwner(false);
+      }
+    },
+    []
+  );
+
   return {
     getInvitations,
     getMembers,
@@ -387,6 +448,8 @@ const useMember = () => {
     invitationsPagination,
     setMembers,
     setInvitations,
+    transferOwnership,
+    transferOwner,
   };
 };
 

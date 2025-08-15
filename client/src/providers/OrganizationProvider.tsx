@@ -91,8 +91,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       setRunningTimer(timer);
     } catch (error: any) {
       console.error("Error fetching running timer:", error);
-      // Don't show toast error for timer fetch failures as it's not critical
-      // and might be noisy for users
+      setRunningTimer(null);
     } finally {
       setIsLoadingTimer(false);
     }

@@ -390,6 +390,7 @@ const Time = () => {
                   }}
                   initialFocus
                   required={false}
+                  disabled={{ after: new Date() }}
                 />
               </PopoverContent>
             </Popover>

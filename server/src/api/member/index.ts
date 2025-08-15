@@ -49,7 +49,7 @@ router.put(
 
 // Transfer ownership
 router.post(
-  "/:organizationId/members/:memberId/transfer-ownership",
+  "/:organizationId/members/:newOwnerId/transfer-ownership",
   protectRoute,
   memberController.transferOwnership
 );

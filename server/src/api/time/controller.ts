@@ -164,6 +164,7 @@ export const createTimeEntry = catchAsync(
             id: data.taskId,
             organizationId,
             projectId: data.projectId,
+            status: "ACTIVE",
           },
         });
         if (!task) throw new ErrorHandler("Task not found", 404);
@@ -318,6 +319,7 @@ export const startTimer = catchAsync(
         where: {
           id: data.taskId,
           organizationId,
+          status: "ACTIVE",
           ...(data.projectId && { projectId: data.projectId }),
         },
       });
@@ -644,18 +646,21 @@ export const updateTimeEntry = catchAsync(
       }
 
       if (data.taskId) {
+        const currentTask = existingEntry.taskId === data.taskId;
+
         const task = await db.task.findFirst({
           where: {
             id: data.taskId,
             organizationId,
             projectId: data.projectId,
+            status: "ACTIVE",
           },
           include: {
             project: true,
           },
         });
 
-        if (!task) {
+        if (!currentTask && !task) {
           throw new ErrorHandler("Task not found", 404);
         }
       }
@@ -1242,8 +1247,8 @@ export const getAllProjectWithTasks = catchAsync(
       },
       include: {
         tasks: {
-          where: { status: "ACTIVE" },
-          select: { id: true, name: true },
+          // where: { status: "ACTIVE" },
+          select: { id: true, name: true, status: true },
         },
         members: {
           select: {
@@ -1262,6 +1267,7 @@ export const getAllProjectWithTasks = catchAsync(
         tasks: project.tasks.map((task) => ({
           id: task.id,
           name: task.name,
+          status: task.status,
         })),
         members: project.members.map((member) => member.userId),
       })),

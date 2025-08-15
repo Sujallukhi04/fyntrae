@@ -82,7 +82,11 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
   useEffect(() => {
     if (initialData) {
       setDescription(initialData.description);
-      setProjectId(initialData?.projectId || "");
+      setProjectId(
+        initialData?.projectId && initialData?.taskId
+          ? `${initialData.projectId}:${initialData.taskId}`
+          : initialData?.projectId || ""
+      );
       setStartTime(initialData.start);
       setEndTime(initialData.end);
       setSelectedTags(initialData.tags);
@@ -127,6 +131,9 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
       billable,
     });
   };
+
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -262,6 +269,7 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
                         );
                       }
                     }}
+                    disabled={[{ after: endOfToday }]}
                   />
                   <Input
                     type="time"
@@ -315,6 +323,7 @@ export const TimeEntryModal: React.FC<TimeEntryModalProps> = ({
                         );
                       }
                     }}
+                    disabled={[{ after: endOfToday }]}
                   />
                   <Input
                     type="time"

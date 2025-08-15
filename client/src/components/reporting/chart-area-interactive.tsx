@@ -84,6 +84,16 @@ export default function ChartAreaInteractive({
   const dateRange: DateRange | undefined =
     date.from && date.to ? { from: date.from, to: date.to } : undefined;
 
+  const today = new Date();
+  const endOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    23,
+    59,
+    59
+  );
+
   return (
     <div className="w-full mx-auto p-3">
       <Card className="bg-card rounded-md shadow-none border">
@@ -120,6 +130,7 @@ export default function ChartAreaInteractive({
                       onSelect={handleDateSelect}
                       numberOfMonths={2}
                       className="rounded-md border"
+                      disabled={[{ after: endOfToday }]}
                     />
                   </PopoverContent>
                 </Popover>

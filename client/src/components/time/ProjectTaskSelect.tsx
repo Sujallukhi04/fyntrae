@@ -111,20 +111,29 @@ const ProjectTaskSelector: React.FC<ProjectTaskSelectorProps> = ({
               selectedValue.startsWith(`${project.id}:`);
             return isMember || isSelected;
           })
-          .map((project) => (
-            <div key={project.id}>
-              <SelectItem value={project.id}>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: project.color || "#6B7280" }}
-                  />
-                  <span className="font-semibold">{project.name}</span>
-                </div>
-              </SelectItem>
+          .map((project) => {
+            const selectedTaskId = selectedValue.includes(":")
+              ? selectedValue.split(":")[1]
+              : null;
 
-              {project.tasks?.length > 0 &&
-                project.tasks.map((task) => (
+            const filteredTasks = project.tasks.filter((task) => {
+              if (task.status !== "DONE") return true;
+              return task.id === selectedTaskId;
+            });
+
+            return (
+              <div key={project.id}>
+                <SelectItem value={project.id}>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: project.color || "#6B7280" }}
+                    />
+                    <span className="font-semibold">{project.name}</span>
+                  </div>
+                </SelectItem>
+
+                {filteredTasks.map((task) => (
                   <SelectItem
                     key={`${project.id}:${task.id}`}
                     value={`${project.id}:${task.id}`}
@@ -137,8 +146,9 @@ const ProjectTaskSelector: React.FC<ProjectTaskSelectorProps> = ({
                     </div>
                   </SelectItem>
                 ))}
-            </div>
-          ))}
+              </div>
+            );
+          })}
       </SelectContent>
     </Select>
   );

@@ -36,7 +36,7 @@ export const API_PERMISSIONS = {
     CREATE: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
     VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE],
     UPDATE: [Role.OWNER, Role.ADMIN],
-    DELETE: [Role.OWNER, Role.ADMIN],
+    DELETE: [Role.OWNER],
     MANAGE_MEMBERS: [Role.OWNER, Role.ADMIN],
     INVITE_MEMBERS: [Role.OWNER, Role.ADMIN],
     VIEW_MEMBERS: [Role.OWNER, Role.ADMIN, Role.MANAGER],
@@ -47,7 +47,7 @@ export const API_PERMISSIONS = {
     UPDATE: [Role.OWNER, Role.ADMIN],
     DEACTIVATE: [Role.OWNER, Role.ADMIN],
     DELETE: [Role.OWNER, Role.ADMIN],
-    CHANGE_ROLE: [Role.OWNER, Role.ADMIN],
+    CHANGE_ROLE: [Role.OWNER],
   },
 
   TIME: {
@@ -104,6 +104,10 @@ export const validateRoleChange = async (
   userId: string,
   organizationId: string
 ): Promise<void> => {
+  if (member.userId === userId) {
+    throw new ErrorHandler("You are cannot update your own role", 404);
+  }
+
   // Check if trying to create multiple owners
   if (member.role !== "OWNER" && newRole === "OWNER") {
     const existingOwner = await db.member.findFirst({

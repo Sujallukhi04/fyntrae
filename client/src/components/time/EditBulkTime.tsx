@@ -35,7 +35,7 @@ interface TimeEntryModalProps {
   onSubmit: (data: {
     description?: string;
     projectId: string | null;
-    taskId: string |null;
+    taskId: string | null;
     billable: boolean;
     tagIds?: string[];
   }) => Promise<void>;
@@ -75,8 +75,8 @@ export const EditTimeEntryModal: React.FC<TimeEntryModalProps> = ({
 
     onSubmit({
       description,
-       projectId: projectid ,
-       taskId,
+      projectId: projectid,
+      taskId,
       tagIds: selectedTags,
       billable,
     });
