@@ -40,6 +40,7 @@ import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
 import useTimesummary from "@/hooks/useTimesummary";
 import TimerHeader from "@/components/time/TimerHeader";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
   data: TimeEntry | null;
@@ -91,6 +92,7 @@ const Time = () => {
     bulkUpdateLoading,
     bulkDeleteLoading,
   } = useTime();
+  const { canCallApi } = useOrgAccess();
 
   const { fetchProjectWiTasks, fetchTags, loading } = useTimesummary();
 
@@ -234,12 +236,30 @@ const Time = () => {
     if (!user?.currentTeamId || !modalState.data) return;
 
     try {
-      await updateTimeEntry(user.currentTeamId, modalState.data?.id, {
-        ...data,
-        start: data.start,
-        end: data.end,
-      });
+      await updateTimeEntry(
+        user.currentTeamId,
+        modalState.data?.id,
+        {
+          ...data,
+          start: data.start,
+          end: data.end,
+        },
+        date
+      );
       setModalState({ type: null, data: null });
+      const updatedDate = format(data.start, "yyyy-MM-dd");
+      const selectedDate = format(date, "yyyy-MM-dd");
+
+      const shouldRefetch = updatedDate !== selectedDate;
+
+      if (shouldRefetch || (timeEntries.length === 1 && currentPage > 1)) {
+        const newPage =
+          timeEntries.length === 1 && currentPage > 1
+            ? Math.max(currentPage - 1, 1)
+            : currentPage;
+        setCurrentPage(newPage);
+        await refreshTimeEntries();
+      }
     } catch (error) {
       console.error("Failed to update time entry:", error);
     }

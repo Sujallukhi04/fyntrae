@@ -11,6 +11,7 @@ import type { Client as ClientType } from "@/types/oraganization";
 import AddEditClientModal from "@/components/clientsOrganation/CreateClient";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 const Client = () => {
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
@@ -38,13 +39,16 @@ const Client = () => {
     deleteClient,
     deleteClientLoading,
   } = useClient();
+
+  const { canCallApi } = useOrgAccess();
+
   const [modalState, setModalState] = useState<{
     type: "add" | "edit" | null;
     data: ClientType | null;
   }>({ type: null, data: null });
 
   const fetchActiveClients = useCallback(async () => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("viewClients")) return;
 
     await getClients(user.currentTeamId, "active", {
       page: activeCurrentPage,
@@ -54,7 +58,7 @@ const Client = () => {
   }, [user?.currentTeamId, activeCurrentPage, getClients]);
 
   const fetchArchivedClients = useCallback(async () => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("viewClients")) return;
     await getClients(user.currentTeamId, "archived", {
       page: archivedCurrentPage,
       pageSize: 10,
@@ -266,14 +270,16 @@ const Client = () => {
             <UserCircle2 className="h-5 w-5 text-muted-foreground" />
             <h1 className=" font-semibold">Clients</h1>
           </div>
-          <Button
-            className="w-full md:w-auto"
-            variant="outline"
-            onClick={() => setModalState({ type: "add", data: null })}
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Create Client
-          </Button>
+          {canCallApi("editClient") && (
+            <Button
+              className="w-full md:w-auto"
+              variant="outline"
+              onClick={() => setModalState({ type: "add", data: null })}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create Client
+            </Button>
+          )}
         </div>
         <Separator />
       </div>
@@ -320,18 +326,20 @@ const Client = () => {
             </div>
           </div> */}
           {/* Placeholder for clients list */}
-          <ActiveClient
-            clients={clients}
-            pagination={clientPagination}
-            isLoading={isLoading}
-            onPageChange={setActiveCurrentPage}
-            onEdit={(client) => setModalState({ type: "edit", data: client })}
-            onArchive={handlesendArchiveClient}
-            isEditLoading={editClientLoading}
-            isArchiveLoading={sendArchiveClientLoading}
-            onDelete={handleDeleteClient} // <-- Pass delete handler
-            deleteLoading={deleteClientLoading} // <-- Pass loading state
-          />
+          {canCallApi("viewClients") && (
+            <ActiveClient
+              clients={clients}
+              pagination={clientPagination}
+              isLoading={isLoading}
+              onPageChange={setActiveCurrentPage}
+              onEdit={(client) => setModalState({ type: "edit", data: client })}
+              onArchive={handlesendArchiveClient}
+              isEditLoading={editClientLoading}
+              isArchiveLoading={sendArchiveClientLoading}
+              onDelete={handleDeleteClient} // <-- Pass delete handler
+              deleteLoading={deleteClientLoading} // <-- Pass loading state
+            />
+          )}
         </TabsContent>
 
         {/* Invitations Tab */}
@@ -347,18 +355,20 @@ const Client = () => {
             </div>
           </div> */}
           {/* Placeholder for invitations list */}
-          <ArchivedClient
-            clients={archivedClients}
-            pagination={archivedPagination}
-            isLoading={isLoading}
-            onPageChange={setArchivedCurrentPage}
-            onEdit={(client) => setModalState({ type: "edit", data: client })}
-            unArchive={handleUnarchiveClient}
-            unArchiveLoading={unarchiveClientLoading}
-            isEditLoading={editClientLoading}
-            onDelete={handleDeleteClient} // <-- Pass delete handler
-            deleteLoading={deleteClientLoading} // <-- Pass loading state
-          />
+          {canCallApi("viewClients") && (
+            <ArchivedClient
+              clients={archivedClients}
+              pagination={archivedPagination}
+              isLoading={isLoading}
+              onPageChange={setArchivedCurrentPage}
+              onEdit={(client) => setModalState({ type: "edit", data: client })}
+              unArchive={handleUnarchiveClient}
+              unArchiveLoading={unarchiveClientLoading}
+              isEditLoading={editClientLoading}
+              onDelete={handleDeleteClient} // <-- Pass delete handler
+              deleteLoading={deleteClientLoading} // <-- Pass loading state
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { formatNumber } from "@/lib/utils";
 import { toast } from "sonner";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface AddEditProjectModalProps {
   isOpen: boolean;

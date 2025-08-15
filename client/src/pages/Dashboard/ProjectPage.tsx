@@ -17,6 +17,7 @@ import ProjectMembersTable from "@/components/project/ProjectMembersTable";
 import useTaks from "@/hooks/useTaks";
 import AddEditTaskModal from "@/components/project/AddEditTaskModal";
 import { toast } from "sonner";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface EditMemberState {
   isOpen: boolean;
@@ -91,6 +92,8 @@ const ProjectIdPage = () => {
     changeTaskStatusLoading,
   } = useTaks();
 
+  const { canCallApi } = useOrgAccess();
+
   useEffect(() => {
     const fetchProject = async () => {
       if (!user?.currentTeamId || !id) return;
@@ -105,14 +108,18 @@ const ProjectIdPage = () => {
   }, [id, user?.currentTeamId]);
 
   useEffect(() => {
-    if (project?.id && user?.currentTeamId) {
+    if (
+      project?.id &&
+      user?.currentTeamId &&
+      canCallApi("viewProjectMembers")
+    ) {
       getProjectMembers(project?.id, user.currentTeamId);
       getOrganizationMembers(user.currentTeamId, project?.id);
     }
   }, [project?.id, user?.currentTeamId]);
 
   useEffect(() => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("editProject")) return;
     getClientsByOrganizationId(user.currentTeamId).then((data) => {
       setClients(data || []);
     });
@@ -366,15 +373,18 @@ const ProjectIdPage = () => {
             </h1>
           </div>
 
-          {/* Right Section: Edit Button */}
-          <Button
-            variant="outline"
-            className="w-full md:w-auto flex items-center gap-2"
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit Project
-          </Button>
+          {canCallApi("editProject") ? (
+            <Button
+              variant="outline"
+              className="w-full md:w-auto flex items-center gap-2"
+              onClick={() => setIsEditModalOpen(true)}
+            >
+              <Pencil className="h-4 w-4" />
+              Edit Project
+            </Button>
+          ) : (
+            <div className="h-8 w-8" />
+          )}
         </div>
         <Separator className="" />
       </div>
@@ -428,7 +438,6 @@ const ProjectIdPage = () => {
 
       {/* Split Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-3 px-6">
-        {/* Tasks Section - 1/2 width on large screens */}
         <TasksTable
           tasks={tasks}
           isLoading={getTasksLoading}
@@ -440,16 +449,17 @@ const ProjectIdPage = () => {
           statusLoading={changeTaskStatusLoading}
         />
 
-        {/* Members Section - 1/2 width on large screens */}
-        <ProjectMembersTable
-          projectMembers={projectMembers}
-          isLoading={isLoading}
-          onAddMember={() => setIsAddMemberModalOpen(true)}
-          onEditMember={openEditMemberModal}
-          onRemoveMember={handleRemoveProjectMember}
-          updateMemberLoading={updateMemberLoading}
-          removeMemberLoading={removeMemberLoading}
-        />
+        {canCallApi("viewProjectMembers") && (
+          <ProjectMembersTable
+            projectMembers={projectMembers}
+            isLoading={isLoading}
+            onAddMember={() => setIsAddMemberModalOpen(true)}
+            onEditMember={openEditMemberModal}
+            onRemoveMember={handleRemoveProjectMember}
+            updateMemberLoading={updateMemberLoading}
+            removeMemberLoading={removeMemberLoading}
+          />
+        )}
       </div>
     </div>
   );

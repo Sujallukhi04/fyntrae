@@ -94,7 +94,7 @@ const Overview = () => {
 
   const [groupBy1, setGroupBy1] = useState("projects");
   const [groupBy2, setGroupBy2] = useState("members");
-  const { role } = useOrgAccess();
+  const { role, canCallApi } = useOrgAccess();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const { createReport, reportLoading } = useReport();
 
@@ -114,18 +114,22 @@ const Overview = () => {
 
       const orgId = user.currentTeamId;
 
-      try {
-        const clientData = await fetchClients(orgId);
-        setClients(clientData.clients);
-      } catch (error) {
-        setClients([]);
+      if (canCallApi("viewClients")) {
+        try {
+          const clientData = await fetchClients(orgId);
+          setClients(clientData.clients);
+        } catch (error) {
+          setClients([]);
+        }
       }
 
-      try {
-        const memberData = await fetchMembers(orgId);
-        setMembers(memberData.members);
-      } catch (error) {
-        setMembers([]);
+      if (canCallApi("viewMembers")) {
+        try {
+          const memberData = await fetchMembers(orgId);
+          setMembers(memberData.members);
+        } catch (error) {
+          setMembers([]);
+        }
       }
 
       try {
@@ -253,7 +257,13 @@ const Overview = () => {
     isPublic: boolean;
     publicUntil?: Date;
   }) => {
-    if (!user?.currentTeamId || !date.from || !date.to) return;
+    if (
+      !user?.currentTeamId ||
+      !date.from ||
+      !date.to ||
+      !canCallApi("saveReport")
+    )
+      return;
     try {
       const formatted = {
         name: data.name.trim(),
@@ -349,7 +359,7 @@ const Overview = () => {
           clientHeader,
           taskHeader,
           undefined,
-          organization?.currency || "USD",
+          organization?.currency || "USD"
         );
         break;
       case "csv":
@@ -358,7 +368,7 @@ const Overview = () => {
           clientHeader,
           taskHeader,
           undefined,
-          organization?.currency || "USD",
+          organization?.currency || "USD"
         );
         break;
       case "ods":
@@ -367,7 +377,7 @@ const Overview = () => {
           clientHeader,
           taskHeader,
           undefined,
-          organization?.currency || "USD",
+          organization?.currency || "USD"
         );
         break;
       default:

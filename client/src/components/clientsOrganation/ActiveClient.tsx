@@ -21,6 +21,7 @@ import { ClientsSkeleton } from "@/components/modals/Skeleton";
 import NoData from "@/components/NoData";
 import PaginationControls, { getStatusBadge } from "../PaginationControl";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface ActiveClientTableProps {
   clients: Client[];
@@ -52,6 +53,7 @@ const ActiveClient: React.FC<ActiveClientTableProps> = ({
   onDelete,
   deleteLoading,
 }) => {
+  const { canCallApi } = useOrgAccess();
   return (
     <>
       {isLoading ? (
@@ -108,37 +110,42 @@ const ActiveClient: React.FC<ActiveClientTableProps> = ({
                     <TableCell>{getStatusBadge("Active")}</TableCell>
 
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem
-                            onClick={() => onEdit?.(client)}
-                            disabled={isEditLoading}
+                      {canCallApi("editClient") && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="bg-popover"
                           >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onArchive?.(client.id)}
-                            disabled={isArchiveLoading}
-                          >
-                            <Archive className="mr-2 h-4 w-4" />
-                            Archive
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onDelete?.(client.id)}
-                            disabled={deleteLoading}
-                            className="text-red-500 hover:text-red-500 focus:text-red-500"
-                          >
-                            <Trash2 className="mr-2 text-red-500 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <DropdownMenuItem
+                              onClick={() => onEdit?.(client)}
+                              disabled={isEditLoading}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onArchive?.(client.id)}
+                              disabled={isArchiveLoading}
+                            >
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archive
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onDelete?.(client.id)}
+                              disabled={deleteLoading}
+                              className="text-red-500 hover:text-red-500 focus:text-red-500"
+                            >
+                              <Trash2 className="mr-2 text-red-500 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

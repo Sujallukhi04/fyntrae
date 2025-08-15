@@ -31,6 +31,7 @@ import { useState } from "react";
 import { TasksSkeleton } from "../modals/Skeleton";
 import { formatDurationFromSeconds, formatTimeDuration } from "@/lib/utils";
 import { useOrganization } from "@/providers/OrganizationProvider";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface TasksTableProps {
   tasks?: Tasks[];
@@ -55,6 +56,7 @@ const TasksTable: React.FC<TasksTableProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"active" | "done">("active");
   const { organization } = useOrganization();
+  const { canCallApi } = useOrgAccess();
 
   const getProgressPercent = (
     spentTime: number | null,
@@ -99,7 +101,9 @@ const TasksTable: React.FC<TasksTableProps> = ({
                 <TableRow key={task.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      <span className="truncate">{task.name}</span>
+                      <span className="truncate max-w-[100px]">
+                        {task.name}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -155,47 +159,53 @@ const TasksTable: React.FC<TasksTableProps> = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          disabled={deleteLoading || statusLoading}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => onToggleStatus?.(task.id, task.status)}
-                          disabled={statusLoading}
-                        >
-                          {task.status === "ACTIVE" ? (
-                            <>
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              Mark as Done
-                            </>
-                          ) : (
-                            <>
-                              <Circle className="mr-2 h-4 w-4" />
-                              Mark as Active
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEditTask?.(task)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Task
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onDeleteTask?.(task.id)}
-                          className="text-red-500 hover:text-red-500 focus:text-red-500"
-                          disabled={deleteLoading}
-                        >
-                          <Trash2 className="mr-2 size-4 text-red-500" />
-                          Delete Task
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {canCallApi("taskedit") ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            disabled={deleteLoading || statusLoading}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onToggleStatus?.(task.id, task.status)
+                            }
+                            disabled={statusLoading}
+                          >
+                            {task.status === "ACTIVE" ? (
+                              <>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Mark as Done
+                              </>
+                            ) : (
+                              <>
+                                <Circle className="mr-2 h-4 w-4" />
+                                Mark as Active
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEditTask?.(task)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Task
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onDeleteTask?.(task.id)}
+                            className="text-red-500 hover:text-red-500 focus:text-red-500"
+                            disabled={deleteLoading}
+                          >
+                            <Trash2 className="mr-2 size-4 text-red-500" />
+                            Delete Task
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <div className="h-8 w-8"></div>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -258,15 +268,18 @@ const TasksTable: React.FC<TasksTableProps> = ({
           </Tabs>
         </div>
 
-        {/* Add Task Button */}
-        <Button
-          variant="outline"
-          className="w-full md:w-auto flex items-center gap-2"
-          onClick={onAddTask}
-        >
-          <Plus className="h-4 w-4" />
-          Add Task
-        </Button>
+        {canCallApi("taskcreate") ? (
+          <Button
+            variant="outline"
+            className="w-full md:w-auto flex items-center gap-2"
+            onClick={onAddTask}
+          >
+            <Plus className="h-4 w-4" />
+            Add Task
+          </Button>
+        ) : (
+          <div className="h-8 w-8"></div>
+        )}
       </div>
 
       {/* Tab Content */}

@@ -21,6 +21,7 @@ import PaginationControls, {
 } from "@/components/PaginationControl";
 import { InvitationsSkeleton } from "@/components/modals/Skeleton";
 import NoData from "@/components/NoData";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface InvitationTableProps {
   invitations: Invitation[];
@@ -45,6 +46,8 @@ const InvitationTable: React.FC<InvitationTableProps> = ({
     role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
   const canResendInvitation = (invitation: Invitation) =>
     invitation.status === "PENDING" || invitation.status === "EXPIRED";
+
+  const { canCallApi } = useOrgAccess();
 
   return (
     <>
@@ -96,31 +99,38 @@ const InvitationTable: React.FC<InvitationTableProps> = ({
                       {new Date(invitation.expiresAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem
-                            onClick={() => onResend(invitation)}
-                            disabled={
-                              !canResendInvitation(invitation) || isResending
-                            }
+                      {canCallApi("deleteInvite") ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="bg-popover"
                           >
-                            <RefreshCcw className="size-4 mr-2" />
-                            {isResending ? "Resending..." : "Resend"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onDelete(invitation)}
-                            className="text-red-500 hover:text-red-500 focus:text-red-500"
-                          >
-                            <Trash2 className="mr-2 size-4 text-red-500" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <DropdownMenuItem
+                              onClick={() => onResend(invitation)}
+                              disabled={
+                                !canResendInvitation(invitation) || isResending
+                              }
+                            >
+                              <RefreshCcw className="size-4 mr-2" />
+                              {isResending ? "Resending..." : "Resend"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onDelete(invitation)}
+                              className="text-red-500 hover:text-red-500 focus:text-red-500"
+                            >
+                              <Trash2 className="mr-2 size-4 text-red-500" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <div className="h-8 w-8" />
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

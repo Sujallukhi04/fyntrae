@@ -46,6 +46,7 @@ import {
   exportToExcel,
   formatExampleData,
 } from "@/utils/exportDTime";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
@@ -109,6 +110,7 @@ const Detailed = () => {
     bulkUpdateLoading,
     bulkDeleteLoading,
   } = useTime();
+  const { canCallApi } = useOrgAccess();
 
   const [modalState, setModalState] = useState<TimeProps>({
     type: null,
@@ -169,18 +171,22 @@ const Detailed = () => {
 
       const orgId = user.currentTeamId;
 
-      try {
-        const clientData = await fetchClients(orgId);
-        setClients(clientData.clients);
-      } catch (error) {
-        setClients([]);
+      if (canCallApi("viewClients")) {
+        try {
+          const clientData = await fetchClients(orgId);
+          setClients(clientData.clients);
+        } catch (error) {
+          setClients([]);
+        }
       }
 
-      try {
-        const memberData = await fetchMembers(orgId);
-        setMembers(memberData.members);
-      } catch (error) {
-        setMembers([]);
+      if (canCallApi("viewMembers")) {
+        try {
+          const memberData = await fetchMembers(orgId);
+          setMembers(memberData.members);
+        } catch (error) {
+          setMembers([]);
+        }
       }
 
       try {
@@ -295,12 +301,30 @@ const Detailed = () => {
     if (!user?.currentTeamId || !modalState.data) return;
 
     try {
-      await updateTimeEntry(user.currentTeamId, modalState.data?.id, {
-        ...data,
-        start: data.start,
-        end: data.end,
-      });
+      await updateTimeEntry(
+        user.currentTeamId,
+        modalState.data?.id,
+        {
+          ...data,
+          start: data.start,
+          end: data.end,
+        },
+        date
+      );
       setModalState({ type: null, data: null });
+      const updatedDate = format(data.start, "yyyy-MM-dd");
+      const selectedDate = format(date, "yyyy-MM-dd");
+
+      const shouldRefetch = updatedDate !== selectedDate;
+
+      if (shouldRefetch || (timeEntries.length === 1 && currentPage > 1)) {
+        const newPage =
+          timeEntries.length === 1 && currentPage > 1
+            ? Math.max(currentPage - 1, 1)
+            : currentPage;
+        setCurrentPage(newPage);
+        await refreshTimeEntries();
+      }
     } catch (error) {
       console.error("Failed to update time entry:", error);
     }

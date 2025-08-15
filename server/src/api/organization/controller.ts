@@ -380,7 +380,7 @@ export const getOrganizationInvitations = catchAsync(
       userId,
       organizationId,
       "ORGANIZATION",
-      "MANAGE_MEMBERS"
+      "VIEW_INVITATIONS"
     );
 
     await db.organizationInvitation.updateMany({

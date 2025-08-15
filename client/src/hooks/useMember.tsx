@@ -1,5 +1,6 @@
 import { organizationApi } from "@/lib/api";
 import { useAuth } from "@/providers/AuthProvider";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import type { Invitation, Member } from "@/types/oraganization";
 import React, { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -33,6 +34,31 @@ const useMember = () => {
     totalPages: number;
   } | null>(null);
 
+  const { canCallApi } = useOrgAccess();
+
+  const updatePagination = (
+    prev: {
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    } | null,
+    change: number
+  ) => {
+    if (!prev) return null;
+
+    const newTotal = Math.max(0, prev.total + change);
+    const newTotalPages = Math.max(1, Math.ceil(newTotal / prev.pageSize));
+    const newPage = Math.min(prev.page, newTotalPages);
+
+    return {
+      ...prev,
+      total: newTotal,
+      totalPages: newTotalPages,
+      page: newPage,
+    };
+  };
+
   const getMembers = useCallback(
     async (
       organizationId: string,
@@ -41,6 +67,11 @@ const useMember = () => {
         pageSize?: number;
       }
     ) => {
+      if (!canCallApi("viewMembers")) {
+        toast.error("You do not have permission to view members.");
+        return;
+      }
+
       try {
         setIsLoadingMembers(true);
         const response = await organizationApi.getOrganizationMembers(
@@ -68,6 +99,11 @@ const useMember = () => {
         pageSize?: number;
       }
     ) => {
+      if (!canCallApi("viewInvite")) {
+        toast.error("You do not have permission to view invitations.");
+        return;
+      }
+
       try {
         setIsLoadingInvitations(true);
 
@@ -97,6 +133,11 @@ const useMember = () => {
         role: string;
       }
     ) => {
+      if (!canCallApi("inviteMember")) {
+        toast.error("You do not have permission to invite members.");
+        return;
+      }
+
       try {
         setIsInviting(true);
         const response = await organizationApi.inviteUser(
@@ -107,25 +148,18 @@ const useMember = () => {
         toast.success(response.message || "Invitation sent successfully!");
 
         setInvitations((prev) => {
-          const idx = prev.findIndex((inv) => inv.email === data.email);
-          if (idx !== -1) {
-            const updated = [...prev];
-            updated[idx] = response.invitation;
-            return updated;
+          const updated = [response.invitation, ...prev];
+          const pageSize = invitationsPagination?.pageSize || 10;
+
+          if (updated.length > pageSize) {
+            updated.pop();
           }
-          return [...prev, response.invitation];
+          return updated;
         });
 
         setInvitationsPagination((prev) => {
-          if (!prev) return null;
           const exists = invitations.some((inv) => inv.email === data.email);
-          return exists
-            ? prev
-            : {
-                ...prev,
-                total: prev.total + 1,
-                totalPages: Math.ceil((prev.total + 1) / prev.pageSize),
-              };
+          return exists ? prev : updatePagination(prev, 1);
         });
 
         return response;
@@ -144,6 +178,11 @@ const useMember = () => {
   // Resend invite uses the same API but its own loader
   const resendInvite = useCallback(
     async (organizationId: string, inviteId: string) => {
+      if (!canCallApi("inviteMember")) {
+        toast.error("You do not have permission to invite members.");
+        return;
+      }
+
       try {
         setIsResendingInvitation(true);
         const response = await organizationApi.resendInvite(
@@ -151,17 +190,11 @@ const useMember = () => {
           inviteId
         );
 
-        setInvitations((prev) => {
-          const idx = prev.findIndex(
-            (inv) => inv.id === response.invitation.id
-          );
-          if (idx !== -1) {
-            const updated = [...prev];
-            updated[idx] = response.invitation;
-            return updated;
-          }
-          return [...prev, response.invitation];
-        });
+        setInvitations((prev) =>
+          prev.map((inv) =>
+            inv.id === response.invitation.id ? response.invitation : inv
+          )
+        );
 
         toast.success(response.message || "Invitation resent successfully!");
         return response;
@@ -179,6 +212,11 @@ const useMember = () => {
 
   const reactiveMember = useCallback(
     async (organizationId: string, memberId: string) => {
+      if (!canCallApi("inviteMember")) {
+        toast.error("You do not have permission to invite members.");
+        return;
+      }
+
       try {
         setReactivateMember(true);
         const response = await organizationApi.reinviteInactiveMember(
@@ -188,29 +226,20 @@ const useMember = () => {
         toast.success(response.message || "Member reactivated successfully!");
 
         setInvitations((prev) => {
-          const idx = prev.findIndex(
-            (inv) => inv.id === response.invitation.id
-          );
-          if (idx !== -1) {
-            const updated = [...prev];
-            updated[idx] = response.invitation;
-            return updated;
+          const updated = [response.invitation, ...prev];
+          const pageSize = invitationsPagination?.pageSize || 10;
+
+          if (updated.length > pageSize) {
+            updated.pop();
           }
-          return [...prev, response.invitation];
+          return updated;
         });
 
         setInvitationsPagination((prev) => {
-          if (!prev) return null;
           const exists = invitations.some(
             (inv) => inv.id === response.invitation.id
           );
-          return exists
-            ? prev
-            : {
-                ...prev,
-                total: prev.total + 1,
-                totalPages: Math.ceil((prev.total + 1) / prev.pageSize),
-              };
+          return exists ? prev : updatePagination(prev, 1);
         });
 
         return response;
@@ -235,6 +264,11 @@ const useMember = () => {
         billableRate: number | null;
       }
     ) => {
+      if (!canCallApi("editMember")) {
+        toast.error("You do not have permission to edit members.");
+        return;
+      }
+
       try {
         setIsUpdatingMember(true);
         const response = await organizationApi.updateMember(
@@ -244,9 +278,7 @@ const useMember = () => {
         );
 
         setMembers((prev) =>
-          prev.map((member) =>
-            member.id === response.member.id ? response.member : member
-          )
+          prev.map((m) => (m.id === response.member.id ? response.member : m))
         );
 
         toast.success("Member updated successfully");
@@ -265,6 +297,11 @@ const useMember = () => {
 
   const deactiveMember = useCallback(
     async (organizationId: string, memberId: string) => {
+      if (!canCallApi("deleteMember")) {
+        toast.error("You do not have permission to deactive members.");
+        return;
+      }
+
       try {
         setIsDeactivatingMember(true);
         const response = await organizationApi.deactiveMember(
@@ -294,6 +331,10 @@ const useMember = () => {
 
   const deleteMember = useCallback(
     async (organizationId: string, memberId: string) => {
+      if (!canCallApi("deleteMember")) {
+        toast.error("You do not have permission to delete members.");
+        return;
+      }
       try {
         setIsRemovingMember(true);
         const response = await organizationApi.deleteMember(
@@ -301,18 +342,8 @@ const useMember = () => {
           memberId
         );
 
-        // Remove member from local state
-        setMembers((prev) => prev.filter((member) => member.id !== memberId));
-
-        // Update pagination
-        setMembersPagination((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            total: prev.total - 1,
-            totalPages: Math.ceil((prev.total - 1) / prev.pageSize),
-          };
-        });
+        setMembers((prev) => prev.filter((m) => m.id !== memberId));
+        setMembersPagination((prev) => updatePagination(prev, -1));
 
         toast.success("Member deleted successfully");
         return response;
@@ -330,24 +361,20 @@ const useMember = () => {
 
   const deleteInvite = useCallback(
     async (organizationId: string, invitationId: string) => {
+      if (!canCallApi("deleteInvite")) {
+        toast.error("You do not have permission to delete invite.");
+        return;
+      }
+
       try {
         setIsDeletingInvitation(true);
         const response = await organizationApi.deleteInvitation(
           organizationId,
           invitationId
         );
-        // Remove invitation from local state
-        setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
 
-        // Update pagination
-        setInvitationsPagination((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            total: prev.total - 1,
-            totalPages: Math.ceil((prev.total - 1) / prev.pageSize),
-          };
-        });
+        setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+        setInvitationsPagination((prev) => updatePagination(prev, -1));
 
         toast.success("Invitation deleted successfully");
         return response;
@@ -365,6 +392,10 @@ const useMember = () => {
 
   const transferOwnership = useCallback(
     async (oraganizationId: string, newOwnerId: string) => {
+      if (!canCallApi("transferOwnership")) {
+        toast.error("You do not have permission to transfer ownership.");
+        return;
+      }
       setTransferOwner(true);
 
       try {

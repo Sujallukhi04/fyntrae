@@ -1,4 +1,5 @@
 import { clientApi } from "@/lib/api";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import type { Client } from "@/types/oraganization";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +17,8 @@ const useClient = () => {
     useState<boolean>(false);
   const [deleteClientLoading, setClientDeleteLoading] =
     useState<boolean>(false);
+
+  const { canCallApi } = useOrgAccess();
 
   const [clientPagination, setClientPagination] = useState<{
     total: number;
@@ -101,6 +104,10 @@ const useClient = () => {
     type: "active" | "archived",
     params?: { page?: number; pageSize?: number }
   ) => {
+    if (!canCallApi("viewClients")) {
+      toast.error("You do not have permission to view clients.");
+      return;
+    }
     try {
       setIsLoading(true);
       const response = await clientApi.getClients(organizationId, {
@@ -126,6 +133,11 @@ const useClient = () => {
   };
 
   const createClient = async (organizationId: string, name: string) => {
+    if (!canCallApi("editClient")) {
+      toast.error("You do not have permission to create clients.");
+      return;
+    }
+
     try {
       setCreateClientLoading(true);
       const response = await clientApi.createClient(organizationId, name);
@@ -150,6 +162,11 @@ const useClient = () => {
     clientId: string,
     name: string
   ) => {
+    if (!canCallApi("editClient")) {
+      toast.error("You do not have permission to edit clients.");
+      return;
+    }
+
     try {
       setEditClientLoading(true);
       const response = await clientApi.editClient(
@@ -180,6 +197,10 @@ const useClient = () => {
     clientId: string,
     organizationId: string
   ) => {
+    if (!canCallApi("editClient")) {
+      toast.error("You do not have permission to send archive clients.");
+      return;
+    }
     try {
       setSendArchiveClientLoading(true);
       const response = await clientApi.sendArchive(clientId, organizationId);
@@ -203,6 +224,10 @@ const useClient = () => {
   };
 
   const unarchiveClient = async (clientId: string, organizationId: string) => {
+    if (!canCallApi("editClient")) {
+      toast.error("You do not have permission to send unarchive clients.");
+      return;
+    }
     try {
       setUnarchiveClientLoading(true);
       const response = await clientApi.unArchiveClient(
@@ -228,6 +253,10 @@ const useClient = () => {
   };
 
   const deleteClient = async (clientId: string, organizationId: string) => {
+    if (!canCallApi("deleteClient")) {
+      toast.error("You do not have permission to delete clients.");
+      return;
+    }
     try {
       setClientDeleteLoading(true);
       const response = await clientApi.deleteClient(clientId, organizationId);

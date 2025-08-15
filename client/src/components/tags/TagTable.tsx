@@ -18,6 +18,7 @@ import {
 } from "../ui/dropdown-menu";
 import NoData from "../NoData";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface TagTableProps {
   tags: TagProps[];
@@ -32,6 +33,7 @@ const TagTable: React.FC<TagTableProps> = ({
   deleteLoading,
   loading,
 }) => {
+  const { canCallApi } = useOrgAccess();
   return (
     <div className="rounded-md bg-muted/40 border border-muted">
       <Table>
@@ -70,28 +72,32 @@ const TagTable: React.FC<TagTableProps> = ({
               <TableRow key={tag.id}>
                 <TableCell className="font-medium">{tag.name}</TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label="More actions"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="text-red-500 hover:text-red-500 focus:text-red-500"
-                        onClick={() => onDelete(tag.id)}
-                        disabled={deleteLoading}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {canCallApi("editTag") ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="More actions"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          className="text-red-500 hover:text-red-500 focus:text-red-500"
+                          onClick={() => onDelete(tag.id)}
+                          disabled={deleteLoading}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <div className="h-8 w-8"></div>
+                  )}
                 </TableCell>
               </TableRow>
             ))

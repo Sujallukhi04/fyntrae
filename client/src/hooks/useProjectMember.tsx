@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { ProjectMemberApi } from "@/lib/api";
 import { toast } from "sonner";
 import type { OrganizationMember, ProjectMember } from "@/types/project";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 const useProjectMember = () => {
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
@@ -13,9 +14,15 @@ const useProjectMember = () => {
   const [updateMemberLoading, setUpdateMemberLoading] = useState(false);
   const [removeMemberLoading, setRemoveMemberLoading] = useState(false);
 
+  const { canCallApi } = useOrgAccess();
+
   // Get project members
   const getProjectMembers = useCallback(
     async (projectId: string, organizationId: string) => {
+      if (!canCallApi("viewProjectMembers")) {
+        toast.error("You do not have permission to project member.");
+        return;
+      }
       try {
         setIsLoading(true);
         const response = await ProjectMemberApi.getProjectMembers(
@@ -39,6 +46,10 @@ const useProjectMember = () => {
   // Get organization members (for adding to project)
   const getOrganizationMembers = useCallback(
     async (organizationId: string, projectId?: string) => {
+      if (!canCallApi("viewProjectMembers")) {
+        return;
+      }
+
       try {
         const response = await ProjectMemberApi.getOrganizationMembers(
           organizationId,
@@ -65,6 +76,11 @@ const useProjectMember = () => {
       memberId: string,
       billableRate?: number
     ) => {
+      if (!canCallApi("viewProjectMembers")) {
+        toast.error("You do not have permission to add project member.");
+        return;
+      }
+
       try {
         setAddMemberLoading(true);
         const response = await ProjectMemberApi.addProjectMember(
@@ -105,6 +121,11 @@ const useProjectMember = () => {
       memberId: string,
       billableRate: number | null
     ) => {
+      if (!canCallApi("viewProjectMembers")) {
+        toast.error("You do not have permission to update project member.");
+        return;
+      }
+
       try {
         setUpdateMemberLoading(true);
         const response = await ProjectMemberApi.updateProjectMember(
@@ -137,6 +158,11 @@ const useProjectMember = () => {
   // Remove member from project
   const removeProjectMember = useCallback(
     async (projectId: string, organizationId: string, memberId: string) => {
+      if (!canCallApi("viewProjectMembers")) {
+        toast.error("You do not have permission to remove project member.");
+        return;
+      }
+
       try {
         setRemoveMemberLoading(true);
         await ProjectMemberApi.removeProjectMember(

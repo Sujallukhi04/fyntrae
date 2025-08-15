@@ -28,6 +28,7 @@ import { InviteMemberModal } from "@/components/member/InviteMemberModal";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { UpdateRateModal } from "@/components/modals/shared/UpdateRateModal";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 type RoleType = "OWNER" | "ADMIN" | "MANAGER" | "EMPLOYEE" | "PLACEHOLDER";
 
@@ -115,6 +116,8 @@ const Members: React.FC = () => {
     transferOwnership,
   } = useMember();
 
+  const { canCallApi } = useOrgAccess();
+
   const [pendingUpdate, setPendingUpdate] = useState<{
     memberId: string;
     role: string;
@@ -167,7 +170,7 @@ const Members: React.FC = () => {
   );
 
   const fetchMembers = useCallback(async () => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("viewMembers")) return;
     await getMembers(user.currentTeamId, {
       page: membersCurrentPage,
       pageSize: membersPageSize,
@@ -176,7 +179,7 @@ const Members: React.FC = () => {
   }, [user?.currentTeamId, membersCurrentPage, membersPageSize, getMembers]);
 
   const fetchInvitations = useCallback(async () => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("viewInvite")) return;
     await getInvitations(user.currentTeamId, {
       page: invitationsCurrentPage,
       pageSize: invitationsPageSize,
@@ -224,6 +227,52 @@ const Members: React.FC = () => {
       }
     }
   }, [membersCurrentPage, invitationsCurrentPage, user?.currentTeamId]);
+
+  const refreshMembers = useCallback(async () => {
+    if (!user?.currentTeamId) return;
+
+    if (activeTab === "all" && canCallApi("viewMembers")) {
+      const totalMembers = membersPagination?.total || 0;
+      const currentPage = membersCurrentPage;
+      const totalFetched = members.length;
+
+      if (totalFetched === 0 || totalMembers > membersPageSize * currentPage) {
+        await getMembers(user.currentTeamId, {
+          page: currentPage,
+          pageSize: membersPageSize,
+        });
+        setMembersLoaded(true);
+      }
+    } else if (activeTab === "invitations" && canCallApi("viewInvite")) {
+      const totalInvites = invitationsPagination?.total || 0;
+      const currentPage = invitationsCurrentPage;
+      const totalFetched = invitations.length;
+
+      if (
+        totalFetched === 0 ||
+        totalInvites > invitationsPageSize * currentPage
+      ) {
+        await getInvitations(user.currentTeamId, {
+          page: currentPage,
+          pageSize: invitationsPageSize,
+        });
+        setInvitationsLoaded(true);
+      }
+    }
+  }, [
+    user?.currentTeamId,
+    activeTab,
+    membersPagination?.total,
+    invitationsPagination?.total,
+    membersPageSize,
+    invitationsPageSize,
+    membersCurrentPage,
+    invitationsCurrentPage,
+    members.length,
+    invitations.length,
+    getMembers,
+    getInvitations,
+  ]);
 
   const handleFormChange = <K extends keyof FormState>(
     key: K,
@@ -313,6 +362,23 @@ const Members: React.FC = () => {
         user.currentTeamId,
         (modalState.data as Invitation).id
       );
+
+      const isActiveTab = activeTab === "invitations";
+      const currentPage = !isActiveTab
+        ? membersCurrentPage
+        : invitationsCurrentPage;
+      const currnetData = !isActiveTab ? members : invitations;
+
+      if (currnetData.length === 1 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        if (isActiveTab) {
+          setMembersCurrentPage(newPage);
+        } else {
+          setInvitationsCurrentPage(newPage);
+        }
+      }
+
+      await refreshMembers();
       setModalState({ type: null, data: null });
     } catch (error) {
       console.error("Failed to delete invitation:", error);
@@ -358,6 +424,22 @@ const Members: React.FC = () => {
       return;
     try {
       await deleteMember(user.currentTeamId, (modalState.data as Member).id);
+
+      const isActiveTab = activeTab === "all";
+      const currentPage = isActiveTab
+        ? membersCurrentPage
+        : invitationsCurrentPage;
+      const currnetData = isActiveTab ? members : invitations;
+
+      if (currnetData.length === 1 && currentPage > 1) {
+        const newPage = Math.max(currentPage - 1, 1);
+        if (isActiveTab) {
+          setMembersCurrentPage(newPage);
+        } else {
+          setInvitationsCurrentPage(newPage);
+        }
+      }
+      await refreshMembers();
       setModalState({ type: null, data: null });
     } catch (error) {
       console.error("Failed to delete member:", error);
@@ -390,14 +472,16 @@ const Members: React.FC = () => {
             <UsersIcon className="h-5 w-5 text-muted-foreground" />
             <h1 className="font-semibold">Members</h1>
           </div>
-          <Button
-            onClick={() => setIsInviteModalOpen(true)}
-            variant="outline"
-            className="w-full md:w-auto"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite Member
-          </Button>
+          {canCallApi("inviteMember") && (
+            <Button
+              onClick={() => setIsInviteModalOpen(true)}
+              variant="outline"
+              className="w-full md:w-auto"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite Member
+            </Button>
+          )}
         </div>
         <Separator />
       </div>
@@ -687,24 +771,29 @@ const Members: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-          <MemberTable
-            members={filteredMembers}
-            pagination={membersPagination}
-            isLoading={isLoadingMembers}
-            onPageChange={setMembersCurrentPage}
-            onEdit={(member) => setModalState({ type: "update", data: member })}
-            onDeactivate={(member) =>
-              setModalState({ type: "deactivate", data: member })
-            }
-            onReinvite={(member) =>
-              setModalState({ type: "reinvite", data: member })
-            }
-            onRemove={(member) =>
-              setModalState({ type: "deleteMember", data: member })
-            }
-            isUpdating={isUpdatingMember}
-            isReactivating={reactivateMember}
-          />
+
+          {canCallApi("viewMembers") && (
+            <MemberTable
+              members={filteredMembers}
+              pagination={membersPagination}
+              isLoading={isLoadingMembers}
+              onPageChange={setMembersCurrentPage}
+              onEdit={(member) =>
+                setModalState({ type: "update", data: member })
+              }
+              onDeactivate={(member) =>
+                setModalState({ type: "deactivate", data: member })
+              }
+              onReinvite={(member) =>
+                setModalState({ type: "reinvite", data: member })
+              }
+              onRemove={(member) =>
+                setModalState({ type: "deleteMember", data: member })
+              }
+              isUpdating={isUpdatingMember}
+              isReactivating={reactivateMember}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="invitations" className="space-y-4">
@@ -737,19 +826,21 @@ const Members: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-          <InvitationTable
-            invitations={filteredInvitations}
-            pagination={invitationsPagination}
-            isLoading={isLoadingInvitations}
-            onPageChange={setInvitationsCurrentPage}
-            onResend={(invitation: Invitation) =>
-              setModalState({ type: "resendInvite", data: invitation })
-            }
-            onDelete={(invitation: Invitation) =>
-              setModalState({ type: "deleteInvite", data: invitation })
-            }
-            isResending={isResendingInvitation}
-          />
+          {canCallApi("viewInvite") && (
+            <InvitationTable
+              invitations={filteredInvitations}
+              pagination={invitationsPagination}
+              isLoading={isLoadingInvitations}
+              onPageChange={setInvitationsCurrentPage}
+              onResend={(invitation: Invitation) =>
+                setModalState({ type: "resendInvite", data: invitation })
+              }
+              onDelete={(invitation: Invitation) =>
+                setModalState({ type: "deleteInvite", data: invitation })
+              }
+              isResending={isResendingInvitation}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

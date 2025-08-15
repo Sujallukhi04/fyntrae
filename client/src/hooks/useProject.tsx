@@ -1,4 +1,5 @@
 import { projectApi } from "@/lib/api";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import type { Project } from "@/types/project";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -32,6 +33,8 @@ const useProject = () => {
     totalPages: number;
   } | null>(null);
 
+  const { canCallApi } = useOrgAccess();
+
   const updatePagination = (prev: any, change: number) => {
     if (!prev) return null;
 
@@ -54,6 +57,10 @@ const useProject = () => {
     type: "active" | "archived",
     params?: { page?: number; pageSize?: number }
   ) => {
+    if (!canCallApi("viewProjects")) {
+      toast.error("You do not have permission to view projects.");
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await projectApi.getAllProjects(organizationId, {
@@ -88,6 +95,11 @@ const useProject = () => {
       clientId?: string | null;
     }
   ) => {
+    if (!canCallApi("createProject")) {
+      toast.error("You do not have permission to create project.");
+      return;
+    }
+
     const pageSize = projectPagination?.pageSize || 10;
     try {
       setCreateProjectLoading(true);
@@ -126,6 +138,10 @@ const useProject = () => {
       clientId?: string | null;
     }
   ) => {
+    if (!canCallApi("editProject")) {
+      toast.error("You do not have permission to edit project.");
+      return;
+    }
     try {
       setEditProjectLoading(true);
       const response = await projectApi.updateProject(
@@ -157,6 +173,11 @@ const useProject = () => {
 
   // Archive project
   const archiveProject = async (projectId: string, organizationId: string) => {
+    if (!canCallApi("editProject")) {
+      toast.error("You do not have permission to archive project.");
+      return;
+    }
+
     try {
       setSendArchiveProjectLoading(true);
       const response = await projectApi.archiveProject(
@@ -195,6 +216,10 @@ const useProject = () => {
     projectId: string,
     organizationId: string
   ) => {
+    if (!canCallApi("editProject")) {
+      toast.error("You do not have permission to unarchive project.");
+      return;
+    }
     try {
       setUnarchiveProjectLoading(true);
       const response = await projectApi.unarchiveProject(
@@ -232,6 +257,10 @@ const useProject = () => {
 
   // Get project by id
   const getProjectById = async (projectId: string, organizationId: string) => {
+    if (!canCallApi("viewProjects")) {
+      toast.error("You do not have permission to view project.");
+      return;
+    }
     setGetProjectLoading(true);
     try {
       const response = await projectApi.getProjectById(
@@ -249,6 +278,10 @@ const useProject = () => {
 
   // Get clients for organization (for project assignment)
   const getClientsByOrganizationId = async (organizationId: string) => {
+    if (!canCallApi("viewClients")) {
+      toast.error("You do not have permission to view clients.");
+      return;
+    }
     try {
       setGetClientsLoading(true);
       const response = await projectApi.getClientsByOrganizationId(
@@ -263,6 +296,10 @@ const useProject = () => {
   };
 
   const deleteProject = async (projectId: string, organizationId: string) => {
+    if (!canCallApi("deleteProject")) {
+      toast.error("You do not have permission to delete project.");
+      return;
+    }
     try {
       setDeleteProjectLoading(true);
 

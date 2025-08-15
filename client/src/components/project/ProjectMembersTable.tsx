@@ -99,7 +99,9 @@ const ProjectMembersTable: React.FC<ProjectMembersTableProps> = ({
                             {member.user.name?.charAt(0) || "U"}
                           </AvatarFallback>
                         </Avatar>
-                        <span>{member.user.name}</span>
+                        <span className="truncate max-w-[100px]">
+                          {member.user.name}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">

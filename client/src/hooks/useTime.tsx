@@ -1,4 +1,5 @@
 import { timeApi } from "@/lib/api";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";
 import { useCallback, useState } from "react";
@@ -22,6 +23,8 @@ const useTime = () => {
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState<boolean>(false);
   const [createTagLoading, setCreateTagLoading] = useState<boolean>(false);
   const [deleteTagLoading, setDeleteTagLoading] = useState<boolean>(false);
+
+  const { canCallApi } = useOrgAccess();
 
   const [timeEntriesPagination, setTimeEntriesPagination] = useState<{
     total: number;
@@ -55,44 +58,57 @@ const useTime = () => {
 
   const addTimeEntryToList = useCallback(
     (timeEntry: TimeEntry, selectedDate?: Date) => {
-      if (selectedDate) {
-        const entryDate = new Date(timeEntry.start);
-        const selected = new Date(selectedDate);
-        const isSameDate = entryDate.toDateString() === selected.toDateString();
-
-        if (!isSameDate) return;
-      }
-
       setTimeEntries((prev) => {
         const pageSize = timeEntriesPagination?.pageSize || 10;
-
-        // Insert the new entry in chronological order (newest first)
         const updatedTimeEntries = [...prev];
-        const newEntryStart = new Date(timeEntry.start);
+        const existingIndex = updatedTimeEntries.findIndex(
+          (entry) => entry.id === timeEntry.id
+        );
 
-        // Find the correct position to insert (newest first order)
-        let insertIndex = 0;
-        for (let i = 0; i < updatedTimeEntries.length; i++) {
-          const existingEntryStart = new Date(updatedTimeEntries[i].start);
-          if (newEntryStart >= existingEntryStart) {
-            insertIndex = i;
-            break;
+        // If selectedDate is provided, compare with updated entry's date
+        if (selectedDate) {
+          const entryDate = new Date(timeEntry.start);
+          const selected = new Date(selectedDate);
+          const isSameDate =
+            entryDate.toDateString() === selected.toDateString();
+
+          if (!isSameDate) {
+            // If not the same date and entry exists, remove it
+            if (existingIndex !== -1) {
+              updatedTimeEntries.splice(existingIndex, 1);
+              updatePagination(-1);
+            }
+            return updatedTimeEntries;
           }
-          insertIndex = i + 1;
         }
 
-        // Insert at the correct position
-        updatedTimeEntries.splice(insertIndex, 0, timeEntry);
+        if (existingIndex !== -1) {
+          // Update the existing entry
+          updatedTimeEntries[existingIndex] = timeEntry;
+        } else {
+          // Insert the new entry in chronological order (newest first)
+          const newEntryStart = new Date(timeEntry.start);
+          let insertIndex = 0;
+          for (let i = 0; i < updatedTimeEntries.length; i++) {
+            const existingEntryStart = new Date(updatedTimeEntries[i].start);
+            if (newEntryStart >= existingEntryStart) {
+              insertIndex = i;
+              break;
+            }
+            insertIndex = i + 1;
+          }
+          updatedTimeEntries.splice(insertIndex, 0, timeEntry);
 
-        // Remove excess entries if page size is exceeded
-        if (updatedTimeEntries.length > pageSize) {
-          updatedTimeEntries.splice(pageSize);
+          // Trim list to page size
+          if (updatedTimeEntries.length > pageSize) {
+            updatedTimeEntries.splice(pageSize);
+          }
+
+          updatePagination(1);
         }
 
         return updatedTimeEntries;
       });
-
-      updatePagination(1);
     },
     [timeEntriesPagination?.pageSize, updatePagination]
   );
@@ -126,23 +142,6 @@ const useTime = () => {
     toast.error(errorMessage);
   }, []);
 
-  const getRunningTimer = useCallback(
-    async (organizationId: string) => {
-      try {
-        setIsLoading(true);
-        const response = await timeApi.getRunningTimer(organizationId);
-        setRunningTimer(response.timer || null);
-        return response.timer;
-      } catch (error: any) {
-        handleError(error, "Failed to fetch running timer");
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [setRunningTimer, handleError]
-  );
-
   const getTimeEntries = useCallback(
     async (
       organizationId: string,
@@ -159,6 +158,10 @@ const useTime = () => {
         all?: boolean;
       }
     ) => {
+      if (!canCallApi("viewAllTimeEntries")) {
+        toast.error("You do not have permission to view time entries.");
+        return;
+      }
       try {
         setGetTimeEntriesLoading(true);
         const response = await timeApi.getTimeEntries(organizationId, params);
@@ -186,6 +189,10 @@ const useTime = () => {
       tagIds?: string[];
     }
   ) => {
+    if (!canCallApi("viewAllTimeEntries")) {
+      toast.error("You do not have permission to start timer.");
+      return;
+    }
     try {
       setStartTimerLoading(true);
       const response = await timeApi.startTimer(organizationId, data);
@@ -205,6 +212,10 @@ const useTime = () => {
     timeEntryId: string,
     selectedDate: Date
   ) => {
+    if (!canCallApi("viewAllTimeEntries")) {
+      toast.error("You do not have permission to end timer.");
+      return;
+    }
     try {
       setStopTimerLoading(true);
       const response = await timeApi.stopTimer(organizationId, timeEntryId);
@@ -233,6 +244,10 @@ const useTime = () => {
     },
     selectedDate: Date
   ) => {
+    if (!canCallApi("viewAllTimeEntries")) {
+      toast.error("You do not have permission to create timeentry.");
+      return;
+    }
     try {
       setCreateTimeEntryLoading(true);
       const response = await timeApi.createTimeEntry(organizationId, data);
@@ -259,8 +274,13 @@ const useTime = () => {
       taskId: string | null;
       billable: boolean;
       tagIds?: string[];
-    }
+    },
+    date: Date
   ) => {
+    if (!canCallApi("viewAllTimeEntries")) {
+      toast.error("You do not have permission to update timeentry.");
+      return;
+    }
     try {
       setUpdateTimeEntryLoading(true);
       const response = await timeApi.updateTimeEntry(
@@ -269,7 +289,7 @@ const useTime = () => {
         data
       );
 
-      updateTimeEntryInList(timeEntryId, response.data);
+      addTimeEntryToList(response.data, date);
       toast.success("Time entry updated successfully");
       return response.data;
     } catch (error: any) {
@@ -284,6 +304,11 @@ const useTime = () => {
     organizationId: string,
     timeEntryId: string
   ) => {
+    if (!canCallApi("viewAllTimeEntries")) {
+      toast.error("You do not have permission to delete timeentry.");
+      return;
+    }
+
     try {
       setDeleteTimeEntryLoading(true);
       const response = await timeApi.deleteTimeEntry(
@@ -315,6 +340,10 @@ const useTime = () => {
       };
     }
   ) => {
+    if (!canCallApi("viewAllTimeEntries")) {
+      toast.error("You do not have permission to update timeentrys.");
+      return;
+    }
     try {
       setBulkUpdateLoading(true);
       const response = await timeApi.bulkUpdateTimeEntries(
@@ -341,6 +370,10 @@ const useTime = () => {
     organizationId: string,
     timeEntryIds: string[]
   ) => {
+    if (!canCallApi("viewAllTimeEntries")) {
+      toast.error("You do not have permission to delete timeentrys.");
+      return;
+    }
     try {
       setBulkDeleteLoading(true);
       const response = await timeApi.bulkDeleteTimeEntries(
@@ -360,6 +393,10 @@ const useTime = () => {
   };
 
   const createTag = async (organizationId: string, name: string) => {
+    if (!canCallApi("editTag")) {
+      toast.error("You do not have permission to create tag.");
+      return;
+    }
     try {
       setCreateTagLoading(true);
       const response = await timeApi.createTag(organizationId, name);
@@ -374,6 +411,10 @@ const useTime = () => {
   };
 
   const deleteTag = async (organizationId: string, tagId: string) => {
+    if (!canCallApi("editTag")) {
+      toast.error("You do not have permission to delete tag.");
+      return;
+    }
     try {
       setDeleteTagLoading(true);
       const response = await timeApi.deleteTag(organizationId, tagId);
@@ -399,7 +440,6 @@ const useTime = () => {
     bulkDeleteLoading,
     timeEntriesPagination,
     getTimeEntriesLoading,
-    getRunningTimer,
     getTimeEntries,
     startTimer,
     stopTimer,

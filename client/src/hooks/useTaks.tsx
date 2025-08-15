@@ -1,4 +1,5 @@
 import { TaskApi } from "@/lib/api";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import type { Tasks } from "@/types/project";
 import React from "react";
 import { useState } from "react";
@@ -13,8 +14,15 @@ const useTaks = () => {
   const [changeTaskStatusLoading, setChangeTaskStatusLoading] =
     useState<boolean>(false);
 
+  const { canCallApi } = useOrgAccess();
+
   // Get tasks for a project
   const getTasks = async (projectId: string, organizationId: string) => {
+    if (!canCallApi("taskview")) {
+      toast.error("You do not have permission to view task of project.");
+      return;
+    }
+
     setGetTasksLoading(true);
     try {
       const response = await TaskApi.getProjectTasks(projectId, organizationId);
@@ -34,6 +42,10 @@ const useTaks = () => {
     organizationId: string,
     data: { name: string; estimatedTime?: number }
   ) => {
+    if (!canCallApi("taskcreate")) {
+      toast.error("You do not have permission to create task of project.");
+      return;
+    }
     try {
       setCreateTaskLoading(true);
       const response = await TaskApi.createTask(
@@ -59,6 +71,11 @@ const useTaks = () => {
     organizationId: string,
     data: { name: string; estimatedTime?: number }
   ) => {
+    if (!canCallApi("taskedit")) {
+      toast.error("You do not have permission to edit task of project.");
+      return;
+    }
+
     try {
       setEditTaskLoading(true);
       const response = await TaskApi.updateTask(
@@ -86,6 +103,11 @@ const useTaks = () => {
     projectId: string,
     organizationId: string
   ) => {
+    if (!canCallApi("taskedit")) {
+      toast.error("You do not have permission to delete task of project.");
+      return;
+    }
+
     try {
       setDeleteTaskLoading(true);
       await TaskApi.deleteTask(taskId, projectId, organizationId);
@@ -106,6 +128,12 @@ const useTaks = () => {
     organizationId: string,
     status: "ACTIVE" | "DONE"
   ) => {
+    if (!canCallApi("taskedit")) {
+      toast.error(
+        "You do not have permission to change status of task in project."
+      );
+      return;
+    }
     try {
       setChangeTaskStatusLoading(true);
       const response = await TaskApi.updateTaskStatus(

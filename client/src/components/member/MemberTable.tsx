@@ -31,6 +31,7 @@ import { MembersSkeleton } from "../modals/Skeleton";
 import PaginationControls, { getStatusBadge } from "../PaginationControl";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { formatNumber, formatRateNumber, getFormat } from "@/lib/utils";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface MemberTableProps {
   members: Member[];
@@ -58,6 +59,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
   isReactivating,
 }) => {
   const { organization } = useOrganization();
+  const { canCallApi } = useOrgAccess();
   return (
     <>
       {isLoading ? (
@@ -130,43 +132,45 @@ const MemberTable: React.FC<MemberTableProps> = ({
                     </TableCell>
                     <TableCell>{getStatusBadge(member.isActive)}</TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-popover">
-                          <DropdownMenuItem
-                            onClick={() => onEdit(member)}
-                            disabled={isUpdating}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onDeactivate(member)}
-                            disabled={isReactivating || !member.isActive}
-                          >
-                            <User className="mr-2 h-4 w-4" />
-                            Deactivate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onReinvite(member)}
-                            disabled={isReactivating || member.isActive}
-                          >
-                            <RefreshCcw className="mr-2 h-4 w-4" />
-                            Send Invite
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onRemove(member)}
-                            className="text-red-500 hover:text-red-500 focus:text-red-500"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {canCallApi("editMember") && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-popover">
+                            <DropdownMenuItem
+                              onClick={() => onEdit(member)}
+                              disabled={isUpdating}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onDeactivate(member)}
+                              disabled={isReactivating || !member.isActive}
+                            >
+                              <User className="mr-2 h-4 w-4" />
+                              Deactivate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onReinvite(member)}
+                              disabled={isReactivating || member.isActive}
+                            >
+                              <RefreshCcw className="mr-2 h-4 w-4" />
+                              Send Invite
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onRemove(member)}
+                              className="text-red-500 hover:text-red-500 focus:text-red-500"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

@@ -9,6 +9,7 @@ import ProjectTable from "@/components/project/ProjectTable";
 import AddEditProjectModal from "@/components/project/AddEditProjectModal";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { Separator } from "@/components/ui/separator";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface ProjectState {
   type: "add" | "edit" | null;
@@ -24,6 +25,7 @@ const ProjectPage = () => {
   >([]);
   const [activeLoaded, setActiveLoaded] = useState(false);
   const [archivedLoaded, setArchivedLoaded] = useState(false);
+  const { canCallApi } = useOrgAccess();
 
   const { organization } = useOrganization();
   const { user } = useAuth();
@@ -54,7 +56,7 @@ const ProjectPage = () => {
   });
 
   useEffect(() => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("viewProjects")) return;
 
     const fetchData = async () => {
       if (activeTab === "active" && !activeLoaded) {
@@ -102,14 +104,14 @@ const ProjectPage = () => {
   }, [activeCurrentPage, archivedCurrentPage, user?.currentTeamId]);
 
   useEffect(() => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("viewClients")) return;
     getClientsByOrganizationId(user.currentTeamId).then((data) => {
       setClients(data || []);
     });
   }, [user?.currentTeamId]);
 
   const refreshProjects = useCallback(async () => {
-    if (!user?.currentTeamId) return;
+    if (!user?.currentTeamId || !canCallApi("viewProjects")) return;
     const pageSize =
       activeTab === "active"
         ? projectPagination?.pageSize || 10
@@ -262,14 +264,16 @@ const ProjectPage = () => {
             <FolderOpen className="h-5 w-5 text-muted-foreground" />
             <span className="font-semibold ">Projects</span>
           </div>
-          <Button
-            className="w-full md:w-auto"
-            variant="outline"
-            onClick={() => setModalState({ type: "add", data: null })}
-          >
-            <FolderPlus className=" h-8 w-8" />
-            Create Project
-          </Button>
+          {canCallApi("createProject") && (
+            <Button
+              className="w-full md:w-auto"
+              variant="outline"
+              onClick={() => setModalState({ type: "add", data: null })}
+            >
+              <FolderPlus className=" h-8 w-8" />
+              Create Project
+            </Button>
+          )}
         </div>
         <Separator />
       </div>

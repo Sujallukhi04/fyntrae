@@ -73,6 +73,7 @@ export interface Client {
   id: string;
   name: string;
   organizationId: string;
+  projectCount: number;
   archivedAt?: Date;
   createdAt: Date;
   updatedAt: Date;

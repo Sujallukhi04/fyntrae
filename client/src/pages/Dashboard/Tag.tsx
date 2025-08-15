@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import useTimesummary from "@/hooks/useTimesummary";
 import type { Tag as TagType } from "@/types/project";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 const Tag = () => {
   const { user } = useAuth();
@@ -18,9 +19,10 @@ const Tag = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const { fetchTags, loading } = useTimesummary();
   const [tags, setTags] = useState<TagType[]>([]);
+  const { canCallApi } = useOrgAccess();
 
   useEffect(() => {
-    if (user?.currentTeamId) {
+    if (user?.currentTeamId && canCallApi("viewTags")) {
       fetchTags(user?.currentTeamId)
         .then((fetchedTags) => {
           setTags(fetchedTags.tags || []);
@@ -59,14 +61,18 @@ const Tag = () => {
             <TagIcon className="h-5 w-5 text-muted-foreground" />
             <h1 className="text-lg font-semibold">Tags</h1>
           </div>
-          <Button
-            className="w-full md:w-auto"
-            variant="outline"
-            onClick={() => setAddModalOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Tag
-          </Button>
+          {canCallApi("editTag") ? (
+            <Button
+              className="w-full md:w-auto"
+              variant="outline"
+              onClick={() => setAddModalOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Tag
+            </Button>
+          ) : (
+            <div className="w-8 h-8"></div>
+          )}
         </div>
         <Separator className="mb-4" />
 

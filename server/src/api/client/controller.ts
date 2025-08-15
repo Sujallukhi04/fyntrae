@@ -41,7 +41,10 @@ export const createClient = catchAsync(async (req: Request, res: Response) => {
 
   res.status(201).json({
     message: "Client created successfully",
-    client: newClient,
+    client: {
+      ...newClient,
+      projectCount: 0,
+    },
   });
 });
 
@@ -71,14 +74,24 @@ export const getClients = catchAsync(async (req: Request, res: Response) => {
   if (allData) {
     const clients = await db.client.findMany({
       where: { organizationId },
+      include: {
+        _count: {
+          select: { projects: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
+
+    const formattedClients = clients.map(({ _count, ...rest }) => ({
+      ...rest,
+      projectCount: _count.projects,
+    }));
 
     res.status(200).json({
       message: `${
         type === "archived" ? "Archived" : "Active"
       } clients retrieved successfully`,
-      clients,
+      clients: formattedClients,
       pagination: null,
     });
   } else {
@@ -88,15 +101,25 @@ export const getClients = catchAsync(async (req: Request, res: Response) => {
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
+        include: {
+          _count: {
+            select: { projects: true },
+          },
+        },
       }),
       db.client.count({ where }),
     ]);
+
+    const formattedClients = clients.map(({ _count, ...rest }) => ({
+      ...rest,
+      projectCount: _count.projects,
+    }));
 
     res.status(200).json({
       message: `${
         type === "archived" ? "Archived" : "Active"
       } clients retrieved successfully`,
-      clients,
+      clients: formattedClients,
       pagination: {
         total: totalCount,
         page,
@@ -141,11 +164,19 @@ export const editClient = catchAsync(async (req: Request, res: Response) => {
   const updatedClient = await db.client.update({
     where: { id: clientId },
     data: { name },
+    include: {
+      _count: { select: { projects: true } },
+    },
   });
+
+  const { _count, ...rest } = updatedClient;
 
   res.status(200).json({
     message: "Client updated successfully",
-    client: updatedClient,
+    client: {
+      ...rest,
+      projectCount: updatedClient._count.projects,
+    },
   });
 });
 
@@ -177,11 +208,19 @@ export const archiveClient = catchAsync(async (req: Request, res: Response) => {
   const archivedClient = await db.client.update({
     where: { id: clientId },
     data: { archivedAt: new Date() },
+    include: {
+      _count: { select: { projects: true } },
+    },
   });
+
+  const { _count, ...rest } = archivedClient;
 
   res.status(200).json({
     message: "Client archived successfully",
-    client: archivedClient,
+    client: {
+      ...rest,
+      projectCount: archivedClient._count.projects,
+    },
   });
 });
 
@@ -214,11 +253,19 @@ export const unArchiveClient = catchAsync(
     const unArchivedClient = await db.client.update({
       where: { id: clientId },
       data: { archivedAt: null },
+      include: {
+        _count: { select: { projects: true } },
+      },
     });
+
+    const { _count, ...rest } = unArchivedClient;
 
     res.status(200).json({
       message: "Client unarchived successfully",
-      client: unArchivedClient,
+      client: {
+        ...rest,
+        projectCount: unArchivedClient._count.projects,
+      },
     });
   }
 );

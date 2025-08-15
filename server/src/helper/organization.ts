@@ -26,7 +26,7 @@ export const API_PERMISSIONS = {
 
   CLIENT: {
     CREATE: [Role.OWNER, Role.ADMIN],
-    VIEW: [Role.OWNER, Role.ADMIN],
+    VIEW: [Role.OWNER, Role.ADMIN, Role.MANAGER],
     UPDATE: [Role.OWNER, Role.ADMIN],
     ARCHIVE: [Role.OWNER, Role.ADMIN],
     DELETE: [Role.OWNER, Role.ADMIN],
@@ -40,6 +40,7 @@ export const API_PERMISSIONS = {
     MANAGE_MEMBERS: [Role.OWNER, Role.ADMIN],
     INVITE_MEMBERS: [Role.OWNER, Role.ADMIN],
     VIEW_MEMBERS: [Role.OWNER, Role.ADMIN, Role.MANAGER],
+    VIEW_INVITATIONS: [Role.OWNER, Role.ADMIN, Role.MANAGER],
   },
 
   MEMBER: {

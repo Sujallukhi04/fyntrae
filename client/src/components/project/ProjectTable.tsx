@@ -35,6 +35,7 @@ import {
   formatTimeDuration,
 } from "@/lib/utils";
 import { useNavigate } from "react-router";
+import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface ProjectTableProps {
   projects: Project[];
@@ -75,7 +76,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
 }) => {
   const { organization } = useOrganization();
   const navigate = useNavigate();
-  console.log(isDeleteLoading);
+  const { canCallApi } = useOrgAccess();
   return (
     <>
       {isLoading ? (
@@ -137,7 +138,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                           navigate(`/project/${project.id}`);
                         }
                       }}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className="cursor-pointer hover:bg-muted/50 "
                     >
                       {/* Name with color dot and task count */}
                       <TableCell>
@@ -224,64 +225,69 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
 
                       {/* Actions */}
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => e.stopPropagation()} // Prevent row click
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation(); // Prevent row click
-                                onEdit(project);
-                              }}
-                              disabled={isEditLoading}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            {!archived && onArchive && (
+                        {canCallApi("editProject") ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                disabled={!canCallApi("editProject")}
+                                onClick={(e) => e.stopPropagation()} // Prevent row click
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation(); // Prevent row click
-                                  onArchive(project);
+                                  onEdit(project);
                                 }}
-                                disabled={isArchiveLoading}
+                                disabled={isEditLoading}
                               >
-                                <Archive className="mr-2 h-4 w-4" />
-                                Archive
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
                               </DropdownMenuItem>
-                            )}
-                            {archived && onUnarchive && (
+                              {!archived && onArchive && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent row click
+                                    onArchive(project);
+                                  }}
+                                  disabled={isArchiveLoading}
+                                >
+                                  <Archive className="mr-2 h-4 w-4" />
+                                  Archive
+                                </DropdownMenuItem>
+                              )}
+                              {archived && onUnarchive && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onUnarchive(project);
+                                  }}
+                                  disabled={isUnarchiveLoading}
+                                >
+                                  <Undo2 className="mr-2 h-4 w-4" />
+                                  Unarchive
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onUnarchive(project);
+                                  onDelete(project?.id);
                                 }}
-                                disabled={isUnarchiveLoading}
+                                className="text-red-500 hover:text-red-500 focus:text-red-500"
+                                disabled={isDeleteLoading}
                               >
-                                <Undo2 className="mr-2 h-4 w-4" />
-                                Unarchive
+                                <Trash2 className="mr-2 size-4 text-red-500" />
+                                Delete
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(project?.id);
-                              }}
-                              className="text-red-500 hover:text-red-500 focus:text-red-500"
-                              disabled={isDeleteLoading}
-                            >
-                              <Trash2 className="mr-2 size-4 text-red-500" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <div className="h-8 w-8" />
+                        )}
                       </TableCell>
                     </TableRow>
                   );
