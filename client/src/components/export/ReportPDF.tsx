@@ -119,6 +119,14 @@ const externalLabelsPlugin = {
   },
 };
 
+const truncateText = (doc, text, maxWidth) => {
+  let truncated = text;
+  while (doc.getTextWidth(truncated) > maxWidth && truncated.length > 0) {
+    truncated = truncated.slice(0, -1);
+  }
+  return truncated.length < text.length ? truncated + "…" : truncated;
+};
+
 // Chart.register(externalLabelsPlugin);
 
 const ReportPdf = forwardRef(
@@ -212,6 +220,11 @@ const ReportPdf = forwardRef(
           options: {
             responsive: false,
             animation: { duration: 0 },
+            layout: {
+              padding: {
+                top: 20,
+              },
+            },
             scales: {
               y: {
                 beginAtZero: true,
@@ -246,9 +259,11 @@ const ReportPdf = forwardRef(
               tooltip: {
                 callbacks: {
                   label: (context) => {
-                    const hours = Math.floor(context.parsed.y);
-                    const minutes = Math.round((context.parsed.y - hours) * 60);
-                    return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
+                    const totalSeconds = context.parsed.y * 3600;
+                    return formatTimeDuration(
+                      totalSeconds,
+                      timeTrackingData.intervalFormat
+                    );
                   },
                 },
               },
@@ -259,7 +274,7 @@ const ReportPdf = forwardRef(
                 anchor: "end", // Anchors outside the bar
                 align: "end", // Pushes label above the bar
                 offset: 2, // Space between bar and label
-                rotation: -90, // Keeps label vertical
+                rotation: -90,
                 clamp: true,
                 clip: false,
                 font: {
@@ -268,9 +283,11 @@ const ReportPdf = forwardRef(
                 },
                 formatter: (value) => {
                   if (value <= 0) return "";
-                  const hours = Math.floor(value);
-                  const minutes = Math.round((value - hours) * 60);
-                  return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
+                  const totalSeconds = value * 3600; // Convert hours (float) to seconds
+                  return formatTimeDuration(
+                    totalSeconds,
+                    timeTrackingData.intervalFormat
+                  );
                 },
               },
             },
@@ -503,7 +520,7 @@ const ReportPdf = forwardRef(
 
         const col1X = rightX;
         const col2X = col1X + 40;
-        const col3X = col2X + 35;
+        const col3X = col2X + 30;
 
         const rowHeight = 8;
         const bottomMargin = 20;
@@ -511,7 +528,14 @@ const ReportPdf = forwardRef(
         const drawHeader = () => {
           doc.setFont("helvetica", "normal");
           doc.setFontSize(12);
-          doc.text(level1Group, col1X, currentY);
+          const maxHeaderWidth = col2X - col1X - 5;
+          const truncatedHeader = truncateText(
+            doc,
+            level1Group,
+            maxHeaderWidth
+          );
+
+          doc.text(truncatedHeader, col1X, currentY);
           doc.text("Duration", col2X, currentY);
           doc.text("Cost", col3X, currentY);
 
@@ -530,7 +554,6 @@ const ReportPdf = forwardRef(
           const client = proj.name;
           const color = bluePalette[i];
 
-          // Check if there's space for another row; if not, add page
           if (currentY + rowHeight > pageHeight - bottomMargin) {
             doc.addPage();
             currentY = 20;
@@ -540,20 +563,25 @@ const ReportPdf = forwardRef(
           const dotRadius = 1.5;
           const dotX = col1X;
           const textOffset = 1.5;
-
           currentY += 1;
-
           // Draw colored dot
           doc.setFillColor(...color);
           doc.circle(dotX + textOffset, currentY - 1, dotRadius, "F");
 
           // Text color & font
+          const maxClientNameWidth = col2X - col1X - 10;
+          const truncatedClient = truncateText(doc, client, maxClientNameWidth);
+
           doc.setTextColor(75, 84, 98);
           doc.setFont("helvetica", "normal");
 
-          doc.text(client, dotX + 2 * textOffset + dotRadius, currentY);
           doc.text(
-            formatTimeDuration(proj.seconds, timeTrackingData.intervalFormat),
+            truncatedClient,
+            dotX + 2 * textOffset + dotRadius,
+            currentY
+          );
+          doc.text(
+            formatTimeDuration(proj.seconds, timeTrackingData.intervalFormat), // or use formatTimeDuration if you prefer
             col2X,
             currentY
           );
