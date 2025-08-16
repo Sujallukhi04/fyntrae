@@ -8,7 +8,6 @@ import { toast } from "sonner";
 const useTime = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const { setRunningTimer } = useOrganization();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [getTimeEntriesLoading, setGetTimeEntriesLoading] =
     useState<boolean>(false);
   const [startTimerLoading, setStartTimerLoading] = useState<boolean>(false);
@@ -430,7 +429,6 @@ const useTime = () => {
 
   return {
     timeEntries,
-    isLoading,
     startTimerLoading,
     stopTimerLoading,
     createTimeEntryLoading,

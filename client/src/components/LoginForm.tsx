@@ -101,7 +101,7 @@ export function LoginForm({
                     <Label htmlFor="password">Password</Label>
                     <Link
                       to="/login"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
+                      className="ml-auto text-sm underline-offset-4 hover:underline text-primary"
                     >
                       Forgot your password?
                     </Link>
@@ -126,7 +126,10 @@ export function LoginForm({
               </form>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <Link to="/signup" className="underline underline-offset-4">
+                <Link
+                  to="/signup"
+                  className="underline underline-offset-4 text-primary"
+                >
                   Sign up
                 </Link>
               </div>

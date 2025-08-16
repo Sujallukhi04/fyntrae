@@ -105,6 +105,7 @@ const Time = () => {
     if (!user?.currentTeamId) return;
     const formattedDate = format(date, "yyyy-MM-dd");
 
+    setSelectedEntries([]);
     getTimeEntries(user.currentTeamId, {
       page: currentPage,
       limit: 10,
@@ -162,6 +163,7 @@ const Time = () => {
 
     // Always refresh if we have no entries or if there are more entries to load
     if (currentEntries === 0 || totalEntries > pageSize * currentPage) {
+      setSelectedEntries([]);
       await getTimeEntries(user.currentTeamId, {
         page: currentPage,
         limit: pageSize,

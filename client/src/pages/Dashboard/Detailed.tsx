@@ -136,6 +136,7 @@ const Detailed = () => {
     const currentEntries = timeEntries.length;
 
     if (currentEntries === 0 || totalEntries > pageSize * currentPage) {
+      setSelectedEntries([]);
       await getTimeEntries(user.currentTeamId, {
         page: currentPage,
         limit: pageSize,
@@ -210,6 +211,7 @@ const Detailed = () => {
   useEffect(() => {
     if (!user?.currentTeamId) return;
     const formattedDate = format(date, "yyyy-MM-dd");
+    setSelectedEntries([]);
 
     getTimeEntries(user.currentTeamId, {
       page: currentPage,

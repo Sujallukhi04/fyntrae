@@ -11,7 +11,6 @@ const useMember = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
-
   const [isInviting, setIsInviting] = useState(false);
   const [isUpdatingMember, setIsUpdatingMember] = useState(false);
   const [isResendingInvitation, setIsResendingInvitation] = useState(false);
