@@ -39,7 +39,7 @@ const TagTable: React.FC<TagTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-muted-foreground font-medium">
+            <TableHead className="px-4 text-muted-foreground font-medium">
               Name
             </TableHead>
             <TableHead className="w-12" />
@@ -70,7 +70,7 @@ const TagTable: React.FC<TagTableProps> = ({
           ) : (
             tags.map((tag) => (
               <TableRow key={tag.id}>
-                <TableCell className="font-medium">{tag.name}</TableCell>
+                <TableCell className="font-medium px-4">{tag.name}</TableCell>
                 <TableCell>
                   {canCallApi("editTag") ? (
                     <DropdownMenu>

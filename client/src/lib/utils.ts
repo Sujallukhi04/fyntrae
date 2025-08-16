@@ -28,6 +28,8 @@ export function formatNumber(
     "1,000.00": {
       locale: "en-US",
       options: {
+        style: "currency",
+        currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
         useGrouping: true,
@@ -36,6 +38,8 @@ export function formatNumber(
     "1.000,00": {
       locale: "de-DE",
       options: {
+        style: "currency",
+        currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
         useGrouping: true,
@@ -44,6 +48,8 @@ export function formatNumber(
     "1 000.00": {
       locale: "fr-FR",
       options: {
+        style: "currency",
+        currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
         useGrouping: true,
@@ -53,6 +59,8 @@ export function formatNumber(
       // Indian number format with lakh/crore grouping for INR
       locale: "en-IN",
       options: {
+        style: "currency",
+        currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
         useGrouping: true,
@@ -66,12 +74,10 @@ export function formatNumber(
     return "";
   }
 
-  const formatted = new Intl.NumberFormat(
+  return new Intl.NumberFormat(
     formatConfig.locale,
     formatConfig.options
   ).format(value);
-
-  return `${formatted} ${currency}`;
 }
 
 export const formatDurationFromSeconds = (seconds: number) => {
