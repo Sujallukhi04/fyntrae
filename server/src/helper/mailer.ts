@@ -68,198 +68,18 @@ export const emailTemplates = {
     inviteLink: string;
     role: string;
     isReinvite?: boolean;
-  }) => `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Organization Invitation</title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-                line-height: 1.6;
-                color: #333333;
-                background-color: #f8f9fa;
-            }
-            .container {
-                max-width: 600px;
-                margin: 0 auto;
-                background-color: #ffffff;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 40px 30px;
-                text-align: center;
-            }
-            .header h1 {
-                font-size: 28px;
-                font-weight: 600;
-                margin-bottom: 10px;
-            }
-            .header p {
-                font-size: 16px;
-                opacity: 0.9;
-            }
-            .content {
-                padding: 40px 30px;
-            }
-            .invitation-card {
-                background-color: #f8f9fa;
-                border-radius: 8px;
-                padding: 30px;
-                margin: 20px 0;
-                border-left: 4px solid #667eea;
-            }
-            .organization-name {
-                font-size: 24px;
-                font-weight: 600;
-                color: #2d3748;
-                margin-bottom: 10px;
-            }
-            .role-badge {
-                display: inline-block;
-                background-color: #e2e8f0;
-                color: #4a5568;
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-size: 14px;
-                font-weight: 500;
-                margin-bottom: 15px;
-            }
-            .invite-button {
-                display: inline-block;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 15px 30px;
-                text-decoration: none;
-                border-radius: 6px;
-                font-weight: 600;
-                font-size: 16px;
-                margin: 20px 0;
-                transition: transform 0.2s;
-            }
-            .invite-button:hover {
-                transform: translateY(-2px);
-            }
-            .details {
-                background-color: #f7fafc;
-                border-radius: 6px;
-                padding: 20px;
-                margin: 20px 0;
-            }
-            .details h3 {
-                color: #2d3748;
-                margin-bottom: 15px;
-                font-size: 18px;
-            }
-            .details ul {
-                list-style: none;
-                padding: 0;
-            }
-            .details li {
-                padding: 8px 0;
-                border-bottom: 1px solid #e2e8f0;
-            }
-            .details li:last-child {
-                border-bottom: none;
-            }
-            .footer {
-                background-color: #f8f9fa;
-                padding: 30px;
-                text-align: center;
-                border-top: 1px solid #e2e8f0;
-            }
-            .footer p {
-                color: #718096;
-                font-size: 14px;
-                margin-bottom: 10px;
-            }
-            .footer a {
-                color: #667eea;
-                text-decoration: none;
-            }
-            .expiry-notice {
-                background-color: #fef5e7;
-                border: 1px solid #f6e05e;
-                border-radius: 6px;
-                padding: 15px;
-                margin: 20px 0;
-            }
-            .expiry-notice p {
-                color: #744210;
-                font-size: 14px;
-                margin: 0;
-            }
-            @media (max-width: 600px) {
-                .container {
-                    margin: 0 10px;
-                }
-                .header, .content, .footer {
-                    padding: 20px;
-                }
-                .invitation-card {
-                    padding: 20px;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🎉 You're Invited!</h1>
-                <p>Join your team on FlexFlow</p>
-            </div>
-            
-            <div class="content">
-                <p>Hi there,</p>
-                <p><strong>${inviterName}</strong> has invited you to join their organization on FlexFlow.</p>
-                
-                <div class="invitation-card">
-                    <div class="organization-name">${organizationName}</div>
-                    <div class="role-badge">Role: ${role}</div>
-                    <p>You've been invited to collaborate and manage projects together.</p>
-                </div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${inviteLink}" class="invite-button">Accept Invitation</a>
-                </div>
-                
-                <div class="details">
-                    <h3>What's next?</h3>
-                    <ul>
-                        <li>✅ Click the "Accept Invitation" button above</li>
-                        <li>✅ Create your account or sign in if you already have one</li>
-                        <li>✅ Start collaborating with your team</li>
-                        <li>✅ Access all organization features and projects</li>
-                    </ul>
-                </div>
-                
-                <div class="expiry-notice">
-                    <p>⏰ <strong>Note:</strong> This invitation will expire in 7 days for security reasons.</p>
-                </div>
-                
-                <p>If you have any questions, feel free to reach out to <strong>${inviterName}</strong> or our support team.</p>
-            </div>
-            
-            <div class="footer">
-                <p>This invitation was sent by ${inviterName} via FlexFlow.</p>
-                <p>If you didn't expect this invitation, you can safely ignore this email.</p>
-                <p><a href="${process.env.FRONTEND_URL}">Visit FlexFlow</a> | <a href="${process.env.FRONTEND_URL}/support">Support</a></p>
-            </div>
-        </div>
-    </body>
-    </html>
-  `,
+  }) =>
+    baseEmailLayout({
+      brandName: "FlexFlow",
+      brandTagline: "Smarter Collaboration, Better Results",
+      title: "🎉 You're Invited!",
+      greeting: `Hi there,`,
+      message: `<strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> as <em>${role}</em>. <br /><br />You've been invited to collaborate and manage projects together.`,
+      buttonText: "Accept Invitation",
+      buttonLink: inviteLink,
+      //   logoUrl: "http://localhost:5173/flexflow.png", // 👈 here
+      footerNote: `⏰ <strong>Note:</strong> This invitation will expire in 7 days.<br /><br />This invitation was sent by ${inviterName} via FlexFlow. If you didn't expect this, you can safely ignore it.`,
+    }),
 
   welcomeEmail: ({
     userName,
@@ -269,93 +89,84 @@ export const emailTemplates = {
     userName: string;
     organizationName: string;
     dashboardLink: string;
-  }) => `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to FlexFlow</title>
-        <style>
-            /* Same base styles as above */
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-                line-height: 1.6;
-                color: #333333;
-                background-color: #f8f9fa;
-            }
-            .container {
-                max-width: 600px;
-                margin: 0 auto;
-                background-color: #ffffff;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-                color: white;
-                padding: 40px 30px;
-                text-align: center;
-            }
-            .header h1 {
-                font-size: 28px;
-                font-weight: 600;
-                margin-bottom: 10px;
-            }
-            .content {
-                padding: 40px 30px;
-            }
-            .welcome-button {
-                display: inline-block;
-                background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-                color: white;
-                padding: 15px 30px;
-                text-decoration: none;
-                border-radius: 6px;
-                font-weight: 600;
-                font-size: 16px;
-                margin: 20px 0;
-            }
-            .footer {
-                background-color: #f8f9fa;
-                padding: 30px;
-                text-align: center;
-                border-top: 1px solid #e2e8f0;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🎉 Welcome to FlexFlow!</h1>
-                <p>You're now part of ${organizationName}</p>
-            </div>
-            
-            <div class="content">
-                <p>Hi ${userName},</p>
-                <p>Welcome to FlexFlow! You've successfully joined <strong>${organizationName}</strong> and we're excited to have you on board.</p>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${dashboardLink}" class="welcome-button">Go to Dashboard</a>
-                </div>
-                
-                <p>You can now start collaborating with your team, managing projects, and taking advantage of all FlexFlow features.</p>
-                
-                <p>If you need any help getting started, don't hesitate to reach out to our support team.</p>
-            </div>
-            
-            <div class="footer">
-                <p>Happy collaborating!</p>
-                <p>The FlexFlow Team</p>
-            </div>
-        </div>
-    </body>
-    </html>
-  `,
+  }) =>
+    baseEmailLayout({
+      brandName: "FlexFlow",
+      brandTagline: "Smarter Collaboration, Better Results",
+      title: "🎉 Welcome to FlexFlow!",
+      greeting: `Hi ${userName},`,
+      message: `Welcome to <strong>FlexFlow</strong>! You've successfully joined <strong>${organizationName}</strong> and we're excited to have you on board. <br /><br />You can now start collaborating with your team, managing projects, and taking advantage of all FlexFlow features.`,
+      buttonText: "Go to Dashboard",
+      buttonLink: dashboardLink,
+      footerNote: "Happy collaborating! <br />— The FlexFlow Team",
+    }),
 };
+
+export const baseEmailLayout = ({
+  brandName,
+  brandTagline,
+  title,
+  greeting,
+  message,
+  buttonText,
+  buttonLink,
+  footerNote,
+  logoUrl,
+}: {
+  brandName: string;
+  brandTagline: string;
+  title: string;
+  greeting: string;
+  message: string;
+  buttonText: string;
+  buttonLink: string;
+  footerNote?: string;
+  logoUrl?: string; // 👈 add this
+}) => `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body style="background-color: #f9fafb; padding: 20px; font-family: Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #ffffff;">
+      
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        ${
+          logoUrl
+            ? `<img src="${logoUrl}" alt="${brandName} Logo" style="height: 50px; margin-bottom: 12px;" />`
+            : ""
+        }
+        <h2 style="color: #2563eb; margin: 0;">${brandName}</h2>
+        <p style="color: #6b7280; font-size: 16px; margin: 4px 0 0;">${brandTagline}</p>
+      </div>
+
+      <!-- Content -->
+      <div style="margin-bottom: 32px;">
+        <h3 style="color: #111827; font-weight: 600;">${greeting}</h3>
+        <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 12px;">
+          ${message}
+        </p>
+      </div>
+
+      <!-- Button -->
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${buttonLink}" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; display: inline-block;">
+          ${buttonText}
+        </a>
+      </div>
+
+      <!-- Footer -->
+      <div style="margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+        <p style="color: #6b7280; font-size: 14px; line-height: 1.5;">
+          ${
+            footerNote ||
+            `If you didn’t expect this email, you can safely ignore it.`
+          }
+        </p>
+      </div>
+    </div>
+  </body>
+  </html>
+`;

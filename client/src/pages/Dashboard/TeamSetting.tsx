@@ -34,6 +34,7 @@ import type { OrganizationUpdateData } from "@/types/oraganization";
 import { toast } from "sonner";
 import { LoaderMain } from "@/components/Loader";
 import GeneralModal from "@/components/modals/shared/Normalmodal";
+import { FormField, SaveButton, SectionCard, SectionHeader, SelectField } from "./Reusable";
 
 // Configuration constants
 const CURRENCY_OPTIONS = [
@@ -90,92 +91,7 @@ interface FormData {
   employeesCanSeeBillableRates: boolean;
 }
 // Reusable components
-const SectionHeader = ({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) => (
-  <div className="md:w-[35%]">
-    <h1 className="text-lg font-bold">{title}</h1>
-    <h1 className="text-sm">{description}</h1>
-  </div>
-);
 
-const SectionCard = ({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <Card className={`md:w-[65%] pt-6 pb-5 ${className}`}>
-    <CardContent className="px-0">{children}</CardContent>
-  </Card>
-);
-
-const FormField = React.memo(
-  ({
-    label,
-    children,
-    className = "px-6",
-  }: {
-    label: string;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <div className={`space-y-2 ${className}`}>
-      <Label>{label}</Label>
-      {children}
-    </div>
-  )
-);
-
-const SelectField = ({
-  label,
-  value,
-  options,
-  onChange,
-  className = "px-6",
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
-  className?: string;
-}) => (
-  <FormField label={label} className={className}>
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </FormField>
-);
-
-const SaveButton = ({
-  isLoading,
-  onClick,
-  label = "Save",
-}: {
-  isLoading: boolean;
-  onClick: () => void;
-  label?: string;
-}) => (
-  <div className="flex justify-end px-6">
-    <Button disabled={isLoading} onClick={onClick} className="w-fit">
-      {isLoading ? "Saving..." : label}
-    </Button>
-  </div>
-);
 
 const TeamSetting = () => {
   const { orgId } = useParams();

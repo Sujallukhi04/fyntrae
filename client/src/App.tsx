@@ -118,6 +118,14 @@ const App = () => {
                 }
               />
               <Route
+                path="user/profile"
+                element={
+                  <PermissionRoute>
+                    <Profile />
+                  </PermissionRoute>
+                }
+              />
+              <Route
                 path="tags"
                 element={
                   <PermissionRoute>

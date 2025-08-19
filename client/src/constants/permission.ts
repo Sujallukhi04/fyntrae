@@ -15,6 +15,7 @@ export const OrgRolePages: Record<OrgRole, string[]> = {
     "/settings",
     "/time",
     "/reporting/shared",
+    "/user/profile",
   ],
   ADMIN: [
     "/",
@@ -30,6 +31,7 @@ export const OrgRolePages: Record<OrgRole, string[]> = {
     "/settings",
     "/time",
     "/reporting/shared",
+    "/user/profile",
   ],
   MANAGER: [
     "/",
@@ -43,6 +45,7 @@ export const OrgRolePages: Record<OrgRole, string[]> = {
     "/reporting/detailed",
     "/time",
     "/reporting/shared",
+    "/user/profile",
   ],
   EMPLOYEE: [
     "/",
@@ -53,6 +56,7 @@ export const OrgRolePages: Record<OrgRole, string[]> = {
     "/reporting/detailed",
     "/time",
     "/tags",
+    "/user/profile",
   ],
 };
 

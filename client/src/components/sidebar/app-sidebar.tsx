@@ -42,17 +42,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const userOrganization =
     user?.organizations?.map((org) => ({
       name: org.name,
-      logo: GalleryVerticalEnd,
       plan: formatRole(org.role),
       id: org.id,
     })) || [];
 
   const fallbackTeams = [
     {
-      name: "Default Team",
-      logo: GalleryVerticalEnd,
-      plan: "Free",
       id: "default",
+      name: "Default Team",
+      plan: "Free",
     },
   ];
 
