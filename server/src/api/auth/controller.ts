@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
-import { loginSchema, signupSchema } from "../../schemas/auth";
+import {
+  loginSchema,
+  signupSchema,
+  updateUserSchema,
+} from "../../schemas/auth";
 import { ErrorHandler } from "../../utils/errorHandler";
 import bcrypt from "bcryptjs";
 import { db } from "../../prismaClient";
@@ -7,6 +11,7 @@ import { generateToken } from "../../utils/jwt";
 import { WeekStart } from "@prisma/client";
 import { getAuthUserData, getUserByEmail } from "../../helper/user";
 import { catchAsync } from "../../utils/catchAsync";
+import { uploadToCloudinary } from "../../utils/multer";
 
 export const login = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
@@ -207,6 +212,48 @@ export const getAuthUser = catchAsync(
     res.status(200).json({
       message: "User fetched successfully",
       user: currentUser,
+    });
+  }
+);
+
+export const updateUser = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw new ErrorHandler("userId not found", 404);
+
+    const validatedData = updateUserSchema.parse(req.body);
+    const { name } = validatedData;
+
+    const currentUser = await db.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!currentUser) {
+      throw new ErrorHandler("User not found", 404);
+    }
+
+    let profilePicUrl = currentUser.profilePicUrl;
+    let profilePicPublicId = currentUser.profilePicPublicId;
+
+    if (req.file) {
+      const cloudinaryResult = await uploadToCloudinary(req.file.path);
+      profilePicUrl = cloudinaryResult.url;
+      profilePicPublicId = cloudinaryResult.public_id;
+    }
+
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        name,
+        profilePicUrl,
+        profilePicPublicId,
+      },
+    });
+
+    const currentuser = await getAuthUserData(userId);
+    res.status(200).json({
+      message: "User profile updated successfully",
+      user: currentuser,
     });
   }
 );

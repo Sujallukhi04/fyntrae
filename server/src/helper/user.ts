@@ -14,6 +14,7 @@ export const getAuthUserData = async (userId: string) => {
         updatedAt: true,
         isPlaceholder: true,
         isActive: true,
+        profilePicUrl: true,
 
         currentTeam: {
           select: {

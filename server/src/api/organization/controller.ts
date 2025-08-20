@@ -481,6 +481,20 @@ export const deactiveMember = catchAsync(
       );
     }
 
+    const existingInvitation = await db.organizationInvitation.findFirst({
+      where: {
+        email: member.user.email,
+        organizationId,
+      },
+    });
+
+    if (existingInvitation) {
+      throw new ErrorHandler(
+        "Cannot deactivate member with an existing invitation.",
+        400
+      );
+    }
+
     if (member.userId) {
       const userCurrentTeam = await db.user.findFirst({
         where: { id: member.userId },

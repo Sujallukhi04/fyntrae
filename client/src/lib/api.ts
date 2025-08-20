@@ -15,6 +15,14 @@ export const authApi = {
     const res = await axiosInstance.get("/auth/me");
     return res.data;
   },
+  updateUser: async (formData: FormData) => {
+    const res = await axiosInstance.put("/auth", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  },
 };
 
 export const organizationApi = {

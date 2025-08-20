@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { authApi } from "@/lib/api";
 import type { User } from "@/types/auth";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +11,8 @@ interface AuthContextType {
   login: (user: User) => void;
   logout: () => void;
   refetch: () => Promise<void>;
+  updateuser: (formData: FormData) => Promise<void>;
+  updating: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   const fetchUser = async () => {
     try {
@@ -41,7 +45,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  useEffect(() => { 
+  const updateuser = async (formData: FormData) => {
+    try {
+      setUpdating(true);
+      const response = await authApi.updateUser(formData);
+      setUser(response?.user || null);
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to update organization";
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUser();
   }, []);
 
@@ -61,6 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     login,
     logout,
     refetch: fetchUser,
+    updateuser,
+    updating,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

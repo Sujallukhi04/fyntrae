@@ -13,24 +13,52 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
+import { authApi } from "@/lib/api";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updating, updateuser } = useAuth();
 
   // State for profile form
   const [name, setName] = useState(user?.name || "");
   const [email] = useState(user?.email || ""); // not editable
-  const [avatar, setAvatar] = useState<string | null>(null);
+  const [avatar, setAvatar] = useState<string | null>(
+    user?.profilePicUrl || null
+  );
 
   // State for password update
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const dataURItoBlob = (dataURI: string) => {
+    const byteString = atob(dataURI.split(",")[1]);
+    const arrayBuffer = new ArrayBuffer(byteString.length);
+    const uintArray = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < byteString.length; i++) {
+      uintArray[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([arrayBuffer], { type: "image/jpeg" }); // Adjust MIME type if necessary
+  };
+
   // Handlers
-  const handleProfileSave = () => {
-    console.log("Saving profile:", { name, email, avatar });
-    // 👉 Call your API here, e.g. updateUser({ name, avatar })
+  const handleProfileSave = async () => {
+    if (!name) {
+      toast.error("Name is required!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+
+    if (avatar && avatar !== user?.profilePicUrl) {
+      const file = dataURItoBlob(avatar);
+      formData.append("file", file);
+    }
+
+    try {
+      await updateuser(formData);
+    } catch (error) {}
   };
 
   const handlePasswordSave = () => {
@@ -133,7 +161,7 @@ const Profile = () => {
             </FormField>
 
             <Separator className="my-5" />
-            <SaveButton isLoading={false} onClick={handleProfileSave} />
+            <SaveButton isLoading={updating} onClick={handleProfileSave} />
           </div>
         </SectionCard>
       </div>

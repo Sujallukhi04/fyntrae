@@ -8,6 +8,7 @@ export interface User {
   currentTeamId: string;
   isPlaceholder: boolean;
   isActive: boolean;
+  profilePicUrl: string;
   currentTeam: {
     id: string;
     name: string;
