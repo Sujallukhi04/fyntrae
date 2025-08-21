@@ -149,7 +149,7 @@ const Profile = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between px-6">
               <div className="flex items-center space-x-3 mt-2">
-                <Avatar className="h-12 w-12">
+                <Avatar className="h-12 w-12 border">
                   <AvatarImage
                     src={
                       avatarPreview || "https://avatar.iran.liara.run/public/19"
