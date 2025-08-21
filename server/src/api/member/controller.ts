@@ -718,6 +718,11 @@ export const transferOwnership = catchAsync(
           role: "OWNER",
         },
       });
+
+      await tx.organizations.update({
+        where: { id: organizationId },
+        data: { userId: newOwnerId },
+      });
     });
 
     res.status(200).json({

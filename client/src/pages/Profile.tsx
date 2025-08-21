@@ -11,34 +11,41 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { authApi } from "@/lib/api";
 
 const Profile = () => {
-  const { user, updating, updateuser } = useAuth();
+  const { user, updating, updateuser, changepassword, changePassword } =
+    useAuth();
 
   // State for profile form
   const [name, setName] = useState(user?.name || "");
   const [email] = useState(user?.email || ""); // not editable
-  const [avatar, setAvatar] = useState<string | null>(
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
     user?.profilePicUrl || null
   );
-
   // State for password update
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const dataURItoBlob = (dataURI: string) => {
-    const byteString = atob(dataURI.split(",")[1]);
-    const arrayBuffer = new ArrayBuffer(byteString.length);
-    const uintArray = new Uint8Array(arrayBuffer);
-    for (let i = 0; i < byteString.length; i++) {
-      uintArray[i] = byteString.charCodeAt(i);
+  const [passwordErrors, setPasswordErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+
+  // const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // const [deletePassword, setDeletePassword] = useState("");
+  // const [deleteError, setDeleteError] = useState<string | null>(null);
+  // const [deleting, setDeleting] = useState(false);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file)); // for preview
     }
-    return new Blob([arrayBuffer], { type: "image/jpeg" }); // Adjust MIME type if necessary
   };
 
   // Handlers
@@ -51,44 +58,73 @@ const Profile = () => {
     const formData = new FormData();
     formData.append("name", name);
 
-    if (avatar && avatar !== user?.profilePicUrl) {
-      const file = dataURItoBlob(avatar);
-      formData.append("file", file);
+    if (avatar) {
+      formData.append("file", avatar);
     }
 
     try {
       await updateuser(formData);
-    } catch (error) {}
+    } catch (error) {
+      setAvatar(null);
+      setAvatarPreview(user?.profilePicUrl || null);
+    }
   };
 
-  const handlePasswordSave = () => {
+  const handlePasswordSave = async () => {
+    const errors: typeof passwordErrors = {};
+
+    if (!currentPassword)
+      errors.currentPassword = "Current password is required.";
+
+    if (!newPassword) {
+      errors.newPassword = "New password is required.";
+    } else if (newPassword.length < 8) {
+      errors.newPassword = "New password must be at least 8 characters.";
+    }
+
     if (newPassword !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
+      errors.confirmPassword = "Passwords do not match.";
     }
-    console.log("Updating password:", { currentPassword, newPassword });
-    // 👉 Call your API here, e.g. updatePassword({ currentPassword, newPassword })
+
+    setPasswordErrors(errors);
+
+    // stop if any validation errors
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      await changepassword({ currentPassword, newPassword });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordErrors({});
+    } catch (error: any) {
+      setPasswordErrors({
+        currentPassword:
+          error?.response?.data?.message || "Failed to update password",
+      });
+    }
   };
 
-  const handleDeleteAccount = () => {
-    if (
-      confirm(
-        "Are you sure you want to delete your account? This cannot be undone."
-      )
-    ) {
-      console.log("Deleting account...");
-      // 👉 Call your API here, e.g. deleteAccount()
-    }
-  };
+  // const handleDeleteAccount = async () => {
+  //   setDeleting(true);
+  //   setDeleteError(null);
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setAvatar(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
+  //   try {
+  //     // 👉 Call your API here, passing `deletePassword`
+  //     // await deleteAccount({ currentPassword: deletePassword });
+
+  //     toast.success("Account deleted successfully");
+  //     setShowDeleteModal(false);
+  //     setDeletePassword("");
+  //   } catch (error: any) {
+  //     setDeleteError(
+  //       error?.response?.data?.message || "Failed to delete account"
+  //     );
+  //   } finally {
+  //     setDeleting(false);
+  //   }
+  // };
 
   return (
     <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
@@ -115,7 +151,9 @@ const Profile = () => {
               <div className="flex items-center space-x-3 mt-2">
                 <Avatar className="h-12 w-12">
                   <AvatarImage
-                    src={avatar || "https://avatar.iran.liara.run/public/19"}
+                    src={
+                      avatarPreview || "https://avatar.iran.liara.run/public/19"
+                    }
                   />
                   <AvatarFallback className="bg-blue-500 text-white">
                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
@@ -185,6 +223,11 @@ const Profile = () => {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter your current password"
                 />
+                {passwordErrors.currentPassword && (
+                  <p className="text-sm text-red-400 mt-1">
+                    {passwordErrors.currentPassword}
+                  </p>
+                )}
               </FormField>
 
               <FormField label="New Password">
@@ -195,6 +238,11 @@ const Profile = () => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter your new password"
                 />
+                {passwordErrors.newPassword && (
+                  <p className="text-sm text-red-400 mt-1">
+                    {passwordErrors.newPassword}
+                  </p>
+                )}
               </FormField>
 
               <FormField label="Confirm Password">
@@ -205,19 +253,26 @@ const Profile = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your new password"
                 />
+                {passwordErrors.confirmPassword && (
+                  <p className="text-sm text-red-400 mt-1">
+                    {passwordErrors.confirmPassword}
+                  </p>
+                )}
               </FormField>
             </div>
 
             <Separator className="my-4" />
-            <SaveButton isLoading={false} onClick={handlePasswordSave} />
+            <SaveButton
+              isLoading={changePassword}
+              onClick={handlePasswordSave}
+            />
           </div>
         </SectionCard>
       </div>
 
-      <Separator />
+      {/* <Separator /> */}
 
-      {/* Delete Account */}
-      <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col px-5">
+      {/* <div className="flex gap-6 md:gap-12 w-full md:flex-row flex-col px-5">
         <SectionHeader
           title="Delete Account"
           description="Permanently delete your account."
@@ -233,13 +288,54 @@ const Profile = () => {
             </Alert>
             <Button
               className="w-fit cursor-pointer hover:bg-red-500/50 bg-red-500/80 text-white"
-              onClick={handleDeleteAccount}
+              onClick={() => setShowDeleteModal(true)}
             >
               DELETE ACCOUNT
             </Button>
           </CardContent>
         </Card>
       </div>
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <AlertDialogHeader>
+            <DialogTitle>Confirm Account Deletion</DialogTitle>
+          </AlertDialogHeader>
+
+          <p className="text-sm text-muted-foreground mb-2">
+            Are you sure you want to delete your account? This action is
+            permanent and will erase all your data. Please enter your password
+            to confirm.
+          </p>
+
+          <Input
+            type="password"
+            placeholder="Enter current password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+          />
+          {deleteError && (
+            <p className="text-sm text-red-500 mt-1">{deleteError}</p>
+          )}
+
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleDeleteAccount}
+              disabled={!(deletePassword.length >= 8) || deleting}
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {deleting ? "Deleting..." : "Delete Account"}
+            </Button>
+          </AlertDialogFooter>
+        </DialogContent>
+      </Dialog> */}
     </div>
   );
 };

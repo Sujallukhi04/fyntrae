@@ -173,7 +173,6 @@ export const assertActivePermissionedMember = async (
   });
 
   if (!organization) {
-    console.log("dsdsf");
     throw new ErrorHandler("Organization not found", 404);
   }
 

@@ -9,10 +9,16 @@ interface AuthContextType {
   isAuthenticated: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   login: (user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   refetch: () => Promise<void>;
   updateuser: (formData: FormData) => Promise<void>;
+  changepassword: (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<void>;
   updating: boolean;
+  changePassword: boolean;
+  logoutLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [changePassword, setChangePassword] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   const fetchUser = async () => {
     try {
@@ -50,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUpdating(true);
       const response = await authApi.updateUser(formData);
       setUser(response?.user || null);
+      toast.success("profile updated successfully");
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to update organization";
@@ -57,6 +66,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       throw error;
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const changepassword = async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    try {
+      setChangePassword(true);
+      await authApi.changePassword(data);
+      toast.success("password changed successfully");
+    } catch (error: any) {
+      throw error;
+    } finally {
+      setChangePassword(false);
     }
   };
 
@@ -68,8 +92,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchUser();
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      setLogoutLoading(true);
+      await authApi.logout();
+      setUser(null);
+      toast.success("logout successfully");
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to update organization";
+      toast.error(errorMessage);
+    } finally {
+      setLogoutLoading(false);
+    }
   };
 
   const value = {
@@ -82,6 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     refetch: fetchUser,
     updateuser,
     updating,
+    changePassword,
+    changepassword,
+    logoutLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

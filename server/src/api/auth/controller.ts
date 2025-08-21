@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import {
+  changePasswordSchema,
+  deleteAccountSchema,
   loginSchema,
   signupSchema,
   updateUserSchema,
@@ -224,16 +226,8 @@ export const updateUser = catchAsync(
     const validatedData = updateUserSchema.parse(req.body);
     const { name } = validatedData;
 
-    const currentUser = await db.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!currentUser) {
-      throw new ErrorHandler("User not found", 404);
-    }
-
-    let profilePicUrl = currentUser.profilePicUrl;
-    let profilePicPublicId = currentUser.profilePicPublicId;
+    let profilePicUrl = req.user?.profilePicUrl;
+    let profilePicPublicId = req.user?.profilePicPublicId;
 
     if (req.file) {
       const cloudinaryResult = await uploadToCloudinary(req.file.path);
@@ -254,6 +248,51 @@ export const updateUser = catchAsync(
     res.status(200).json({
       message: "User profile updated successfully",
       user: currentuser,
+    });
+  }
+);
+
+export const changePassword = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw new ErrorHandler("userId not provided", 403);
+
+    const validateddata = changePasswordSchema.parse(req.body);
+
+    const { currentPassword, newPassword } = validateddata;
+
+    const isMatch = await bcrypt.compare(currentPassword, req.user?.password!);
+    if (!isMatch) throw new ErrorHandler("Current password is incorrect", 400);
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await db.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  }
+);
+
+export const logoutUser = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw new ErrorHandler("userId not provided", 403);
+
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      path: "/", // must match the cookie's path
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
     });
   }
 );

@@ -16,11 +16,18 @@ export const authApi = {
     return res.data;
   },
   updateUser: async (formData: FormData) => {
-    const res = await axiosInstance.put("/auth", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const res = await axiosInstance.put("/auth", formData);
+    return res.data;
+  },
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    const res = await axiosInstance.put("/auth/change-password", data);
+    return res.data;
+  },
+  logout: async () => {
+    const res = await axiosInstance.get("/auth/logout");
     return res.data;
   },
 };

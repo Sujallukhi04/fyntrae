@@ -3,6 +3,7 @@ import {
   Bell,
   ChevronsUpDown,
   CreditCard,
+  Loader2,
   LogOut,
   Sparkles,
 } from "lucide-react";
@@ -26,12 +27,16 @@ import { Link } from "react-router";
 
 export function NavUser({
   user,
+  onLogout,
+  logoutLoading,
 }: {
   user: {
     name: string;
     email: string;
     avatar: string;
   };
+  onLogout: () => void;
+  logoutLoading?: boolean;
 }) {
   const { isMobile } = useSidebar();
 
@@ -53,11 +58,8 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage
-                  src={user.avatar || "/placeholder.svg"}
-                  alt={user.name}
-                />
+              <Avatar className="h-8 w-8 rounded-lg border border">
+                <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">
                   {" "}
                   {getInitials(user.name)}
@@ -119,9 +121,13 @@ export function NavUser({
               </DropdownMenuItem> */}
             </DropdownMenuGroup>
             {/* <DropdownMenuSeparator /> */}
-            <DropdownMenuItem>
-              <LogOut />
-              Log out
+            <DropdownMenuItem onClick={onLogout} disabled={logoutLoading}>
+              {logoutLoading ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut />
+              )}
+              Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

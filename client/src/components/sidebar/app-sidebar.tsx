@@ -31,13 +31,14 @@ import { NavUser } from "./nav-user";
 import useAuthUser from "@/hooks/useAuthUser";
 import { TimerWidget } from "../time/TimerWeight";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
 const formatRole = (role: string) => {
   return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useAuthUser();
+  const { user, logout, logoutLoading } = useAuth();
   const { canAccessPage } = useOrgAccess();
   const userOrganization =
     user?.organizations?.map((org) => ({
@@ -60,7 +61,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     user: {
       name: user?.name || "User",
       email: user?.email || "guest@example.com",
-      avatar: "/placeholder.svg?height=32&width=32",
+      avatar: user?.profilePicUrl || "/placeholder.svg?height=32&width=32",
     },
     teams: userOrganization.length > 0 ? userOrganization : fallbackTeams,
     navMain: [
@@ -143,7 +144,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.admin} name="Admin" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={data.user}
+          onLogout={logout}
+          logoutLoading={logoutLoading}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

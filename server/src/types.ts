@@ -10,6 +10,8 @@ export interface UserMain {
   password: string;
   currentTeamId: string | null;
   isActive: boolean;
+  profilePicUrl: string;
+  profilePicPublicId: string;
   weekStart: WeekStart;
   createdAt: Date;
   updatedAt: Date;

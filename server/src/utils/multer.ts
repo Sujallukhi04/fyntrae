@@ -33,27 +33,19 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB size limit
   },
   fileFilter: (req, file, cb) => {
-    const allowedMimeTypes = ["image/jpeg", "image/png"];
-
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      const error = new Error("Only JPG, JPEG, and PNG files are allowed.");
-      return cb(error as any, false); // Reject the upload if the mime type is not valid
-    }
-
     const fileExtension = path.extname(file.originalname).toLowerCase();
-    if (
-      fileExtension !== ".jpg" &&
-      fileExtension !== ".jpeg" &&
-      fileExtension !== ".png"
-    ) {
-      const error = new Error(
-        "Only JPG, JPEG, and PNG file extensions are allowed."
-      );
-      return cb(error as any, false); // Reject the upload if the extension is not valid
-    }
+    console.log(file);
+    const allowedExtensions = [".jpg", ".jpeg", ".png"];
 
-    // If file is valid, pass `null` for the error and `true` to indicate upload is allowed
-    cb(null, true);
+    if (
+      file.mimetype &&
+      file.mimetype.startsWith("image/") &&
+      allowedExtensions.includes(fileExtension)
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed.") as any, false);
+    }
   },
 });
 

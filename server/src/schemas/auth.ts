@@ -29,3 +29,17 @@ export const loginSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(1, "Name cannot be empty"),
 });
+
+export const changePasswordSchema = z.object({
+  currentPassword: z
+    .string()
+    .min(1, { message: "Current password is required" }),
+
+  newPassword: z
+    .string()
+    .min(8, { message: "New password must be at least 8 characters" }),
+});
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, { message: "Current password is required" }),
+});
