@@ -14,7 +14,12 @@ import { getAuthUserData, getUserByEmail } from "../../helper/user";
 import { catchAsync } from "../../utils/catchAsync";
 import { deleteFromCloudinary, uploadToCloudinary } from "../../utils/multer";
 import { generateAccessToken, generateRefreshToken } from "../../utils/jwt";
-import { rotateRefreshToken, storeRefreshToken } from "../../helper/token";
+import {
+  createToken,
+  rotateRefreshToken,
+  storeRefreshToken,
+} from "../../helper/token";
+import { emailTemplates, sendMail } from "../../helper/mailer";
 
 const accessTokenExpiresIn =
   Number(process.env.ACCESS_TOKEN_EXPIRES_IN) || 15 * 60 * 1000;
@@ -50,6 +55,83 @@ export const login = catchAsync(
       throw new ErrorHandler("Invalid email or password", 401);
     }
 
+    if (!existingUser.emailVerified) {
+      const verificationToken = await createToken(
+        existingUser.email,
+        "EmailVerification"
+      );
+
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+
+      try {
+        await sendMail({
+          to: existingUser.email,
+          subject: `Verify your email address`,
+          html: emailTemplates.verificationEmail({
+            userName: existingUser.name,
+            verificationLink: verificationUrl,
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to send verification email:", err);
+        throw new ErrorHandler(
+          "Your email is not verified and we couldn't send a new verification email. Please contact support.",
+          500
+        );
+      }
+
+      throw new ErrorHandler(
+        "Email not verified. A new verification link has been sent.",
+        403
+      );
+    }
+
+    await db.refreshToken.deleteMany({
+      where: {
+        userId: existingUser.id,
+        expiresAt: { lt: new Date() },
+      },
+    });
+
+    const userTokens = await db.refreshToken.findMany({
+      where: { userId: existingUser.id },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const MAX_TOKENS = Number(process.env.MAXIMUM_SESSION) || 5;
+    if (userTokens.length >= MAX_TOKENS) {
+      const tokensToDelete = userTokens.slice(
+        0,
+        userTokens.length - MAX_TOKENS + 1
+      );
+      await db.refreshToken.deleteMany({
+        where: {
+          id: { in: tokensToDelete.map((t) => t.id) },
+        },
+      });
+    }
+
+    const accessToken = generateAccessToken({ id: existingUser.id });
+    const refreshToken = await storeRefreshToken(existingUser.id);
+
+    const refreshtoken = generateRefreshToken({ token: refreshToken });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      maxAge: accessTokenExpiresIn,
+      path: "/",
+    });
+
+    res.cookie("refreshToken", refreshtoken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      maxAge: refreshTokenExpiresIn,
+      path: "/api/auth/refresh",
+    });
+
     const userWithOrg = await db.user.findUnique({
       where: { id: existingUser.id },
       select: {
@@ -74,27 +156,6 @@ export const login = catchAsync(
           take: 1,
         },
       },
-    });
-
-    const accessToken = generateAccessToken({ id: existingUser.id });
-    const refreshToken = await storeRefreshToken(existingUser.id);
-
-    const refreshtoken = generateRefreshToken({ token: refreshToken });
-
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-      maxAge: accessTokenExpiresIn,
-      path: "/",
-    });
-
-    res.cookie("refreshToken", refreshtoken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-      maxAge: refreshTokenExpiresIn,
-      path: "/api/auth/refresh",
     });
 
     res.status(200).json({
@@ -198,6 +259,27 @@ export const register = catchAsync(
       };
     });
 
+    const verificationToken = await createToken(email, "EmailVerification");
+
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+
+    try {
+      await sendMail({
+        to: email,
+        subject: `Verification of Email Address`,
+        html: emailTemplates.verificationEmail({
+          userName: name,
+          verificationLink: verificationUrl,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send verification email:", err);
+      throw new ErrorHandler(
+        "Failed to send verification email. Please check your email address and try again.",
+        500
+      );
+    }
+
     res.status(201).json({
       message: "User registered successfully",
       user: result.user,
@@ -283,6 +365,8 @@ export const changePassword = catchAsync(
       data: { password: hashedPassword },
     });
 
+    await db.refreshToken.deleteMany({ where: { userId } });
+
     res.status(200).json({
       success: true,
       message: "Password updated successfully",
@@ -295,10 +379,17 @@ export const logoutUser = catchAsync(
     const userId = req.user?.id;
     if (!userId) throw new ErrorHandler("userId not provided", 403);
 
-    await db.refreshToken.deleteMany({ where: { userId } });
+    //@ts-ignore
+    const oldToken = req.token;
+    if (!oldToken) throw new ErrorHandler("Refresh token missing", 401);
+
+    await db.refreshToken.deleteMany({ where: { token: oldToken } });
 
     res.clearCookie("accessToken", { httpOnly: true, path: "/" });
-    res.clearCookie("refreshToken", { httpOnly: true, path: "/refresh" });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      path: "/api/auth/refresh",
+    });
 
     res.status(200).json({
       success: true,

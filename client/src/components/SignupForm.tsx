@@ -61,7 +61,15 @@ export function SignupForm({
       toast.error("Name cannot be empty");
       return;
     }
-    signupMutation(formData);
+    try {
+      await signupMutation(formData);
+    } catch (error) {
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+      });
+    }
   };
 
   return (

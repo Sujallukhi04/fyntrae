@@ -47,8 +47,14 @@ export function LoginForm({
       toast.error("Please enter a valid email address");
       return;
     }
-
-    loginMutation(formData);
+    try {
+      await loginMutation(formData);
+    } catch (error) {
+      setFormData({
+        email: "",
+        password: "",
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -100,6 +100,43 @@ export const emailTemplates = {
       buttonLink: dashboardLink,
       footerNote: "Happy collaborating! <br />— The FlexFlow Team",
     }),
+
+  verificationEmail: ({
+    userName,
+    verificationLink,
+  }: {
+    userName: string;
+    verificationLink: string;
+  }) =>
+    baseEmailLayout({
+      brandName: "FlexFlow",
+      brandTagline: "Smarter Collaboration, Better Results",
+      title: "🔒 Verify Your Email Address",
+      greeting: `Hi ${userName},`,
+      message: `Thank you for signing up! Please verify your email address by clicking the button below.`,
+      buttonText: "Verify Email",
+      buttonLink: verificationLink,
+      footerNote:
+        "If you didn't sign up for this account, please ignore this email.",
+    }),
+
+  forgotPasswordEmail: ({
+    userName,
+    resetLink,
+  }: {
+    userName: string;
+    resetLink: string;
+  }) =>
+    baseEmailLayout({
+      brandName: "FlexFlow",
+      brandTagline: "Smarter Collaboration, Better Results",
+      title: "🔑 Reset Your Password",
+      greeting: `Hi ${userName},`,
+      message: `We received a request to reset your password. Click the button below to reset it. If you didn't request this, you can safely ignore this email.`,
+      buttonText: "Reset Password",
+      buttonLink: resetLink,
+      footerNote: "This link will expire in 1 hour.",
+    }),
 };
 
 export const baseEmailLayout = ({

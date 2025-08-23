@@ -21,6 +21,7 @@ const useSignup = () => {
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Signup failed";
       toast.error(errorMessage);
+      throw err;
     } finally {
       setIsPending(false);
     }

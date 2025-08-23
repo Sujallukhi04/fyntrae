@@ -20,6 +20,7 @@ const useLogin = () => {
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Login failed";
       toast.error(errorMessage);
+      throw err;
     } finally {
       setIsPending(false);
     }

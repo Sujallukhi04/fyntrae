@@ -26,6 +26,7 @@ import { useOrganization } from "./providers/OrganizationProvider";
 import useTimesummary from "./hooks/useTimesummary";
 import Shared from "./pages/Dashboard/Shared";
 import ReportPublic from "./pages/ReportPublic";
+import VerifyPage from "./pages/Verification";
 
 const App = () => {
   const { isLoading, isAuthenticated } = useAuthUser();
@@ -164,6 +165,7 @@ const App = () => {
         <Route path="/team-invite/:token" element={<TeamInvite />} />
 
         <Route path="/public-report/:reportId" element={<ReportPublic />} />
+        <Route path="/verify-email" element={<VerifyPage />} />
 
         <Route
           path="/signup"

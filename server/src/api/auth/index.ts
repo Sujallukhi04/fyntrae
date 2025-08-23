@@ -18,7 +18,12 @@ router.put("/change-password", protectRoute, authController.changePassword);
 
 router.post("/refresh", validateRefreshToken, authController.refresh);
 
-router.get("/logout", protectRoute, authController.logoutUser);
+router.get(
+  "/logout",
+  protectRoute,
+  validateRefreshToken,
+  authController.logoutUser
+);
 
 router.get("/me", protectRoute, authController.getAuthUser);
 
