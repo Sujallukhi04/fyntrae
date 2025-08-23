@@ -9,11 +9,18 @@ import {
 import { ErrorHandler } from "../../utils/errorHandler";
 import bcrypt from "bcryptjs";
 import { db } from "../../prismaClient";
-import { generateToken } from "../../utils/jwt";
 import { WeekStart } from "@prisma/client";
 import { getAuthUserData, getUserByEmail } from "../../helper/user";
 import { catchAsync } from "../../utils/catchAsync";
-import { uploadToCloudinary } from "../../utils/multer";
+import { deleteFromCloudinary, uploadToCloudinary } from "../../utils/multer";
+import { generateAccessToken, generateRefreshToken } from "../../utils/jwt";
+import { rotateRefreshToken, storeRefreshToken } from "../../helper/token";
+
+const accessTokenExpiresIn =
+  Number(process.env.ACCESS_TOKEN_EXPIRES_IN) || 15 * 60 * 1000;
+
+const refreshTokenExpiresIn =
+  Number(process.env.REFRESH_TOKEN_EXPIRES_IN) || 7 * 24 * 60 * 60 * 1000;
 
 export const login = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
@@ -22,17 +29,17 @@ export const login = catchAsync(
     const { email, password } = validatedData;
 
     const existingUser = await getUserByEmail(email);
-    if (!existingUser) throw new ErrorHandler("User does not exist", 401);
+    if (!existingUser) throw new ErrorHandler("User does not exist", 404);
 
     if (existingUser.isPlaceholder || !existingUser.isActive) {
       throw new ErrorHandler(
         "Account is deactivated. Contact administrator.",
-        401
+        403
       );
     }
 
     if (!existingUser.password) {
-      throw new ErrorHandler("Invalid email or password", 401);
+      throw new ErrorHandler("Invalid email or password", 400);
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -69,14 +76,25 @@ export const login = catchAsync(
       },
     });
 
-    const token = generateToken({ id: existingUser.id });
+    const accessToken = generateAccessToken({ id: existingUser.id });
+    const refreshToken = await storeRefreshToken(existingUser.id);
 
-    res.cookie("token", token, {
-      httpOnly: true, // Prevent access via JavaScript (XSS protection)
-      secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS in production
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax", // Lax in dev for tools, strict in prod
-      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-      path: "/", // Cookie is sent for all routes
+    const refreshtoken = generateRefreshToken({ token: refreshToken });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      maxAge: accessTokenExpiresIn,
+      path: "/",
+    });
+
+    res.cookie("refreshToken", refreshtoken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      maxAge: refreshTokenExpiresIn,
+      path: "/api/auth/refresh",
     });
 
     res.status(200).json({
@@ -180,16 +198,6 @@ export const register = catchAsync(
       };
     });
 
-    const token = generateToken({ id: result.user.id });
-
-    res.cookie("token", token, {
-      httpOnly: true, // Prevent access via JavaScript (XSS protection)
-      secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS in production
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax", // Lax in dev for tools, strict in prod
-      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-      path: "/", // Cookie is sent for all routes
-    });
-
     res.status(201).json({
       message: "User registered successfully",
       user: result.user,
@@ -230,6 +238,10 @@ export const updateUser = catchAsync(
     let profilePicPublicId = req.user?.profilePicPublicId;
 
     if (req.file) {
+      if (profilePicPublicId) {
+        await deleteFromCloudinary(profilePicPublicId);
+      }
+
       const cloudinaryResult = await uploadToCloudinary(req.file.path);
       profilePicUrl = cloudinaryResult.url;
       profilePicPublicId = cloudinaryResult.public_id;
@@ -283,12 +295,10 @@ export const logoutUser = catchAsync(
     const userId = req.user?.id;
     if (!userId) throw new ErrorHandler("userId not provided", 403);
 
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-      path: "/", // must match the cookie's path
-    });
+    await db.refreshToken.deleteMany({ where: { userId } });
+
+    res.clearCookie("accessToken", { httpOnly: true, path: "/" });
+    res.clearCookie("refreshToken", { httpOnly: true, path: "/refresh" });
 
     res.status(200).json({
       success: true,
@@ -296,3 +306,56 @@ export const logoutUser = catchAsync(
     });
   }
 );
+
+export const refresh = catchAsync(async (req: Request, res: Response) => {
+  //@ts-ignore
+  const oldToken = req.token;
+  if (!oldToken) throw new ErrorHandler("Refresh token missing", 401);
+
+  const dbToken = await db.refreshToken.findUnique({
+    where: { token: oldToken },
+  });
+
+  if (dbToken) {
+    await db.refreshToken.deleteMany({
+      where: { userId: dbToken.userId, expiresAt: { lt: new Date() } },
+    });
+  }
+
+  if (!dbToken || dbToken.expiresAt < new Date()) {
+    throw new ErrorHandler("Invalid or expired refresh token", 401);
+  }
+
+  const newRefreshToken = await rotateRefreshToken(
+    oldToken,
+    dbToken.userId,
+    dbToken.expiresAt
+  );
+
+  const accessToken = generateAccessToken({ id: dbToken.userId });
+
+  const refreshtoken = generateRefreshToken(
+    { token: newRefreshToken },
+    dbToken.expiresAt
+  );
+
+  console.log(refreshtoken, accessToken);
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    maxAge: accessTokenExpiresIn,
+    path: "/",
+  });
+
+  res.cookie("refreshToken", refreshtoken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    maxAge: dbToken.expiresAt.getTime() - Date.now(),
+    path: "/api/auth/refresh",
+  });
+
+  res.json({ message: "Tokens refreshed" });
+});

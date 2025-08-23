@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
+import jwt from "jsonwebtoken";
 
 class ErrorHandler extends Error {
   statusCode: number;
@@ -51,6 +52,14 @@ const errorHandler = (
   // Prisma unknown errors
   if (err instanceof Prisma.PrismaClientUnknownRequestError) {
     customError = new ErrorHandler(`Unknown database error occurred`, 500);
+  }
+
+  // JWT errors
+  if (err instanceof jwt.TokenExpiredError) {
+    customError = new ErrorHandler("Token expired", 401);
+  }
+  if (err instanceof jwt.JsonWebTokenError) {
+    customError = new ErrorHandler("Invalid token", 401);
   }
 
   if (err instanceof TypeError) {

@@ -99,3 +99,8 @@ export const uploadToCloudinary = async (filePath: string) => {
     throw new Error("Error during file upload or deletion process");
   }
 };
+
+export const deleteFromCloudinary = async (publicId: string) => {
+  return await cloudinary.uploader.destroy(publicId);
+};
+  

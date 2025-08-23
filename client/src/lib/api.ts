@@ -30,6 +30,10 @@ export const authApi = {
     const res = await axiosInstance.get("/auth/logout");
     return res.data;
   },
+  refresh: async () => {
+    const res = await axiosInstance.post("/auth/refresh");
+    return res.data;
+  },
 };
 
 export const organizationApi = {

@@ -40,14 +40,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [changePassword, setChangePassword] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
+  const forceLogout = () => {
+    setUser(null);
+    toast.error("Your session has expired, please login again");
+  };
+
   const fetchUser = async () => {
     try {
       setIsLoading(true);
       const response = await authApi.getAuthUser();
       setUser(response?.user || null);
-    } catch (error) {
-      console.error("Auth check failed:", error);
-      setUser(null);
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        try {
+          await authApi.refresh();
+          const retry = await authApi.getAuthUser();
+          setUser(retry?.user || null);
+        } catch (refreshErr) {
+          forceLogout();
+        }
+      } else {
+        console.error("Auth check failed:", error);
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }

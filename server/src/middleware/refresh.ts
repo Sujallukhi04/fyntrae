@@ -5,30 +5,25 @@ import { ErrorHandler } from "../utils/errorHandler";
 import { getUserById } from "../helper/user";
 import { catchAsync } from "../utils/catchAsync";
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 
-export const protectRoute = catchAsync(
+export const validateRefreshToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const token = req.cookies.accessToken;
-
-    if (!token) {
-      throw new ErrorHandler("Unauthorized - No token provided", 401);
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      throw new ErrorHandler("Refresh token missing", 401);
     }
 
-    const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET!) as TokenPayload;
+    const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET!) as {
+      token: string;
+    };
 
     if (!decoded) {
       throw new ErrorHandler("Unauthorized - Invalid token", 401);
     }
 
-    const user = await getUserById(decoded.id);
-
-    if (!user) {
-      throw new ErrorHandler("Unauthorized - User not found", 401);
-    }
-
     //@ts-ignore
-    req.user = user;
+    req.token = decoded.token;
 
     next();
   }
