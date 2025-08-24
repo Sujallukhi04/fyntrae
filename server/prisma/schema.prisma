@@ -88,7 +88,7 @@ model Organizations {
   updatedAt                    DateTime @updatedAt
 
   currentTeamUsers User[]                   @relation("UserCurrentTeam")
-  owner            User                     @relation("OrganizationOwner", fields: [userId], references: [id], onDelete: Restrict)
+  owner            User                     @relation("OrganizationOwner", fields: [userId], references: [id], onDelete: Cascade)
   members          Member[]
   invitations      OrganizationInvitation[]
   clients          Client[]
@@ -205,7 +205,7 @@ model Task {
   updatedAt      DateTime @updatedAt
 
   project      Project       @relation(fields: [projectId], references: [id], onDelete: Restrict)
-  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   timeEntries  TimeEntry[]
 }
 
@@ -239,9 +239,9 @@ model TimeEntry {
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  task         Task?         @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  member       Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  task         Task?         @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  member       Member        @relation(fields: [memberId], references: [id], onDelete: Restrict)
 
   tags TimeEntryTag[]
 }

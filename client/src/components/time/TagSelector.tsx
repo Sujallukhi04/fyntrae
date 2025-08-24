@@ -8,6 +8,7 @@ import { Loader2, Plus, Tag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router";
 
 interface Tag {
   id: string;
@@ -54,15 +55,17 @@ export const TagSelectorPopover = ({
         <div className="p-3">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium">Tags</h4>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={onAddTag}
-            >
-              <Plus className="h-3 w-3 mr-1 " />
-              Add
-            </Button>
+            <Link to="/tags">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={onAddTag}
+              >
+                <Plus className="h-3 w-3 mr-1 " />
+                Add
+              </Button>
+            </Link>
           </div>
 
           <Separator className="my-2" />
@@ -98,14 +101,14 @@ export const TagSelectorPopover = ({
               <div className="text-center py-6">
                 <Tag className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">No tags found</p>
-                <Button
+                {/* <Button
                   variant="link"
                   size="sm"
                   className="mt-1 h-auto p-0 text-xs"
                   onClick={onCreateFirstTag}
                 >
                   Create your first tag
-                </Button>
+                </Button> */}
               </div>
             )}
           </div>

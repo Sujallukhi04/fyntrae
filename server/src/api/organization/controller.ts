@@ -655,10 +655,6 @@ export const deleteMember = catchAsync(
     await db.$transaction(async (tx) => {
       //in future delete related data if needed like project tasks , timeentry
 
-      await tx.member.delete({
-        where: { id: memberId },
-      });
-
       await tx.organizationInvitation.deleteMany({
         where: {
           email: member.user.email,
@@ -677,6 +673,10 @@ export const deleteMember = catchAsync(
         where: {
           memberId: memberId,
         },
+      });
+
+      await tx.member.delete({
+        where: { id: memberId },
       });
     });
 

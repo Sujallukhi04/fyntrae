@@ -135,7 +135,7 @@ export const emailTemplates = {
       message: `We received a request to reset your password. Click the button below to reset it. If you didn't request this, you can safely ignore this email.`,
       buttonText: "Reset Password",
       buttonLink: resetLink,
-      footerNote: "This link will expire in 1 hour.",
+      footerNote: "This link will expire in 24 hours.",
     }),
 };
 
