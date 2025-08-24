@@ -12,7 +12,12 @@ router.post("/register", authController.register);
 
 router.put("/", protectRoute, upload.single("file"), authController.updateUser);
 
-router.put("/change-password", protectRoute, authController.changePassword);
+router.put(
+  "/change-password",
+  protectRoute,
+  validateRefreshToken,
+  authController.changePassword
+);
 
 // router.delete("/account" , protectRoute, authControler.deleteUser)
 

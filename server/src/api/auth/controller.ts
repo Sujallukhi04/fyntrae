@@ -353,6 +353,9 @@ export const changePassword = catchAsync(
     const userId = req.user?.id;
     if (!userId) throw new ErrorHandler("userId not provided", 403);
 
+    //@ts-ignore
+    const token = req.token;
+
     const validateddata = changePasswordSchema.parse(req.body);
 
     const { currentPassword, newPassword } = validateddata;
@@ -367,7 +370,12 @@ export const changePassword = catchAsync(
       data: { password: hashedPassword },
     });
 
-    await db.refreshToken.deleteMany({ where: { userId } });
+    await db.refreshToken.deleteMany({
+      where: {
+        userId,
+        token: { not: token },
+      },
+    });
 
     res.status(200).json({
       success: true,

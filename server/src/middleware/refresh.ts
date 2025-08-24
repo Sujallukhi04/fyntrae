@@ -10,6 +10,7 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 export const validateRefreshToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const refreshToken = req.cookies.refreshToken;
+
     if (!refreshToken) {
       throw new ErrorHandler("Refresh token missing", 401);
     }
