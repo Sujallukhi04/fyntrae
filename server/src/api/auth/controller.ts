@@ -118,6 +118,9 @@ export const login = catchAsync(
 
     const refreshtoken = generateRefreshToken({ token: refreshToken });
 
+    res.clearCookie("accessToken", { path: "/" });
+    res.clearCookie("refreshToken", { path: "/api/auth" });
+
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -440,7 +443,8 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
     dbToken.expiresAt
   );
 
-  console.log(refreshtoken, accessToken);
+  res.clearCookie("accessToken", { path: "/" });
+  res.clearCookie("refreshToken", { path: "/api/auth" });
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
