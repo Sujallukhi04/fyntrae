@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, X, AlertCircle, Mail } from "lucide-react";
-import { useParams } from "react-router";
 import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { authApi } from "@/lib/api";
 
 const VerifyPage = () => {
   const location = useLocation();
@@ -35,15 +35,14 @@ const VerifyPage = () => {
 
     const verifyToken = async () => {
       try {
-        console.log("first");
-        const res = await fetch(`/api/auth/verify/${token}`);
-        if (!res.ok) throw new Error("Invalid or expired token");
-
+        await authApi.verifyEmail(token);
         setStatus("success");
         toast.success("Your email has been successfully verified!");
-      } catch (error) {
+      } catch (error: any) {
         setStatus("error");
-        toast.error("Verification failed. The link may be invalid or expired.");
+        const errorMessage =
+          error.response?.data?.message || "Failed to update organization";
+        toast.error(errorMessage);
       }
     };
 

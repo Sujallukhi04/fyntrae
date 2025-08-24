@@ -27,6 +27,8 @@ import useTimesummary from "./hooks/useTimesummary";
 import Shared from "./pages/Dashboard/Shared";
 import ReportPublic from "./pages/ReportPublic";
 import VerifyPage from "./pages/Verification";
+import Reset from "./pages/Reset";
+import SetNewPassword from "./pages/NewPassword";
 
 const App = () => {
   const { isLoading, isAuthenticated } = useAuthUser();
@@ -165,7 +167,20 @@ const App = () => {
         <Route path="/team-invite/:token" element={<TeamInvite />} />
 
         <Route path="/public-report/:reportId" element={<ReportPublic />} />
-        <Route path="/verify-email" element={<VerifyPage />} />
+        <Route
+          path="/verify-email"
+          element={!isAuthenticated ? <VerifyPage /> : <Navigate to={"/"} />}
+        />
+        <Route
+          path="/reset"
+          element={!isAuthenticated ? <Reset /> : <Navigate to={"/"} />}
+        />
+        <Route
+          path="/new-password"
+          element={
+            !isAuthenticated ? <SetNewPassword /> : <Navigate to={"/"} />
+          }
+        />
 
         <Route
           path="/signup"

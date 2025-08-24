@@ -14,7 +14,7 @@ router.put("/", protectRoute, upload.single("file"), authController.updateUser);
 
 router.put("/change-password", protectRoute, authController.changePassword);
 
-// router.delete("/account" , protectRoute, authController.deleteUser)
+// router.delete("/account" , protectRoute, authControler.deleteUser)
 
 router.post("/refresh", validateRefreshToken, authController.refresh);
 
@@ -24,6 +24,12 @@ router.get(
   validateRefreshToken,
   authController.logoutUser
 );
+
+router.put("/verify-email/:token", authController.verifyEmail);
+
+router.post("/send-resetlink", authController.sendResetPassword);
+
+router.post("/resetpassword/:token", authController.resetPasswordWithToken);
 
 router.get("/me", protectRoute, authController.getAuthUser);
 

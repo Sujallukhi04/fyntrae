@@ -64,6 +64,7 @@ export function LoginForm({
       [name]: value,
     }));
   };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="">
@@ -106,7 +107,7 @@ export function LoginForm({
                   <div className="flex items-center">
                     <Label htmlFor="password">Password</Label>
                     <Link
-                      to="/login"
+                      to="/reset"
                       className="ml-auto text-sm underline-offset-4 hover:underline text-primary"
                     >
                       Forgot your password?

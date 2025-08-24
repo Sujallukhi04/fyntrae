@@ -43,3 +43,11 @@ export const changePasswordSchema = z.object({
 export const deleteAccountSchema = z.object({
   password: z.string().min(1, { message: "Current password is required" }),
 });
+
+export const resetpassword = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+export const resetpasswordWithToken = z.object({
+  password: z.string().min(1, { message: "new password is required" }),
+});

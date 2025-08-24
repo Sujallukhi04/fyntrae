@@ -34,6 +34,18 @@ export const authApi = {
     const res = await axiosInstance.post("/auth/refresh");
     return res.data;
   },
+  verifyEmail: async (token: string) => {
+    const res = await axiosInstance.put(`/auth/verify-email/${token}`);
+    return res.data;
+  },
+  resetLink: async (email: string) => {
+    const res = await axiosInstance.post(`/auth/send-resetlink`, { email });
+    return res.data;
+  },
+  newPassword: async (token: string, password: string) => {
+    const res = await axiosInstance.post(`/auth/resetpassword/${token}`, { password });
+    return res.data;
+  },
 };
 
 export const organizationApi = {

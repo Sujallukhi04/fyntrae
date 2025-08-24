@@ -3,6 +3,8 @@ import {
   changePasswordSchema,
   deleteAccountSchema,
   loginSchema,
+  resetpassword,
+  resetpasswordWithToken,
   signupSchema,
   updateUserSchema,
 } from "../../schemas/auth";
@@ -129,7 +131,7 @@ export const login = catchAsync(
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
       maxAge: refreshTokenExpiresIn,
-      path: "/api/auth/refresh",
+      path: "/api/auth",
     });
 
     const userWithOrg = await db.user.findUnique({
@@ -388,7 +390,7 @@ export const logoutUser = catchAsync(
     res.clearCookie("accessToken", { httpOnly: true, path: "/" });
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      path: "/api/auth/refresh",
+      path: "/api/auth",
     });
 
     res.status(200).json({
@@ -445,8 +447,169 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
     maxAge: dbToken.expiresAt.getTime() - Date.now(),
-    path: "/api/auth/refresh",
+    path: "/api/auth",
   });
 
   res.json({ message: "Tokens refreshed" });
 });
+
+export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
+  const { token } = req.params;
+
+  if (!token || typeof token !== "string") {
+    throw new ErrorHandler("Verification token is missing", 400);
+  }
+
+  await db.tokens.deleteMany({
+    where: {
+      expires: { lt: new Date() },
+    },
+  });
+
+  const dbToken = await db.tokens.findUnique({
+    where: { token },
+  });
+
+  if (!dbToken || dbToken.type !== "EmailVerification") {
+    throw new ErrorHandler("Invalid verification token", 400);
+  }
+
+  // First, check if the token is expired
+  if (dbToken.expires < new Date()) {
+    await db.tokens.delete({ where: { token } });
+    throw new ErrorHandler("Verification token has expired", 400);
+  }
+
+  // Then, check if the user is already verified
+  const user = await db.user.findFirst({
+    where: { email: dbToken.email },
+    select: { email: true, emailVerified: true },
+  });
+
+  if (!user) {
+    throw new ErrorHandler("User not found", 404);
+  }
+
+  if (user.emailVerified) {
+    await db.tokens.delete({ where: { token } }); // Optional: clean up
+    throw new ErrorHandler("Email already verified.", 400);
+  }
+
+  // Mark user as verified
+  await db.user.update({
+    where: { email: dbToken.email },
+    data: { emailVerified: true },
+  });
+
+  // Delete the token after use
+  await db.tokens.delete({ where: { token } });
+
+  res.status(200).json({ message: "Email verified successfully" });
+});
+
+export const sendResetPassword = catchAsync(
+  async (req: Request, res: Response) => {
+    const validatedData = resetpassword.parse(req.body);
+
+    const { email } = validatedData;
+
+    const user = await db.user.findFirst({
+      where: {
+        email,
+        emailVerified: true,
+      },
+    });
+
+    if (!user) throw new ErrorHandler("Email does not exists");
+
+    await db.tokens.deleteMany({
+      where: {
+        expires: { lt: new Date() },
+      },
+    });
+
+    const resetToken = await createToken(user.email, "PasswordReset");
+
+    const resetUrl = `${process.env.FRONTEND_URL}/new-password?token=${resetToken}`;
+
+    try {
+      await sendMail({
+        to: user.email,
+        subject: `Reset Your Password`,
+        html: emailTemplates.forgotPasswordEmail({
+          userName: user.name,
+          resetLink: resetUrl,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send verification email:", err);
+      throw new ErrorHandler(
+        "Failed to send password reset email. Please try again.",
+        500
+      );
+    }
+
+    res.status(200).json({ message: "Email verified successfully" });
+  }
+);
+
+export const resetPasswordWithToken = catchAsync(
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+
+    const validatedData = resetpasswordWithToken.parse(req.body);
+
+    const { password } = validatedData;
+
+    if (!token || typeof token !== "string") {
+      throw new ErrorHandler("Verification token is missing", 400);
+    }
+
+    await db.tokens.deleteMany({
+      where: {
+        expires: { lt: new Date() },
+      },
+    });
+
+    const dbToken = await db.tokens.findUnique({
+      where: { token },
+    });
+
+    if (!dbToken || dbToken.type !== "PasswordReset") {
+      throw new ErrorHandler("Invalid verification token", 400);
+    }
+
+    // First, check if the token is expired
+    if (dbToken.expires < new Date()) {
+      await db.tokens.delete({ where: { token } });
+      throw new ErrorHandler("Verification token has expired", 400);
+    }
+
+    const user = await db.user.findFirst({
+      where: { email: dbToken.email },
+    });
+
+    if (!user) {
+      throw new ErrorHandler("User not found", 404);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    await db.refreshToken.deleteMany({
+      where: { userId: user.id },
+    });
+
+    // Delete the token after use
+    await db.tokens.delete({ where: { token } });
+
+    res.status(200).json({
+      message:
+        "Password reset successful. All sessions have been logged out very soon.",
+    });
+  }
+);

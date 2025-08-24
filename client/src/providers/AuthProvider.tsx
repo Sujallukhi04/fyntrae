@@ -75,9 +75,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(response?.user || null);
       toast.success("profile updated successfully");
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to update organization";
-      toast.error(errorMessage);
+        const errorMessage =
+          error.response?.data?.message || "Failed to update organization";
+        toast.error(errorMessage);
       throw error;
     } finally {
       setUpdating(false);

@@ -42,7 +42,6 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -69,7 +68,7 @@ model Tokens {
   expires DateTime
   type    TokenTypes
 
-  @@unique([email, token, type])
+  @@unique([email, type])
   @@index([email, type])
 }
 
