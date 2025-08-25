@@ -19,6 +19,7 @@ import {
   updatesTimeEntrySchema,
 } from "../../schemas/time";
 import { catchAsync } from "../../utils/catchAsync";
+import { emitToOrg } from "../../socket";
 
 const calculateDuration = (start: Date, end: Date | null) => {
   if (!end) return null;
@@ -389,6 +390,20 @@ export const startTimer = catchAsync(
       return entryWithRelations;
     });
 
+    emitToOrg(organizationId, "timer:started", {
+      id: timeEntry.id,
+      start: timeEntry.start,
+      end: timeEntry.end,
+      duration: timeEntry.duration,
+      description: timeEntry.description,
+      taskId: timeEntry.taskId,
+      projectId: timeEntry.projectId,
+      organizationId: timeEntry.organizationId,
+      userId: timeEntry.userId,
+      tags: timeEntry.tags.map((t) => t.tag.id),
+      billable: timeEntry.billable,
+    });
+
     res.status(201).json({
       success: true,
       data: {
@@ -468,6 +483,20 @@ export const stopTimer = catchAsync(
     if (updateTimeEntry.taskId) {
       await recalculateTaskSpentTime(updateTimeEntry.taskId);
     }
+
+    emitToOrg(organizationId, "timer:stopped", {
+      id: updateTimeEntry.id,
+      start: updateTimeEntry.start,
+      end: updateTimeEntry.end,
+      duration: updateTimeEntry.duration,
+      description: updateTimeEntry.description,
+      taskId: updateTimeEntry.taskId,
+      projectId: updateTimeEntry.projectId,
+      organizationId: updateTimeEntry.organizationId,
+      userId: updateTimeEntry.userId,
+      tags: updateTimeEntry.tags.map((t) => t.tag.id),
+      billable: updateTimeEntry.billable,
+    });
 
     res.status(201).json({
       success: true,

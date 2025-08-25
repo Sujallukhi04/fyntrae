@@ -13,6 +13,7 @@ import useTimesummary from "@/hooks/useTimesummary";
 import { formatNumber, formatTimeDuration } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrganization } from "@/providers/OrganizationProvider";
+import { useSocket } from "@/providers/SocketProvider";
 import type {
   ProjectWithTasks,
   RecentTimeEntry,
@@ -56,6 +57,7 @@ const DashMain = () => {
   const { startTimer, stopTimer, startTimerLoading, stopTimerLoading } =
     useTime();
   const { runningTimer, organization } = useOrganization();
+  const { socket } = useSocket();
   const [projectsWithTasks, setProjectsWithTasks] = useState<
     ProjectWithTasks[]
   >([]);
@@ -118,6 +120,22 @@ const DashMain = () => {
       setProjectSummary([]);
     }
   };
+
+  useEffect(() => {
+    if (!socket || !user?.currentTeamId) return;
+
+    const reload = async () => {
+      await loadDashboardData();
+    };
+
+    socket.on("timer:started", reload);
+    socket.on("timer:stopped", reload);
+
+    return () => {
+      socket.off("timer:started", reload);
+      socket.off("timer:stopped", reload);
+    };
+  }, [socket, user?.currentTeamId]);
 
   useEffect(() => {
     if (user?.currentTeamId) loadDashboardData();

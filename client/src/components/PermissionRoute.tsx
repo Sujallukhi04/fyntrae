@@ -17,7 +17,6 @@ const PermissionRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!canAccessPage(path)) {
-    console.log(path, canAccessPage(path));
     return <Navigate to="/" replace />;
   }
 

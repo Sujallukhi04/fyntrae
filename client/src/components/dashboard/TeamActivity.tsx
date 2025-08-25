@@ -17,7 +17,7 @@ const TeamActivity = ({
         <span>Team Activity</span>
       </h2>
 
-      <div className="bg-muted/50 border border-zinc-800 rounded-md py-3 max-h-[290px] h-full overflow-hidden space-y-3">
+      <div className="bg-muted/50 border border-zinc-800 rounded-md py-3 h-[290px] overflow-hidden space-y-3">
         {visibleEntries.map((entry, idx) => (
           <React.Fragment key={entry.id}>
             <div className="px-3">

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { authApi } from "@/lib/api";
 import type { User } from "@/types/auth";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 interface AuthContextType {
   user: User | null;
@@ -39,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [updating, setUpdating] = useState(false);
   const [changePassword, setChangePassword] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const navigate = useNavigate();
 
   const forceLogout = () => {
     setUser(null);
@@ -75,9 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(response?.user || null);
       toast.success("profile updated successfully");
     } catch (error: any) {
-        const errorMessage =
-          error.response?.data?.message || "Failed to update organization";
-        toast.error(errorMessage);
+      const errorMessage =
+        error.response?.data?.message || "Failed to update organization";
+      toast.error(errorMessage);
       throw error;
     } finally {
       setUpdating(false);
@@ -112,7 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLogoutLoading(true);
       await authApi.logout();
       setUser(null);
+
       toast.success("logout successfully");
+      navigate("/login");
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to update organization";

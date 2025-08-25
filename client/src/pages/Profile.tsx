@@ -150,11 +150,7 @@ const Profile = () => {
             <div className="flex items-center justify-between px-6">
               <div className="flex items-center space-x-3 mt-2">
                 <Avatar className="h-12 w-12 border">
-                  <AvatarImage
-                    src={
-                      avatarPreview || "https://avatar.iran.liara.run/public/19"
-                    }
-                  />
+                  <AvatarImage src={avatarPreview || undefined} alt="image" />
                   <AvatarFallback className="bg-blue-500 text-white">
                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
                   </AvatarFallback>

@@ -20,7 +20,7 @@ const ProjectProgress = () => {
 
       <h2 className="text-sm font-medium text-muted-foreground px-3"></h2>
 
-      <div className="bg-muted/50 border border-zinc-800 rounded-md py-4 max-h-[290px] h-full space-y-3.5">
+      <div className="bg-muted/50 border border-zinc-800 rounded-md py-4 h-[290px] space-y-3.5">
         {projects.map((project, idx) => (
           <React.Fragment key={project.id}>
             <div className="px-3 flex flex-col space-y-1">

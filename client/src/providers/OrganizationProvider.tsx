@@ -16,6 +16,7 @@ import type {
 } from "@/types/oraganization";
 import { toast } from "sonner";
 import type { TimeEntry } from "@/types/project";
+import { useSocket } from "./SocketProvider";
 
 interface OrganizationContextType {
   organization: Organization | null;
@@ -72,6 +73,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isSwitching, setIsSwitching] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const { socket } = useSocket();
 
   const updateRunningTimer = useCallback((timer: TimeEntry | null) => {
     setRunningTimer(timer);
@@ -246,6 +248,30 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     [setUser]
   );
+
+  useEffect(() => {
+    if (!socket || !user?.currentTeamId) return;
+
+    const handleTimerStarted = (data: TimeEntry) => {
+      if (data.userId === user.id) {
+        fetchRunningTimer(user.currentTeamId);
+      }
+    };
+
+    const handleTimerStopped = (data: TimeEntry) => {
+      if (data.userId === user.id) {
+        fetchRunningTimer(user.currentTeamId);
+      }
+    };
+
+    socket.on("timer:started", handleTimerStarted);
+    socket.on("timer:stopped", handleTimerStopped);
+
+    return () => {
+      socket.off("timer:started", handleTimerStarted);
+      socket.off("timer:stopped", handleTimerStopped);
+    };
+  }, [socket, user?.currentTeamId, user?.id]);
 
   const refetch = useCallback(async () => {
     if (user?.currentTeamId) {

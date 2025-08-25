@@ -6,16 +6,19 @@ import { ThemeProvider } from "./providers/ThemeProvider.tsx";
 import { AuthProvider } from "./providers/AuthProvider.tsx";
 import { OrganizationProvider } from "./providers/OrganizationProvider.tsx";
 import { OrgAccessProvider } from "./providers/OrgAccessProvider.tsx";
+import { SocketProvider } from "./providers/SocketProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <ThemeProvider>
       <AuthProvider>
-        <OrganizationProvider>
-          <OrgAccessProvider>
-            <App />
-          </OrgAccessProvider>
-        </OrganizationProvider>
+        <SocketProvider>
+          <OrganizationProvider>
+            <OrgAccessProvider>
+              <App />
+            </OrgAccessProvider>
+          </OrganizationProvider>
+        </SocketProvider>
       </AuthProvider>
     </ThemeProvider>
   </BrowserRouter>

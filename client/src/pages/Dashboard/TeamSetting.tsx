@@ -1,19 +1,12 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Minus, Plus, CreditCard, TriangleAlert, Settings } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -34,7 +27,13 @@ import type { OrganizationUpdateData } from "@/types/oraganization";
 import { toast } from "sonner";
 import { LoaderMain } from "@/components/Loader";
 import GeneralModal from "@/components/modals/shared/Normalmodal";
-import { FormField, SaveButton, SectionCard, SectionHeader, SelectField } from "./Reusable";
+import {
+  FormField,
+  SaveButton,
+  SectionCard,
+  SectionHeader,
+  SelectField,
+} from "./Reusable";
 
 // Configuration constants
 const CURRENCY_OPTIONS = [
@@ -91,7 +90,6 @@ interface FormData {
   employeesCanSeeBillableRates: boolean;
 }
 // Reusable components
-
 
 const TeamSetting = () => {
   const { orgId } = useParams();
@@ -392,10 +390,10 @@ const TeamSetting = () => {
                   </div>
                 </div>
               </div>
-              <Button variant="outline" size="sm">
+              {/* <Button variant="outline" size="sm">
                 <CreditCard className="h-4 w-4 mr-2" />
                 Go to Billing
-              </Button>
+              </Button> */}
             </div>
 
             <FormField label="Organization Name">
