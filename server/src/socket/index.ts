@@ -5,7 +5,7 @@ import { ErrorHandler } from "../utils/errorHandler";
 
 interface JwtPayload {
   id: string;
-  orgId?: string; // include orgId in token or send via query
+  orgId?: string; 
 }
 
 interface AuthenticatedSocket extends Socket {
@@ -13,10 +13,10 @@ interface AuthenticatedSocket extends Socket {
 }
 
 type OrgUserSocketMap = Map<
-  string, // orgId
+  string, 
   Map<
-    string, // userId
-    Set<string> // socketIds
+    string, 
+    Set<string> 
   >
 >;
 
@@ -41,13 +41,11 @@ export const initializeSocket = (io: Server) => {
         );
       }
 
-      // Verify JWT
       const decoded = jwt.verify(
         token,
         process.env.ACCESS_TOKEN_SECRET as string
       ) as JwtPayload;
 
-      // Get orgId from query if not in token
       const orgId = socket.handshake.query.orgId as string | undefined;
 
       socket.user = {
@@ -87,7 +85,6 @@ export const initializeSocket = (io: Server) => {
       `User connected: ${userId} (Org: ${orgId}), socketId: ${socket.id}`
     );
 
-
     socket.on("disconnect", () => {
       console.log(
         `User disconnected: ${userId} (Org: ${orgId}), socketId: ${socket.id}`
@@ -106,8 +103,6 @@ export const initializeSocket = (io: Server) => {
           orgUserSocketMap.delete(orgId);
         }
       }
-
-      console.log("Updated Org Map:", orgUserSocketMap);
     });
   });
 };

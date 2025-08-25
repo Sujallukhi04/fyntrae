@@ -1,4 +1,9 @@
-import { formatNumber, formatTime, formatTimeDuration } from "@/lib/utils";
+import {
+  formatNumber,
+  formatRateNumber,
+  formatTime,
+  formatTimeDuration,
+} from "@/lib/utils";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
@@ -51,9 +56,13 @@ export function generateCustomReportPDF(
 
   // === Summary Card with Rounded Border ===
   const totalSeconds = timeEntries.reduce((acc, item) => acc + item.seconds, 0);
-  const totalCost = timeEntries.reduce((acc, item) => acc + item.cost, 0);
+  const totalCost = timeEntries.reduce((acc, item) => {
+    return acc + (item.billable ? item.cost : 0);
+  }, 0);
   const durationStr = formatTimeDuration(totalSeconds, intervalFormat);
-  const costStr = formatNumber(totalCost, numberFormat, currency);
+  const costStr = `${formatRateNumber(totalCost, numberFormat)} ${
+    currency || "INR"
+  }`;
 
   doc.setDrawColor(220);
   doc.setFillColor(245, 245, 245);

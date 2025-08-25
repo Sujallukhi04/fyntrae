@@ -223,20 +223,22 @@ export function formatTimeDuration(
     return "0min";
   }
 
-  const totalMinutes = totalSeconds / 60;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.round(totalMinutes % 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
 
   if (format === "12h") {
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    } else {
-      return `${minutes}min`;
-    }
+    let result = "";
+
+    if (hours > 0) result += `${hours}h `;
+    if (minutes > 0) result += `${minutes}min `;
+    if (seconds > 0 && hours === 0) result += `${seconds}s`;
+
+    return result.trim() || "0min";
   }
 
   if (format === "decimal") {
-    const decimalHours = (totalMinutes / 60).toFixed(2);
+    const decimalHours = (totalSeconds / 3600).toFixed(2);
     return `${decimalHours}h`;
   }
 
