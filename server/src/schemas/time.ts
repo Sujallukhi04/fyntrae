@@ -229,7 +229,18 @@ export const exportTimeSummarySchema = z
       path: ["startTime"],
     }
   )
-  .refine((data) => new Date(data.endDate) <= new Date(), {
-    message: "End date cannot be in the future",
-    path: ["endTime"],
-  });
+  .refine(
+    (data) => {
+      const end = new Date(data.endDate);
+      const today = new Date();
+
+      end.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      return end <= today;
+    },
+    {
+      message: "End date cannot be in the future",
+      path: ["endDate"],
+    }
+  );
