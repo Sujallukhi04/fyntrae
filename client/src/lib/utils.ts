@@ -224,15 +224,20 @@ export function formatTimeDuration(
   }
 
   const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
 
   if (format === "12h") {
     let result = "";
 
     if (hours > 0) result += `${hours}h `;
-    if (minutes > 0) result += `${minutes}min `;
-    if (seconds > 0 && hours === 0) result += `${seconds}s`;
+
+    // convert remaining seconds to decimal minutes
+    const remainingMinutes =
+      hours > 0 ? Math.floor((totalSeconds % 3600) / 60) : totalSeconds / 60;
+    const roundedMinutes = Math.round(remainingMinutes * 10) / 10; // 1 decimal
+
+    if (roundedMinutes > 0) result += `${roundedMinutes}min`;
 
     return result.trim() || "0min";
   }
