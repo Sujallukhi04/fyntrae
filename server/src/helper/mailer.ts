@@ -39,7 +39,7 @@ export const sendMail = async ({
     // Send mail
     const info = await transporter.sendMail({
       from: {
-        name: process.env.SMTP_FROM_NAME || "FlexFlow Team",
+        name: process.env.SMTP_FROM_NAME || "Fyntrae Team",
         address: process.env.SMTP_FROM_EMAIL!,
       },
       to,
@@ -70,7 +70,7 @@ export const emailTemplates = {
     isReinvite?: boolean;
   }) =>
     baseEmailLayout({
-      brandName: "FlexFlow",
+      brandName: "Fyntrae",
       brandTagline: "Smarter Collaboration, Better Results",
       title: "🎉 You're Invited!",
       greeting: `Hi there,`,
@@ -91,14 +91,14 @@ export const emailTemplates = {
     dashboardLink: string;
   }) =>
     baseEmailLayout({
-      brandName: "FlexFlow",
+      brandName: "Fyntrae",
       brandTagline: "Smarter Collaboration, Better Results",
-      title: "🎉 Welcome to FlexFlow!",
+      title: "🎉 Welcome to Fyntrae!",
       greeting: `Hi ${userName},`,
-      message: `Welcome to <strong>FlexFlow</strong>! You've successfully joined <strong>${organizationName}</strong> and we're excited to have you on board. <br /><br />You can now start collaborating with your team, managing projects, and taking advantage of all FlexFlow features.`,
+      message: `Welcome to <strong>Fyntrae</strong>! You've successfully joined <strong>${organizationName}</strong> and we're excited to have you on board. <br /><br />You can now start collaborating with your team, managing projects, and taking advantage of all FlexFlow features.`,
       buttonText: "Go to Dashboard",
       buttonLink: dashboardLink,
-      footerNote: "Happy collaborating! <br />— The FlexFlow Team",
+      footerNote: "Happy collaborating! <br />— The Fyntrae Team",
     }),
 
   verificationEmail: ({
@@ -109,7 +109,7 @@ export const emailTemplates = {
     verificationLink: string;
   }) =>
     baseEmailLayout({
-      brandName: "FlexFlow",
+      brandName: "Fyntrae",
       brandTagline: "Smarter Collaboration, Better Results",
       title: "🔒 Verify Your Email Address",
       greeting: `Hi ${userName},`,
@@ -128,7 +128,7 @@ export const emailTemplates = {
     resetLink: string;
   }) =>
     baseEmailLayout({
-      brandName: "FlexFlow",
+      brandName: "Fyntrae",
       brandTagline: "Smarter Collaboration, Better Results",
       title: "🔑 Reset Your Password",
       greeting: `Hi ${userName},`,

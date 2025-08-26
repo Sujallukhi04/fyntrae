@@ -264,7 +264,7 @@ const ProjectPage = () => {
             <FolderOpen className="h-5 w-5 text-muted-foreground" />
             <span className="font-semibold ">Projects</span>
           </div>
-          {canCallApi("createProject") && (
+          {canCallApi("createProject") ? (
             <Button
               className="w-full md:w-auto"
               variant="outline"
@@ -273,6 +273,8 @@ const ProjectPage = () => {
               <FolderPlus className=" h-8 w-8" />
               Create Project
             </Button>
+          ) : (
+            <div className="h-9 w-9" />
           )}
         </div>
         <Separator />

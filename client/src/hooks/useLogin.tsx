@@ -14,7 +14,7 @@ const useLogin = () => {
 
       const response = await authApi.login(credentials);
 
-      login(response.user);
+      login();
 
       return response;
     } catch (err: any) {

@@ -9,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  login: (user: User) => void;
+  login: () => void;
   logout: () => Promise<void>;
   refetch: () => Promise<void>;
   updateuser: (formData: FormData) => Promise<void>;
@@ -105,8 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchUser();
   }, []);
 
-  const login = (userData: User) => {
-    fetchUser();
+  const login = () => {
+    return fetchUser();
   };
 
   const logout = async () => {

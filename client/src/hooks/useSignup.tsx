@@ -6,16 +6,13 @@ import { toast } from "sonner";
 
 const useSignup = () => {
   const [isPending, setIsPending] = useState(false);
-
-  const { login } = useAuth();
-
   const signupMutation = async (data: SignupData) => {
     try {
       setIsPending(true);
 
       const response = await authApi.signup(data);
 
-      login(response.user);
+      toast.success("User registered successfully");
 
       return response;
     } catch (err: any) {

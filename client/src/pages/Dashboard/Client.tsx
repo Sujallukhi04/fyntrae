@@ -270,7 +270,7 @@ const Client = () => {
             <UserCircle2 className="h-5 w-5 text-muted-foreground" />
             <h1 className=" font-semibold">Clients</h1>
           </div>
-          {canCallApi("editClient") && (
+          {canCallApi("editClient") ? (
             <Button
               className="w-full md:w-auto"
               variant="outline"
@@ -279,6 +279,8 @@ const Client = () => {
               <UserPlus className="mr-2 h-4 w-4" />
               Create Client
             </Button>
+          ) : (
+            <div className="w-9 h-9" />
           )}
         </div>
         <Separator />

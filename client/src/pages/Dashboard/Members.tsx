@@ -472,7 +472,7 @@ const Members: React.FC = () => {
             <UsersIcon className="h-5 w-5 text-muted-foreground" />
             <h1 className="font-semibold">Members</h1>
           </div>
-          {canCallApi("inviteMember") && (
+          {canCallApi("inviteMember") ? (
             <Button
               onClick={() => setIsInviteModalOpen(true)}
               variant="outline"
@@ -481,6 +481,8 @@ const Members: React.FC = () => {
               <UserPlus className="mr-2 h-4 w-4" />
               Invite Member
             </Button>
+          ) : (
+            <div className="w-9 h-9" />
           )}
         </div>
         <Separator />
