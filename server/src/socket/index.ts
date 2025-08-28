@@ -2,23 +2,26 @@ import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import { ErrorHandler } from "../utils/errorHandler";
+import { Role } from "@prisma/client";
 
 interface JwtPayload {
   id: string;
-  orgId?: string; 
+  orgId?: string;
+  role?: Role;
 }
 
 interface AuthenticatedSocket extends Socket {
   user?: JwtPayload;
 }
 
-type OrgUserSocketMap = Map<
-  string, 
-  Map<
-    string, 
-    Set<string> 
-  >
->;
+const ALLOWED_ROLES: Role[] = [
+  Role.ADMIN,
+  Role.EMPLOYEE,
+  Role.MANAGER,
+  Role.OWNER,
+];
+
+type OrgUserSocketMap = Map<string, Map<string, Set<string>>>;
 
 const orgUserSocketMap: OrgUserSocketMap = new Map();
 
@@ -29,11 +32,9 @@ export const initializeSocket = (io: Server) => {
 
   io.use((socket: AuthenticatedSocket, next) => {
     try {
-      // Parse cookies
       const rawCookie = socket.handshake.headers.cookie || "";
       const cookies = cookie.parse(rawCookie);
 
-      // JWT from cookies
       const token = cookies["accessToken"];
       if (!token) {
         return next(
@@ -47,17 +48,29 @@ export const initializeSocket = (io: Server) => {
       ) as JwtPayload;
 
       const orgId = socket.handshake.query.orgId as string | undefined;
+      const role = socket.handshake.query.role as Role | undefined;
 
-      socket.user = {
-        ...decoded,
-        orgId: orgId,
-      };
-
-      if (!socket.user.orgId) {
+      if (!orgId) {
         return next(
           new ErrorHandler("Authentication error: OrgId missing", 401)
         );
       }
+
+      if (!role) {
+        return next(
+          new ErrorHandler("Authentication error: Role missing", 401)
+        );
+      }
+
+      if (!ALLOWED_ROLES.includes(role)) {
+        return next(new ErrorHandler("Forbidden: Invalid role provided", 403));
+      }
+
+      socket.user = {
+        ...decoded,
+        orgId,
+        role,
+      };
 
       next();
     } catch (err) {

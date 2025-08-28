@@ -23,10 +23,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (!user?.currentTeamId) return;
 
+    const currentOrg = user.organizations.find(
+      (org) => org.id === user.currentTeamId
+    );
+
     const socketInstance = io(import.meta.env.VITE_SOKECT_URL, {
       withCredentials: true,
       query: {
         orgId: user.currentTeamId,
+        role: currentOrg?.role,
       },
     });
 

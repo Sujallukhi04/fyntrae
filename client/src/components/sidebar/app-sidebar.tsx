@@ -39,7 +39,6 @@ const formatRole = (role: string) => {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, logout, logoutLoading } = useAuth();
-  const { canAccessPage } = useOrgAccess();
   const userOrganization =
     user?.organizations?.map((org) => ({
       name: org.name,
