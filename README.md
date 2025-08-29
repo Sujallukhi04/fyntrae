@@ -58,15 +58,3 @@ cp .env.example .env
 npm install
 npm run dev
 ```
-
-### Client
-
-- `npm run dev` – Start the Vite dev server
-- `npm run build` – Build for production
-- `npm run preview` – Preview production build
-
-### Server
-
-- `npm run dev` – Start the server with hot reload
-- `npm run build` – Build the server
-- `npm start` – Start the built server
