@@ -35,26 +35,3 @@ It helps teams and organizations track time, manage projects, assign tasks, and 
 git clone https://github.com/Sujallukhi04/flexflow.git
 cd flexflow
 ```
-
-### 1. Setup the Server
-
-```sh
-cd server
-cp .env.example .env
-# Edit .env with your database credentials
-
-npm install
-npx prisma migrate dev
-npm run dev
-```
-
-### 2. Setup the Client
-
-```sh
-cd ../client
-cp .env.example .env
-# Edit .env if needed (API URL, etc.)
-
-npm install
-npm run dev
-```
