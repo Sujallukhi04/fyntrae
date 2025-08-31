@@ -1,55 +1,90 @@
 import React from "react";
 
-export const MatrixLoader = ({
-  variant = "default",
+type SpinnerSize = "small" | "medium" | "large" | "xlarge";
+
+interface SpinnerLoaderProps {
+  size?: SpinnerSize;
+  color?: string;
+  strokeWidth?: number;
+  className?: string;
+}
+
+export const SpinnerLoader: React.FC<SpinnerLoaderProps> = ({
   size = "medium",
-  speed = "normal",
+  color = "#3B82F6",
+  strokeWidth,
   className = "",
 }) => {
-  const sizeClasses = {
-    small: "w-9 h-8",
-    medium: "w-11 h-10",
-    large: "w-14 h-12",
-    xlarge: "w-16 h-14",
+  const sizeMap: Record<SpinnerSize, number> = {
+    small: 24,
+    medium: 40,
+    large: 56,
+    xlarge: 80,
   };
 
-  const speedClasses = {
-    slow: "animate-[matrix_2s_infinite_linear]",
-    normal: "animate-[matrix_1s_infinite_linear]",
-    fast: "animate-[matrix_0.6s_infinite_linear]",
+  const strokeMap: Record<SpinnerSize, number> = {
+    small: 3,
+    medium: 4,
+    large: 5,
+    xlarge: 8,
   };
 
-  const variantStyles = {
-    default:
-      "bg-[linear-gradient(transparent_calc(1*100%/6),#fff_0_calc(3*100%/6),transparent_0),linear-gradient(transparent_calc(2*100%/6),#fff_0_calc(4*100%/6),transparent_0),linear-gradient(transparent_calc(3*100%/6),#fff_0_calc(5*100%/6),transparent_0)]",
-    colorful:
-      "bg-[linear-gradient(transparent_calc(1*100%/6),#00ff88_0_calc(3*100%/6),transparent_0),linear-gradient(transparent_calc(2*100%/6),#ff0080_0_calc(4*100%/6),transparent_0),linear-gradient(transparent_calc(3*100%/6),#0080ff_0_calc(5*100%/6),transparent_0)]",
-    neon: "bg-[linear-gradient(transparent_calc(1*100%/6),#00ffff_0_calc(3*100%/6),transparent_0),linear-gradient(transparent_calc(2*100%/6),#00ffff_0_calc(4*100%/6),transparent_0),linear-gradient(transparent_calc(3*100%/6),#00ffff_0_calc(5*100%/6),transparent_0)] drop-shadow-[0_0_10px_#00ffff]",
-    warm: "bg-[linear-gradient(transparent_calc(1*100%/6),#ffaa00_0_calc(3*100%/6),transparent_0),linear-gradient(transparent_calc(2*100%/6),#ffaa00_0_calc(4*100%/6),transparent_0),linear-gradient(transparent_calc(3*100%/6),#ffaa00_0_calc(5*100%/6),transparent_0)]",
-    purple:
-      "bg-[linear-gradient(transparent_calc(1*100%/6),#a855f7_0_calc(3*100%/6),transparent_0),linear-gradient(transparent_calc(2*100%/6),#a855f7_0_calc(4*100%/6),transparent_0),linear-gradient(transparent_calc(3*100%/6),#a855f7_0_calc(5*100%/6),transparent_0)]",
-  };
+  const dimension = sizeMap[size];
+  const stroke = strokeWidth ?? strokeMap[size];
+  const radius = dimension / 2 - stroke * 2;
+  const circumference = 2 * Math.PI * radius;
 
   return (
-    <div
-      className={`
-        ${sizeClasses[size]}
-        ${speedClasses[speed]}
-        ${variantStyles[variant]}
-        bg-[length:17px_400%] bg-no-repeat
-        ${className}
-      `}
-      style={{
-        backgroundPosition: "0% 100%, 50% 100%, 100% 100%",
-      }}
-    />
+    <svg
+      width={dimension}
+      height={dimension}
+      className={`animate-spin ${className}`}
+      viewBox={`0 0 ${dimension} ${dimension}`}
+    >
+      <circle
+        cx={dimension / 2}
+        cy={dimension / 2}
+        r={radius}
+        stroke="#374151"
+        strokeWidth={stroke}
+        fill="none"
+        className="opacity-25"
+      />
+      <circle
+        cx={dimension / 2}
+        cy={dimension / 2}
+        r={radius}
+        stroke={color}
+        strokeWidth={stroke}
+        fill="none"
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * 0.25}
+        strokeLinecap="round"
+      />
+    </svg>
   );
 };
 
 export const LoaderMain = () => {
   return (
-    <div className="flex justify-center items-center h-screen p-8">
-      <MatrixLoader variant="default" size="xlarge" />
+    <div className="min-h-screen  flex items-center justify-center">
+      {/* Main Loading Container - matching your dashboard card style */}
+      <div className="  p-12 max-w-md w-full ">
+        {/* Loading Spinner - centered like your timer */}
+        <div className="flex justify-center mb-6">
+          <SpinnerLoader size="xlarge" color="#3B82F6" />
+        </div>
+
+        {/* Loading Text - matching your interface text style */}
+        <div className="text-center mb-6">
+          <h2 className="text-gray-300 text-lg font-medium mb-2">
+            Setting up your workspace
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Loading projects and time entries...
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

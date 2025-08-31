@@ -119,6 +119,35 @@
   }
 }
 
+/* Loader animations */
+@keyframes spinSegments {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Custom classes */
+.animate-spinSegments {
+  animation: spinSegments 1.2s linear infinite;
+}
+
+.animate-fade {
+  animation: fade 1.2s ease-in-out infinite;
+}
+
 @keyframes matrix {
   0% {
     background-position: 0% 100%, 50% 100%, 100% 100%;

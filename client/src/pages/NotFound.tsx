@@ -1,124 +1,85 @@
-import React from "react";
+import { motion } from "framer-motion";
+import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Home, ArrowLeft, Search, AlertTriangle } from "lucide-react";
-import { Link, useNavigate } from "react-router";
 
 const NotFound = () => {
-  const navigate = useNavigate();
-
-  const handleGoBack = () => {
-    navigate(-1);
+  const handleGoHome = () => {
+    // Always redirect to homepage
+    window.location.href = "/";
   };
 
-  const handleGoHome = () => {
-    navigate("/");
+  const handleGoBack = () => {
+    // Always go back in history
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = "/";
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="text-center space-y-4">
-            <div className="flex justify-center">
-              <div className="relative">
-                <div className="text-9xl font-bold text-primary/20 select-none">
-                  404
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <AlertTriangle className="h-16 w-16 text-destructive" />
-                </div>
-              </div>
+    <section className="relative flex items-center justify-center overflow-hidden pt-38 pb-20 text-white min-h-screen">
+      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
+        {/* 404 Heading */}
+        <motion.h1
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="text-6xl md:text-7xl lg:text-8xl font-bold leading-[1] text-white mb-6"
+        >
+          <span className="bg-gradient-to-br from-blue-200 via-blue-300 to-blue-600 bg-clip-text text-transparent">
+            404
+          </span>
+        </motion.h1>
+
+        {/* Error Message */}
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="mb-8"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Page Not Found
+          </h2>
+          <p className="text-lg text-gray-300 max-w-xl mx-auto leading-relaxed">
+            The page you're looking for doesn't exist or has been moved. Let's
+            get you back on track.
+          </p>
+        </motion.div>
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8"
+        >
+          {/* Go Home */}
+          <Button
+            onClick={handleGoHome}
+            className="w-full sm:w-auto rounded-full bg-blue-600 px-6 py-6 text-lg font-semibold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 flex items-center justify-center gap-3"
+          >
+            <div className="flex items-center gap-2">
+              <Home className="size-5" />
+              <span>Go Home</span>
             </div>
-            <CardTitle className="text-3xl font-bold">Page Not Found</CardTitle>
-            <p className="text-lg text-muted-foreground">
-              Sorry, we couldn't find the page you're looking for.
-            </p>
-          </CardHeader>
+          </Button>
 
-          <CardContent className="space-y-6">
-            <Alert>
-              <Search className="h-4 w-4" />
-              <AlertDescription>
-                The page you are looking for might have been removed, had its
-                name changed, or is temporarily unavailable.
-              </AlertDescription>
-            </Alert>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">What you can do:</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="w-6 h-6 p-0 flex items-center justify-center"
-                  >
-                    1
-                  </Badge>
-                  Check the URL for any typos
-                </li>
-                <li className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="w-6 h-6 p-0 flex items-center justify-center"
-                  >
-                    2
-                  </Badge>
-                  Go back to the previous page
-                </li>
-                <li className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="w-6 h-6 p-0 flex items-center justify-center"
-                  >
-                    3
-                  </Badge>
-                  Visit our homepage
-                </li>
-              </ul>
+          {/* Go Back */}
+          <Button
+            variant="outline"
+            onClick={handleGoBack}
+            className="w-full sm:w-auto rounded-full px-6 py-6 flex items-center gap-x-2 text-lg font-semibold"
+          >
+            <div className="flex items-center gap-2">
+              <ArrowLeft className="w-8 h-8" />
+              <span>Go Back</span>
             </div>
-
-            <Separator />
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                onClick={handleGoBack}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Go Back
-              </Button>
-
-              <Button
-                onClick={handleGoHome}
-                className="flex items-center gap-2"
-              >
-                <Home className="h-4 w-4" />
-                Go to Homepage
-              </Button>
-            </div>
-
-            <div className="text-center text-sm text-muted-foreground">
-              <p>
-                Need help?{" "}
-                <Link
-                  to="/contact"
-                  className="text-primary hover:underline font-medium"
-                >
-                  Contact Support
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          </Button>
+        </motion.div>
       </div>
-    </div>
+    </section>
   );
 };
 
