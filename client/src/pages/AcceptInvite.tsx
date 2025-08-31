@@ -24,7 +24,7 @@ export const TeamInvite = () => {
       try {
         await organizationApi.acceptInvitation(token);
         toast.success("Invitation accepted!");
-        navigate("/dashboard", { replace: true });
+        navigate("/", { replace: true });
       } catch (err: any) {
         const message =
           err?.response?.data?.message || "Failed to accept invitation.";
