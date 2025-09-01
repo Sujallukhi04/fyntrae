@@ -12,7 +12,7 @@ const useSignup = () => {
 
       const response = await authApi.signup(data);
 
-      toast.success("User registered successfully");
+      toast.success(response.message || "User Signup successful");
 
       return response;
     } catch (err: any) {

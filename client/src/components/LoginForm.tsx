@@ -48,7 +48,8 @@ export function LoginForm({
       return;
     }
     try {
-      await loginMutation(formData);
+      const response = await loginMutation(formData);
+      toast.success(response.message || "User login successfully");
     } catch (error) {
       setFormData({
         email: "",
