@@ -1,3 +1,4 @@
+import { config } from "../config/config";
 import { db } from "../prismaClient";
 import crypto from "crypto";
 
@@ -6,7 +7,7 @@ export async function storeRefreshToken(userId: string, expiresAt?: Date) {
   const tokenExpiresAt =
     expiresAt ??
     new Date(
-      Date.now() + Number(process.env.REFRESH_TOKEN_EXPIRES_IN) ||
+      Date.now() + Number(config.REFRESH_TOKEN_EXPIRES_IN) ||
         7 * 24 * 60 * 60 * 1000
     );
 

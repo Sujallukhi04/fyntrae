@@ -4,8 +4,9 @@ import { TokenPayload } from "../types";
 import { ErrorHandler } from "../utils/errorHandler";
 import { getUserById } from "../helper/user";
 import { catchAsync } from "../utils/catchAsync";
+import { config } from "../config/config";
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const ACCESS_TOKEN_SECRET = config.ACCESS_TOKEN_SECRET;
 
 export const protectRoute = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -15,7 +16,7 @@ export const protectRoute = catchAsync(
       throw new ErrorHandler("Unauthorized - No token provided", 401);
     }
 
-    const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET!) as TokenPayload;
+    const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as TokenPayload;
 
     if (!decoded) {
       throw new ErrorHandler("Unauthorized - Invalid token", 401);

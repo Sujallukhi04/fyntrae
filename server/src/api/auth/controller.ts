@@ -22,12 +22,13 @@ import {
   storeRefreshToken,
 } from "../../helper/token";
 import { emailTemplates, sendMail } from "../../helper/mailer";
+import { config } from "../../config/config";
 
 const accessTokenExpiresIn =
-  Number(process.env.ACCESS_TOKEN_EXPIRES_IN) || 15 * 60 * 1000;
+  Number(config.ACCESS_TOKEN_EXPIRES_IN) || 15 * 60 * 1000;
 
 const refreshTokenExpiresIn =
-  Number(process.env.REFRESH_TOKEN_EXPIRES_IN) || 7 * 24 * 60 * 60 * 1000;
+  Number(config.REFRESH_TOKEN_EXPIRES_IN) || 7 * 24 * 60 * 60 * 1000;
 
 export const login = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
@@ -63,7 +64,7 @@ export const login = catchAsync(
         "EmailVerification"
       );
 
-      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      const verificationUrl = `${config.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
       try {
         await sendMail({
@@ -100,7 +101,7 @@ export const login = catchAsync(
       orderBy: { createdAt: "asc" },
     });
 
-    const MAX_TOKENS = Number(process.env.MAXIMUM_SESSION) || 5;
+    const MAX_TOKENS = Number(config.MAXIMUM_SESSION) || 5;
     if (userTokens.length >= MAX_TOKENS) {
       const tokensToDelete = userTokens.slice(
         0,
@@ -123,16 +124,16 @@ export const login = catchAsync(
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      secure: config.NODE_ENV === "production",
+      sameSite: config.NODE_ENV === "production" ? "none" : "lax",
       maxAge: accessTokenExpiresIn,
       path: "/",
     });
 
     res.cookie("refreshToken", refreshtoken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      secure: config.NODE_ENV === "production",
+      sameSite: config.NODE_ENV === "production" ? "none" : "lax",
       maxAge: refreshTokenExpiresIn,
       path: "/api/auth",
     });
@@ -266,7 +267,7 @@ export const register = catchAsync(
 
     const verificationToken = await createToken(email, "EmailVerification");
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${config.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
     try {
       await sendMail({
@@ -278,7 +279,6 @@ export const register = catchAsync(
         }),
       });
     } catch (err) {
-      console.error("Failed to send verification email:", err);
       throw new ErrorHandler(
         "Failed to send verification email. Please check your email address and try again.",
         500
@@ -286,7 +286,8 @@ export const register = catchAsync(
     }
 
     res.status(201).json({
-      message: "User registered successfully",
+      message:
+        "User registered successfully. Verification email has been sent to your email address.",
       user: result.user,
       personalOrganization: {
         id: result.organization.id,
@@ -448,16 +449,16 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
     maxAge: accessTokenExpiresIn,
     path: "/",
   });
 
   res.cookie("refreshToken", refreshtoken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
     maxAge: dbToken.expiresAt.getTime() - Date.now(),
     path: "/api/auth",
   });
@@ -542,7 +543,7 @@ export const sendResetPassword = catchAsync(
 
     const resetToken = await createToken(user.email, "PasswordReset");
 
-    const resetUrl = `${process.env.FRONTEND_URL}/new-password?token=${resetToken}`;
+    const resetUrl = `${config.FRONTEND_URL}/new-password?token=${resetToken}`;
 
     try {
       await sendMail({

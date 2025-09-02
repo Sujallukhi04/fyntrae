@@ -4,8 +4,9 @@ import { TokenPayload } from "../types";
 import { ErrorHandler } from "../utils/errorHandler";
 import { getUserById } from "../helper/user";
 import { catchAsync } from "../utils/catchAsync";
+import { config } from "../config/config";
 
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const REFRESH_TOKEN_SECRET = config.REFRESH_TOKEN_SECRET;
 
 export const validateRefreshToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {

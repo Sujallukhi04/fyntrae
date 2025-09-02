@@ -1,11 +1,11 @@
+import { config } from "../config/config";
 import jwt from "jsonwebtoken";
 
 export function generateAccessToken(payload: object) {
-  const expiresInMs =
-    Number(process.env.ACCESS_TOKEN_EXPIRES_IN) || 15 * 60 * 1000; // fallback 15min in ms
+  const expiresInMs = Number(config.ACCESS_TOKEN_EXPIRES_IN) || 15 * 60 * 1000; // fallback 15min in ms
   const expiresInSec = Math.floor(expiresInMs / 1000);
 
-  return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET!, {
+  return jwt.sign(payload, config.ACCESS_TOKEN_SECRET, {
     expiresIn: expiresInSec, // number of seconds
   });
 }
@@ -22,9 +22,9 @@ export function generateRefreshToken(payload: object, expiresAt?: Date) {
     options.expiresIn = Math.floor(remainingMs / 1000);
   } else {
     const expiresInMs =
-      Number(process.env.REFRESH_TOKEN_EXPIRES_IN) || 7 * 24 * 60 * 60 * 1000; // fallback 7 days
+      Number(config.REFRESH_TOKEN_EXPIRES_IN) || 7 * 24 * 60 * 60 * 1000; // fallback 7 days
     options.expiresIn = Math.floor(expiresInMs / 1000);
   }
 
-  return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET!, options);
+  return jwt.sign(payload, config.REFRESH_TOKEN_SECRET, options);
 }

@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { ErrorHandler } from "../utils/errorHandler";
+import { config } from "../config/config";
 
 interface MailOptions {
   to: string;
@@ -21,12 +22,12 @@ export const sendMail = async ({
   try {
     // Create transporter
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+      host: config.SMTP.HOST,
+      port: config.SMTP.PORT,
+      secure: config.SMTP.SECURE, // true for 465, false for other ports
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: config.SMTP.USER,
+        pass: config.SMTP.PASS,
       },
       tls: {
         rejectUnauthorized: false,
@@ -39,8 +40,8 @@ export const sendMail = async ({
     // Send mail
     const info = await transporter.sendMail({
       from: {
-        name: process.env.SMTP_FROM_NAME || "Fyntrae Team",
-        address: process.env.SMTP_FROM_EMAIL!,
+        name: config.SMTP.FROM_NAME,
+        address: config.SMTP.FROM_EMAIL,
       },
       to,
       subject,
@@ -158,7 +159,7 @@ export const baseEmailLayout = ({
   buttonText: string;
   buttonLink: string;
   footerNote?: string;
-  logoUrl?: string; // 👈 add this
+  logoUrl?: string;
 }) => `
   <!DOCTYPE html>
   <html>

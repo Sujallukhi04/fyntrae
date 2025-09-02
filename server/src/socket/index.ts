@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import { ErrorHandler } from "../utils/errorHandler";
 import { Role } from "@prisma/client";
+import { config } from "../config/config";
 
 interface JwtPayload {
   id: string;
@@ -44,7 +45,7 @@ export const initializeSocket = (io: Server) => {
 
       const decoded = jwt.verify(
         token,
-        process.env.ACCESS_TOKEN_SECRET as string
+        config.ACCESS_TOKEN_SECRET as string
       ) as JwtPayload;
 
       const orgId = socket.handshake.query.orgId as string | undefined;

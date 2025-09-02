@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import jwt from "jsonwebtoken";
+import { config } from "../config/config";
 
 class ErrorHandler extends Error {
   statusCode: number;
@@ -72,7 +73,7 @@ const errorHandler = (
   res.status(statusCode).json({
     success: false,
     message,
-    ...(process.env.NODE_ENV !== "production" && {
+    ...(config.NODE_ENV !== "production" && {
       stack: customError.stack,
     }),
   });

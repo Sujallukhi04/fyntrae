@@ -1,4 +1,5 @@
-import { WeekStart } from "@prisma/client";
+import { Member, WeekStart } from "@prisma/client";
+import { File } from "buffer";
 
 export interface TokenPayload {
   id: string;
@@ -21,6 +22,10 @@ declare global {
   namespace Express {
     interface Request {
       user?: UserMain;
+      member?: Member;
+      files?:
+        | { [fieldname: string]: Express.Multer.File[] }
+        | Express.Multer.File[];
     }
   }
 }

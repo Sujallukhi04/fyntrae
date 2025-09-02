@@ -1,3 +1,4 @@
+import { config } from "../../config/config";
 import { updateBillableRate } from "../../helper/billableRate";
 import { emailTemplates, sendMail } from "../../helper/mailer";
 import {
@@ -129,7 +130,7 @@ export const inviteNewMember = catchAsync(
       },
     });
 
-    const inviteLink = `${process.env.FRONTEND_URL}/team-invite/${invitation.token}`;
+    const inviteLink = `${config.FRONTEND_URL}/team-invite/${invitation.token}`;
 
     try {
       await sendInvitationEmail({
@@ -230,7 +231,7 @@ export const resendInvite = catchAsync(async (req: Request, res: Response) => {
     },
   });
 
-  const inviteLink = `${process.env.FRONTEND_URL}/team-invite/${updatedInvitation.token}`;
+  const inviteLink = `${config.FRONTEND_URL}/team-invite/${updatedInvitation.token}`;
 
   try {
     await sendInvitationEmail({
@@ -377,7 +378,7 @@ export const reinviteInactiveMember = catchAsync(
       },
     });
 
-    const inviteLink = `${process.env.FRONTEND_URL}/team-invite/${invitation.token}`;
+    const inviteLink = `${config.FRONTEND_URL}/team-invite/${invitation.token}`;
 
     try {
       await sendInvitationEmail({

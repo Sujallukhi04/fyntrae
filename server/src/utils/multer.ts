@@ -1,38 +1,47 @@
-import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
+import multer, { StorageEngine, FileFilterCallback } from "multer";
+import { Request } from "express";
+import { config } from "../config/config";
 
-// Load environment variables from .env file
 dotenv.config();
 
-// Configure Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: config.CLOUDINARY.CLOUD_NAME,
+  api_key: config.CLOUDINARY.API_KEY,
+  api_secret: config.CLOUDINARY.API_SECRET,
 });
 
-// Set up the multer storage configuration
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "./uploads"); // Folder for storing files temporarily (optional)
+  destination: (
+    req: Request,
+    file: Express.Multer.File,
+    callback: (error: Error | null, destination: string) => void
+  ) => {
+    const uploadDir = "./uploads";
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    callback(null, uploadDir);
   },
-
-  filename: (req, file, cb) => {
+  filename: (
+    req: Request,
+    file: Express.Multer.File,
+    callback: (error: Error | null, filename: string) => void
+  ) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // Keep the file extension
+    callback(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
 
-// Set up multer with file size limit (e.g., 5MB)
 export const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB size limit
+    fileSize: 5 * 1024 * 1024,
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter(req: Request, file: Express.Multer.File, cb: FileFilterCallback) {
     const fileExtension = path.extname(file.originalname).toLowerCase();
     console.log(file);
     const allowedExtensions = [".jpg", ".jpeg", ".png"];
@@ -49,14 +58,13 @@ export const upload = multer({
   },
 });
 
-// Upload file to Cloudinary function
 const unlinkFile = (filePath: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     fs.unlink(filePath, (err) => {
       if (err) {
-        reject(new Error(`Error deleting the file: ${err.message}`)); // Reject with error message
+        reject(new Error(`Error deleting the file: ${err.message}`));
       } else {
-        resolve(); // Resolve if the file is deleted successfully
+        resolve();
       }
     });
   });
@@ -65,33 +73,27 @@ const unlinkFile = (filePath: string): Promise<void> => {
 export const uploadToCloudinary = async (filePath: string) => {
   let cloudinaryResult;
   try {
-    // 1. Upload the file to Cloudinary
     cloudinaryResult = await cloudinary.uploader.upload(filePath, {
-      folder: "uploads", // Cloudinary folder (optional)
-      resource_type: "auto", // Automatically detect the file type
+      folder: "uploads",
+      resource_type: "auto",
     });
 
-    // 2. If upload is successful, delete the local file
     await unlinkFile(filePath);
 
-    // 3. Return the Cloudinary result if everything is successful
     return {
-      url: cloudinaryResult.secure_url, // Cloudinary URL of the uploaded image
-      public_id: cloudinaryResult.public_id, // Cloudinary public_id (useful for deletion or management)
+      url: cloudinaryResult.secure_url,
+      public_id: cloudinaryResult.public_id,
     };
   } catch (error) {
-    // 4. If any operation fails, log the error and throw it
     console.error("Error in the upload or delete process:", error);
-    // Rollback: Even if Cloudinary upload fails, try to delete the file (no-op if file doesn't exist)
     if (cloudinaryResult) {
       console.log(
         `Cloudinary upload failed, but rollback handled. Cloudinary public_id: ${cloudinaryResult.public_id}`
       );
     }
 
-    // Delete the file if it's partially uploaded and the deletion hasn't happened yet
     try {
-      await unlinkFile(filePath); // Attempt file deletion
+      await unlinkFile(filePath);
     } catch (deleteError) {
       console.error("Error deleting file during rollback:", deleteError);
     }
@@ -103,4 +105,3 @@ export const uploadToCloudinary = async (filePath: string) => {
 export const deleteFromCloudinary = async (publicId: string) => {
   return await cloudinary.uploader.destroy(publicId);
 };
-  
