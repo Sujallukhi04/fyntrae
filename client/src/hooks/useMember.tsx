@@ -2,11 +2,11 @@ import { organizationApi } from "@/lib/api";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import type { Invitation, Member } from "@/types/oraganization";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 const useMember = () => {
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);

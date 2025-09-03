@@ -2,7 +2,6 @@ import React from "react";
 import { Separator } from "../ui/separator";
 import { ChevronRight, Clock } from "lucide-react";
 import type { RecentTimeEntry } from "@/types/project";
-import NoData from "../NoData";
 
 const RecentTimeEntries = ({
   entries = [],

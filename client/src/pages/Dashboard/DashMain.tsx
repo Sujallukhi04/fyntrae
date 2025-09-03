@@ -1,4 +1,3 @@
-import ActivityGraph from "@/components/dashboard/ActivityGraph";
 import ChartMain from "@/components/dashboard/ChartMain";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import Last7Days from "@/components/dashboard/Last7Days";
@@ -20,16 +19,12 @@ import type {
   RunningTimeEntry,
   Tag as TagType,
 } from "@/types/project";
-import { format } from "date-fns";
 import {
-  ChartNoAxesColumnIncreasing,
   Clock,
   DollarSign,
   Euro,
   IndianRupee,
   PoundSterling,
-  ReceiptText,
-  Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 

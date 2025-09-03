@@ -18,8 +18,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { format, parse, set } from "date-fns";
-import { Ban, CalendarIcon, Clock, DollarSign, Loader2 } from "lucide-react";
+import { format, set } from "date-fns";
+import { Ban, CalendarIcon, Clock, Loader2 } from "lucide-react";
 import { TagSelectorPopover } from "./TagSelector";
 import ProjectTaskSelector from "./ProjectTaskSelect";
 import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";

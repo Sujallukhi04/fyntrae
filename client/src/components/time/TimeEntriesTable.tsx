@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Edit, Trash2, MoreVertical, ChevronRight, Clock } from "lucide-react";
 import NoData from "@/components/NoData";
-import { format } from "date-fns";
 import { cn, formatTime, formatTimeDuration } from "@/lib/utils";
 import type {
   OrganizationMember,
@@ -57,12 +56,6 @@ interface TimeEntriesTableProps {
   runningTimer: boolean;
   showMember?: boolean;
 }
-
-const formatEntryDuration = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}h ${minutes}m`;
-};
 
 const TimeEntriesTable: React.FC<TimeEntriesTableProps> = ({
   timeEntries,

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import {
   Collapsible,
@@ -15,7 +14,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 export function NavMain({

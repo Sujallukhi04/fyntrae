@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate, useLocation } from "react-router";
+import { Navigate } from "react-router";
 import useAuthUser from "@/hooks/useAuthUser";
 import { LoaderMain } from "./Loader";
 

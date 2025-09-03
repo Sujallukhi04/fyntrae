@@ -9,7 +9,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface CustomAlertDialogProps {
   open: boolean;

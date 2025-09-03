@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -10,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { formatNumber } from "@/lib/utils";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { toast } from "sonner";
 
 interface UpdateRateModalProps {
   isOpen: boolean;

@@ -42,7 +42,7 @@ export function TimerWidget() {
   const handleStartTimer = async () => {
     if (!user?.currentTeamId) return;
     try {
-      const result = await startTimer(user.currentTeamId, {
+      await startTimer(user.currentTeamId, {
         description: "",
         billable: false,
       });

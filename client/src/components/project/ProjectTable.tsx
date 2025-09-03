@@ -30,7 +30,6 @@ import NoData from "@/components/NoData";
 import { ProjectsSkeleton } from "../modals/Skeleton";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import {
-  formatDurationFromSeconds,
   formatNumber,
   formatTimeDuration,
 } from "@/lib/utils";
@@ -52,12 +51,6 @@ interface ProjectTableProps {
   isUnarchiveLoading?: boolean;
   archived?: boolean;
 }
-
-const formatTime = (minutes: number) => {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}:${m < 10 ? "0" : ""}${m}h`;
-};
 
 const ProjectTable: React.FC<ProjectTableProps> = ({
   projects,

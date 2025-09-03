@@ -8,25 +8,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Clock, FolderOpen } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock } from "lucide-react";
 import NoData from "../NoData";
 import type { TimeEntryGroupProps } from "@/types/project";
-import {
-  formatNumber,
-  formatRateNumber,
-  formatTimeDuration,
-} from "@/lib/utils";
-
-const formatDuration = (seconds: number) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m.toString().padStart(2, "0")}min`;
-};
+import { formatNumber, formatTimeDuration } from "@/lib/utils";
 
 const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
   groupedData = [],
-  groupBy1 = "projects",
-  groupBy2 = "members",
   currncy = "USD",
   format,
   intervalFormat,
@@ -46,7 +34,7 @@ const TimeEntryGroup: React.FC<TimeEntryGroupProps> = ({
   );
   const totalCost = groupedData.reduce((sum, g) => sum + (g.cost || 0), 0);
 
-  console.log(totalSeconds)
+  console.log(totalSeconds);
 
   return (
     <div className="space-y-4">

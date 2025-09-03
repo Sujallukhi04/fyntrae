@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { authApi } from "@/lib/api";
-import { useAuth } from "@/providers/AuthProvider";
 import type { SignupData } from "@/types/auth";
 import { toast } from "sonner";
 

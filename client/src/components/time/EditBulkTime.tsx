@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
 import { Ban, Loader2 } from "lucide-react";
 import { TagSelectorPopover } from "./TagSelector";
 import ProjectTaskSelector from "./ProjectTaskSelect";
-import type { ProjectWithTasks, TimeEntry } from "@/types/project";
+import type { ProjectWithTasks } from "@/types/project";
 import { useOrganization } from "@/providers/OrganizationProvider";
 
 interface Tag {

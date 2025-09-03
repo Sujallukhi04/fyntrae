@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import {
   Clock,
@@ -7,8 +6,6 @@ import {
   Users,
   DollarSign,
   Building2,
-  Shield,
-  Download,
 } from "lucide-react";
 
 const Features = () => {

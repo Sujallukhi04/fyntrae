@@ -1,19 +1,12 @@
 import type * as React from "react";
 import {
-  BookOpen,
-  Bot,
   CircleUserRound,
   Clock8,
   FileText,
   FolderOpen,
-  Frame,
-  GalleryVerticalEnd,
   LayoutDashboard,
-  Map,
   PieChart,
   Settings,
-  Settings2,
-  SquareTerminal,
   Tag,
   Users,
 } from "lucide-react";
@@ -28,9 +21,7 @@ import {
 import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
-import useAuthUser from "@/hooks/useAuthUser";
 import { TimerWidget } from "../time/TimerWeight";
-import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import { useAuth } from "@/providers/AuthProvider";
 
 const formatRole = (role: string) => {

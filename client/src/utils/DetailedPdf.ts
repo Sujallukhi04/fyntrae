@@ -1,9 +1,4 @@
-import {
-  formatNumber,
-  formatRateNumber,
-  formatTime,
-  formatTimeDuration,
-} from "@/lib/utils";
+import { formatRateNumber, formatTime, formatTimeDuration } from "@/lib/utils";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
@@ -99,6 +94,7 @@ export function generateCustomReportPDF(
     ];
   });
 
+  //@ts-ignore
   doc.autoTable({
     startY: 60,
     margin: { left: 14, right: 14 },
@@ -126,11 +122,12 @@ export function generateCustomReportPDF(
       fillColor: [250, 250, 250],
     },
     theme: "grid",
-    didDrawPage: (data) => {
+    didDrawPage: (data: any) => {
       const pageHeight = doc.internal.pageSize.height;
       doc.setFontSize(9);
       doc.setTextColor(150);
       doc.text(
+        //@ts-ignore
         `Page ${doc.internal.getCurrentPageInfo().pageNumber}`,
         14,
         pageHeight - 10

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ReactNode } from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -16,7 +15,7 @@ interface PersistentModalProps {
   open: boolean;
   onOpenChange: (val: boolean) => void;
   title: string;
-  description: string;
+  description?: ReactNode;
   onConfirm: () => Promise<void> | void;
   onCancel?: () => void;
   loading?: boolean;

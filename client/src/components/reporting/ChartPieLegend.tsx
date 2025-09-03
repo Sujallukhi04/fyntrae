@@ -13,10 +13,7 @@ interface ChartPieLegendProps {
   groupBy: string;
 }
 
-export function ChartPieLegend({
-  groupedData = [],
-  groupBy = "members",
-}: ChartPieLegendProps) {
+export function ChartPieLegend({ groupedData = [] }: ChartPieLegendProps) {
   const blueColors = generateBlueTones(groupedData.length);
   const chartData = groupedData.map((item, idx) => ({
     name: item.name || "Unknown",

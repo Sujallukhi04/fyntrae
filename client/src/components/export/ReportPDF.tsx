@@ -1,15 +1,9 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { Chart, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import {
   formatRateNumber,
   formatTimeDuration,
@@ -55,71 +49,7 @@ interface TimeTrackingData {
   };
 }
 
-const externalLabelsPlugin = {
-  id: "externalLabelsPlugin",
-  afterDraw(chart: any) {
-    const { ctx, chartArea, data } = chart;
-    const meta = chart.getDatasetMeta(0);
-    const centerX = (chartArea.left + chartArea.right) / 2;
-    const centerY = (chartArea.top + chartArea.bottom) / 2;
-
-    const scale = chart.width / 200;
-    const total = data.datasets[0].data.reduce(
-      (a: number, b: number) => a + b,
-      0
-    );
-
-    meta.data.forEach((arc: any, index: number) => {
-      const value = data.datasets[0].data[index];
-      const percentage = (value / total) * 100;
-
-      // ❌ Skip label if too small (e.g., under 4%)
-      if (percentage < 4) return;
-
-      const angle = (arc.startAngle + arc.endAngle) / 2;
-      const backgroundColor = data.datasets[0].backgroundColor[index];
-
-      const pullOutLength = 15 * scale;
-      const horizontalLength = 12 * scale;
-      const labelOffset = 3 * scale;
-      const fontSize = 8 * scale;
-      const lineWidth = 1.2 * scale;
-
-      const arcX = centerX + Math.cos(angle) * arc.outerRadius;
-      const arcY = centerY + Math.sin(angle) * arc.outerRadius;
-      const pullX =
-        centerX + Math.cos(angle) * (arc.outerRadius + pullOutLength);
-      const pullY =
-        centerY + Math.sin(angle) * (arc.outerRadius + pullOutLength);
-
-      const isRightSide = pullX > centerX;
-      const lineEndX = isRightSide
-        ? pullX + horizontalLength
-        : pullX - horizontalLength;
-      const labelX = isRightSide
-        ? lineEndX + labelOffset
-        : lineEndX - labelOffset;
-
-      // Draw line
-      ctx.beginPath();
-      ctx.moveTo(arcX, arcY);
-      ctx.lineTo(pullX, pullY);
-      ctx.lineTo(lineEndX, pullY);
-      ctx.strokeStyle = backgroundColor;
-      ctx.lineWidth = lineWidth;
-      ctx.stroke();
-
-      // Draw label
-      ctx.font = `${fontSize}px 'Helvetica Neue', Helvetica, Arial, sans-serif`;
-      ctx.fillStyle = "#333";
-      ctx.textAlign = isRightSide ? "left" : "right";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`${percentage.toFixed(2)}%`, labelX, pullY);
-    });
-  },
-};
-
-const truncateText = (doc, text, maxWidth) => {
+const truncateText = (doc: jsPDF, text: string, maxWidth: number): string => {
   let truncated = text;
   while (doc.getTextWidth(truncated) > maxWidth && truncated.length > 0) {
     truncated = truncated.slice(0, -1);
@@ -232,6 +162,7 @@ const ReportPdf = forwardRef(
                 ticks: { display: false },
                 border: { display: false },
                 grid: {
+                  //@ts-ignore
                   drawBorder: false,
                   drawTicks: false,
                   drawOnChartArea: true,
@@ -245,7 +176,8 @@ const ReportPdf = forwardRef(
                 grid: { display: false },
                 ticks: {
                   autoSkip: true,
-                  maxTicksLimit: 7, // You can adjust this number
+                  maxTicksLimit: 7,
+                  //@ts-ignore
                   callback: function (value: any, index: number, ticks: any[]) {
                     const label = this.getLabelForValue(value);
                     return label; // Show formatted date
@@ -269,21 +201,21 @@ const ReportPdf = forwardRef(
               },
               datalabels: {
                 display: (context) =>
-                  context.dataset.data[context.dataIndex] > 0.1,
+                  (context.dataset.data[context.dataIndex] as number) > 0.1,
                 color: "#1f2937",
-                anchor: "end", // Anchors outside the bar
-                align: "end", // Pushes label above the bar
-                offset: 2, // Space between bar and label
+                anchor: "end",
+                align: "end",
+                offset: 2,
                 rotation: -90,
                 clamp: true,
                 clip: false,
                 font: {
-                  weight: "semibold",
+                  weight: "bold", // "semibold" is invalid
                   size: 9,
                 },
-                formatter: (value) => {
+                formatter: (value: number) => {
                   if (value <= 0) return "";
-                  const totalSeconds = value * 3600; // Convert hours (float) to seconds
+                  const totalSeconds = value * 3600;
                   return formatTimeDuration(
                     totalSeconds,
                     timeTrackingData.intervalFormat
@@ -325,7 +257,6 @@ const ReportPdf = forwardRef(
               legend: {
                 display: false,
               },
-              externalLabelsPlugin: false,
             },
           },
           plugins: [],
@@ -429,14 +360,15 @@ const ReportPdf = forwardRef(
         doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
 
-        const gState = doc.GState({ opacity: 0.6 });
+        const gState = new (jsPDF as any).GState({ opacity: 0.6 });
         doc.setGState(gState);
         doc.setTextColor(31, 41, 55);
 
         doc.text(`Duration`, cardX + cardPadding, cardY + 7);
         doc.text(`Total cost`, cardX + 37, cardY + 7);
 
-        doc.setGState(new doc.GState({ opacity: 1 }));
+        const gsState = new (jsPDF as any).GState({ opacity: 1 });
+        doc.setGState(gsState);
 
         doc.setFontSize(15).setTextColor(0);
         doc.text(
@@ -659,7 +591,7 @@ const ReportPdf = forwardRef(
 
           currentY += 3;
 
-          // Use AutoTable here
+          // @ts-ignore (if types not fully compatible)
           doc.autoTable({
             startY: currentY,
             margin: { left: 10, right: 10 },
@@ -688,7 +620,8 @@ const ReportPdf = forwardRef(
             showHead: "everyPage",
           });
 
-          currentY = doc.lastAutoTable.finalY + 14;
+          const lastTable = (doc as any).lastAutoTable;
+          if (lastTable) currentY = lastTable.finalY + 14;
         });
 
         const pageCount = doc.getNumberOfPages();

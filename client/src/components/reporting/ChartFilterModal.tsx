@@ -28,8 +28,6 @@ import type { Client, Member } from "@/types/oraganization";
 import type { ProjectWithTasks, Tag } from "@/types/project";
 import { cn } from "@/lib/utils";
 import {
-  Briefcase,
-  Check,
   CheckCircle2,
   CircleCheck,
   Folder,

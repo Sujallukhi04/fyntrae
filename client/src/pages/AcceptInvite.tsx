@@ -38,7 +38,7 @@ export const TeamInvite = () => {
   }, [user, token]);
 
   // While user is being loaded
-  if (isUserLoading) {
+  if (isUserLoading || isAccepting) {
     return <LoaderMain />;
   }
 

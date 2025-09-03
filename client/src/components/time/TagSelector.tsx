@@ -32,7 +32,6 @@ export const TagSelectorPopover = ({
   selectedTags,
   onTagToggle,
   onAddTag,
-  onCreateFirstTag,
   tagLoading = false,
   runningTimer,
   text = "",

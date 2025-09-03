@@ -1,4 +1,4 @@
-import { organizationApi, reportApi } from "@/lib/api";
+import { reportApi } from "@/lib/api";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 

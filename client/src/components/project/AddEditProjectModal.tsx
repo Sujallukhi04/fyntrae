@@ -18,15 +18,13 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Circle, Loader2, Minus, Plus } from "lucide-react";
+import { Loader2, Minus, Plus } from "lucide-react";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { formatNumber } from "@/lib/utils";
 import { toast } from "sonner";
-import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface AddEditProjectModalProps {
   isOpen: boolean;
@@ -89,7 +87,7 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({
   mode = "add",
   initialData,
   clients = [],
-  numberFormat = "1,000.00",
+  // numberFormat = "1,000.00",
   currency = "INR",
 }) => {
   const [name, setName] = useState(initialData?.name || "");

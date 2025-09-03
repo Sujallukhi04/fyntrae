@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { IndianRupee, Euro, DollarSign, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { Member } from "@/types/oraganization";
 
 // Types

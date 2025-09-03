@@ -8,7 +8,6 @@ import ProjectTaskSelector from "@/components/time/ProjectTaskSelect";
 import { TagSelectorPopover } from "@/components/time/TagSelector";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import useTime from "@/hooks/useTime";
 import useTimesummary from "@/hooks/useTimesummary";
 
 interface TimerHeaderProps {

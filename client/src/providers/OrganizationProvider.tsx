@@ -57,7 +57,7 @@ export const useOrganization = () => {
 export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { user, refetch: refetchUser, setUser } = useAuth();
+  const { user, setUser } = useAuth();
 
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);

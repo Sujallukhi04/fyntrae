@@ -30,7 +30,7 @@ import NoData from "@/components/NoData";
 import { MembersSkeleton } from "../modals/Skeleton";
 import PaginationControls, { getStatusBadge } from "../PaginationControl";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { formatNumber, formatRateNumber, getFormat } from "@/lib/utils";
+import { formatNumber, getFormat } from "@/lib/utils";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface MemberTableProps {

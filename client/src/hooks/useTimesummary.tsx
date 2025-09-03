@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import {
   clientApi,
   organizationApi,
-  reportApi,
   timeApi,
   timeSummaryApi,
 } from "../lib/api";
@@ -132,7 +131,7 @@ const useTimesummary = () => {
     },
     []
   );
-  
+
   const fetchTimeData = useCallback(
     async (
       organizationId: string,

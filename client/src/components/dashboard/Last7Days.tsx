@@ -1,14 +1,8 @@
 import React from "react";
 import { CalendarDays, Clock } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { format, differenceInCalendarDays } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 import { formatTimeDuration } from "@/lib/utils";
-
-const formatTime = (seconds: number) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m.toString().padStart(2, "0")}min`;
-};
 
 const getLabel = (dateStr: string) => {
   const entryDate = new Date(dateStr);

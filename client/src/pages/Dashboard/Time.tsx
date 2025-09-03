@@ -1,6 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -9,21 +7,16 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
-  Clock,
   DollarSign,
-  Play,
-  Plus,
   Trash2,
   CalendarIcon,
   Pencil,
   IndianRupee,
   Euro,
   PoundSterling,
-  Loader2,
-  Square,
 } from "lucide-react";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
@@ -32,15 +25,13 @@ import type {
   Tag as TagType,
   TimeEntry,
 } from "@/types/project";
-import ProjectTaskSelector from "@/components/time/ProjectTaskSelect";
-import { TagSelectorPopover } from "@/components/time/TagSelector";
+
 import { useAuth } from "@/providers/AuthProvider";
 import TimeEntriesTable from "@/components/time/TimeEntriesTable";
 import { TimeEntryModal } from "@/components/time/AddEditTimeModal";
 import { EditTimeEntryModal } from "@/components/time/EditBulkTime";
 import useTimesummary from "@/hooks/useTimesummary";
 import TimerHeader from "@/components/time/TimerHeader";
-import { useOrgAccess } from "@/providers/OrgAccessProvider";
 interface TimeProps {
   type: "add" | "edit" | "edit-bulk" | "delete-bulk" | null;
   data: TimeEntry | null;
@@ -70,7 +61,7 @@ const Time = () => {
   >([]);
   const [tags, setTags] = useState<TagType[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const { organization, runningTimer } = useOrganization();
+  const { runningTimer } = useOrganization();
   const { user } = useAuth();
   const {
     getTimeEntriesLoading,
@@ -92,7 +83,6 @@ const Time = () => {
     bulkUpdateLoading,
     bulkDeleteLoading,
   } = useTime();
-  const { canCallApi } = useOrgAccess();
 
   const { fetchProjectWiTasks, fetchTags, loading } = useTimesummary();
 
@@ -189,7 +179,7 @@ const Time = () => {
   }) => {
     if (!user?.currentTeamId || selectedEntries.length === 0) return;
     try {
-      const response = await bulkUpdateTimeEntries(user?.currentTeamId, {
+      await bulkUpdateTimeEntries(user?.currentTeamId, {
         timeEntryIds: selectedEntries,
         updates: data,
       });

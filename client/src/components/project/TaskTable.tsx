@@ -29,7 +29,7 @@ import type { Tasks } from "@/types/project";
 import { getStatusBadge } from "../PaginationControl";
 import { useState } from "react";
 import { TasksSkeleton } from "../modals/Skeleton";
-import { formatDurationFromSeconds, formatTimeDuration } from "@/lib/utils";
+import { formatTimeDuration } from "@/lib/utils";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 

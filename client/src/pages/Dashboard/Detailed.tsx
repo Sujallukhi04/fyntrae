@@ -9,7 +9,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   DollarSign,
-  Tag,
   Trash2,
   CalendarIcon,
   Download,
@@ -23,7 +22,7 @@ import {
 } from "lucide-react";
 
 import { useCallback, useEffect, useState } from "react";
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 import { useOrganization } from "@/providers/OrganizationProvider";
 import useTime from "@/hooks/useTime";
 import type {
@@ -41,11 +40,7 @@ import ChartFilterModal from "@/components/reporting/ChartFilterModal";
 import { DownloadModal } from "@/components/modals/shared/DownloadModal";
 import { toast } from "sonner";
 import { generateCustomReportPDF } from "@/utils/DetailedPdf";
-import {
-  addExampleTotalRow,
-  exportToExcel,
-  formatExampleData,
-} from "@/utils/exportDTime";
+import { exportToExcel } from "@/utils/exportDTime";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 
 interface TimeProps {
@@ -121,10 +116,6 @@ const Detailed = () => {
 
   const [selectedExportType, setSelectedExportType] = useState<string | null>(
     null
-  );
-
-  const allTasks = projectsWithTasks.flatMap((p) =>
-    (p.tasks || []).map((t) => ({ ...t, projectId: p.id }))
   );
 
   const refreshTimeEntries = useCallback(async () => {
@@ -281,7 +272,7 @@ const Detailed = () => {
   }) => {
     if (!user?.currentTeamId || selectedEntries.length === 0) return;
     try {
-      const response = await bulkUpdateTimeEntries(user?.currentTeamId, {
+      await bulkUpdateTimeEntries(user?.currentTeamId, {
         timeEntryIds: selectedEntries,
         updates: data,
       });

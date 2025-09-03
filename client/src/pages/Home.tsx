@@ -3,7 +3,6 @@ import FAQ from "@/components/Landing/FAQ";
 import Features from "@/components/Landing/Features";
 import Hero from "@/components/Landing/Hero";
 import Navbar from "@/components/Landing/Navbar";
-import React from "react";
 
 const Home = () => {
   return (

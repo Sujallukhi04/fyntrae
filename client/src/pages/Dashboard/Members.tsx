@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, act } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   UserPlus,
   Search,

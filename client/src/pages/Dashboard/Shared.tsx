@@ -1,13 +1,11 @@
 import { ReportModal } from "@/components/report/AddEditReport";
 import ReportTable from "@/components/report/ReportTable";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import useReport from "@/hooks/useReport";
 import { useAuth } from "@/providers/AuthProvider";
-import { useOrganization } from "@/providers/OrganizationProvider";
 import { format } from "date-fns";
 import { ChartNoAxesColumnDecreasing, ChevronRight } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const Shared = () => {
   const {

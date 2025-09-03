@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, UserCircle2, UserPlus } from "lucide-react";
+import { UserCircle2, UserPlus } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import useClient from "@/hooks/useClient";
 import ActiveClient from "@/components/clientsOrganation/ActiveClient";

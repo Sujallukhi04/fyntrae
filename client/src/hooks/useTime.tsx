@@ -1,7 +1,7 @@
 import { timeApi } from "@/lib/api";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import type { ProjectWithTasks, Tag, TimeEntry } from "@/types/project";
+import type { TimeEntry } from "@/types/project";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 

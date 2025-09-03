@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router";
-import { Info, Loader2, Mail, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import useLogin from "@/hooks/useLogin";
 import { toast } from "sonner";

@@ -6,16 +6,16 @@ export const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.response.use(
-  (res) => res,
+  (res) => res, // if success, just return the response
   (error) => {
-    if (error.response?.status === 429) {
-      console.warn("Rate limited. Redirecting to rate limit page.");
+    const status = error.response?.status;
 
+    if (status === 429) {
+      console.warn("Rate limited. Redirecting to rate limit page.");
       window.location.href = "/rate-limit";
 
       return new Promise(() => {});
     }
-
-    return Promise.reject(error);
+    return Promise.reject(error); // other errors
   }
 );

@@ -5,9 +5,7 @@ import {
   Download,
   User,
   FolderOpen,
-  Building2,
   CheckCircle2,
-  Tag,
   Folder,
   Currency,
   Save,
@@ -30,8 +28,8 @@ import useTimesummary from "@/hooks/useTimesummary";
 import { useAuth } from "@/providers/AuthProvider";
 
 import type { Client, Member } from "@/types/oraganization";
-import type { ProjectWithTasks, Report, Tag as TagType } from "@/types/project";
-import { format, set } from "date-fns";
+import type { ProjectWithTasks, Tag as TagType } from "@/types/project";
+import { format } from "date-fns";
 import ChartFilterModal from "@/components/reporting/ChartFilterModal";
 import { useOrgAccess } from "@/providers/OrgAccessProvider";
 import { toast } from "sonner";
@@ -107,6 +105,8 @@ const Overview = () => {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const appRef = useRef<{ generatePdf: () => Promise<void> }>(null);
+
+  console.log(isGeneratingPdf);
 
   useEffect(() => {
     const loadData = async () => {

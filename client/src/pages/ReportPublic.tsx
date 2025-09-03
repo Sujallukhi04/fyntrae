@@ -33,7 +33,7 @@ const ReportPublic = () => {
     return <NotFound />;
   }
 
-  const { name, description, properties, data, history_data } = reportData;
+  const { properties, data, history_data } = reportData;
 
   return (
     <div className="mx-auto max-w-7xl py-4 w-full space-y-4">
