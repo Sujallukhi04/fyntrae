@@ -19,11 +19,7 @@ import { db } from "./prismaClient";
 import { config } from "./config/config";
 import compression from "compression";
 import helmet from "helmet";
-import {
-  apiLimiter,
-  authLimiter,
-  globalLimiter,
-} from "./config/express_rate_limit";
+import { globalLimiter } from "./config/express_rate_limit";
 
 const app = express();
 const httpServer = createServer(app);
@@ -74,15 +70,15 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use("/api/auth", authLimiter, authRoutes);
-app.use("/api/organization", apiLimiter, organizationRoutes);
-app.use("/api/member", apiLimiter, memberRoutes);
-app.use("/api/client", apiLimiter, clientRoutes);
-app.use("/api/project", apiLimiter, projectRoutes);
-app.use("/api/time", apiLimiter, timeRoutes);
-app.use("/api/tag", apiLimiter, tagRoutes);
-app.use("/api/timesummary", apiLimiter, timeSummaryRoutes);
-app.use("/api/report", apiLimiter, reportRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/organization", organizationRoutes);
+app.use("/api/member", memberRoutes);
+app.use("/api/client", clientRoutes);
+app.use("/api/project", projectRoutes);
+app.use("/api/time", timeRoutes);
+app.use("/api/tag", tagRoutes);
+app.use("/api/timesummary", timeSummaryRoutes);
+app.use("/api/report", reportRoutes);
 
 app.use(errorHandler);
 

@@ -2,7 +2,7 @@ import { rateLimit } from "express-rate-limit";
 
 export const globalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  limit: 300, // 300 requests per IP per minute
+  limit: 500, // 500 requests per IP per minute
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." },

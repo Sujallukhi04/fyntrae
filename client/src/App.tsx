@@ -29,6 +29,7 @@ import ReportPublic from "./pages/ReportPublic";
 import VerifyPage from "./pages/Verification";
 import Reset from "./pages/Reset";
 import SetNewPassword from "./pages/NewPassword";
+import RateLimit from "./pages/RateLimit";
 
 const App = () => {
   const { isLoading, isAuthenticated } = useAuthUser();
@@ -181,7 +182,7 @@ const App = () => {
             !isAuthenticated ? <SetNewPassword /> : <Navigate to={"/"} />
           }
         />
-
+        <Route path="/rate-limit" element={<RateLimit />} />
         <Route
           path="/signup"
           element={!isAuthenticated ? <Signup /> : <Navigate to={"/"} />}
