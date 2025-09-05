@@ -176,7 +176,7 @@ const ReportPdf = forwardRef(
                 grid: { display: false },
                 ticks: {
                   autoSkip: true,
-                  maxTicksLimit: 7,
+                  maxTicksLimit: 7, // You can adjust this number
                   //@ts-ignore
                   callback: function (value: any, index: number, ticks: any[]) {
                     const label = this.getLabelForValue(value);
@@ -201,21 +201,23 @@ const ReportPdf = forwardRef(
               },
               datalabels: {
                 display: (context) =>
-                  (context.dataset.data[context.dataIndex] as number) > 0.1,
+                  //@ts-ignore
+                  context.dataset.data[context.dataIndex] > 0.1,
                 color: "#1f2937",
-                anchor: "end",
-                align: "end",
-                offset: 2,
+                anchor: "end", // Anchors outside the bar
+                align: "end", // Pushes label above the bar
+                offset: 2, // Space between bar and label
                 rotation: -90,
                 clamp: true,
                 clip: false,
+                //@ts-ignore
                 font: {
-                  weight: "bold", // "semibold" is invalid
+                  weight: "semibold",
                   size: 9,
                 },
-                formatter: (value: number) => {
+                formatter: (value) => {
                   if (value <= 0) return "";
-                  const totalSeconds = value * 3600;
+                  const totalSeconds = value * 3600; // Convert hours (float) to seconds
                   return formatTimeDuration(
                     totalSeconds,
                     timeTrackingData.intervalFormat
@@ -257,6 +259,8 @@ const ReportPdf = forwardRef(
               legend: {
                 display: false,
               },
+              //@ts-ignore
+              externalLabelsPlugin: false,
             },
           },
           plugins: [],
@@ -360,15 +364,15 @@ const ReportPdf = forwardRef(
         doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
 
-        const gState = new (jsPDF as any).GState({ opacity: 0.6 });
+        const gState = doc.GState({ opacity: 0.6 });
         doc.setGState(gState);
         doc.setTextColor(31, 41, 55);
 
         doc.text(`Duration`, cardX + cardPadding, cardY + 7);
         doc.text(`Total cost`, cardX + 37, cardY + 7);
 
-        const gsState = new (jsPDF as any).GState({ opacity: 1 });
-        doc.setGState(gsState);
+        //@ts-ignore
+        doc.setGState(new doc.GState({ opacity: 1 }));
 
         doc.setFontSize(15).setTextColor(0);
         doc.text(
@@ -591,7 +595,7 @@ const ReportPdf = forwardRef(
 
           currentY += 3;
 
-          // @ts-ignore (if types not fully compatible)
+          //@ts-ignore
           doc.autoTable({
             startY: currentY,
             margin: { left: 10, right: 10 },
@@ -620,8 +624,8 @@ const ReportPdf = forwardRef(
             showHead: "everyPage",
           });
 
-          const lastTable = (doc as any).lastAutoTable;
-          if (lastTable) currentY = lastTable.finalY + 14;
+          //@ts-ignore
+          currentY = doc.lastAutoTable.finalY + 14;
         });
 
         const pageCount = doc.getNumberOfPages();

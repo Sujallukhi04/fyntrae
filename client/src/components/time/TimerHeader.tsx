@@ -114,7 +114,7 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
   // Timer elapsed time calculation
   useEffect(() => {
     if (runningTimer) {
-      const startTime = Date.parse(runningTimer.start + "Z");
+      const startTime = new Date(runningTimer.start).getTime();
 
       const updateTimer = () => {
         const now = Date.now();

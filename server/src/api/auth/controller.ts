@@ -125,7 +125,7 @@ export const login = catchAsync(
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
-      sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax",
       maxAge: accessTokenExpiresIn,
       path: "/",
     });
@@ -133,7 +133,7 @@ export const login = catchAsync(
     res.cookie("refreshToken", refreshtoken, {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
-      sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax",
       maxAge: refreshTokenExpiresIn,
       path: "/api/auth",
     });
@@ -450,7 +450,7 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: config.NODE_ENV === "production",
-    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+    sameSite: "lax",
     maxAge: accessTokenExpiresIn,
     path: "/",
   });
@@ -458,7 +458,7 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
   res.cookie("refreshToken", refreshtoken, {
     httpOnly: true,
     secure: config.NODE_ENV === "production",
-    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+    sameSite: "lax",
     maxAge: dbToken.expiresAt.getTime() - Date.now(),
     path: "/api/auth",
   });
