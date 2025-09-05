@@ -32,7 +32,7 @@ const io = new Server(httpServer, {
 
 const PORT = config.PORT || 5000;
 
-app.use(helmet());
+// app.use(helmet());
 
 app.use(
   cors({

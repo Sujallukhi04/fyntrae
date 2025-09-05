@@ -15,7 +15,7 @@ export function TimerWidget() {
 
   useEffect(() => {
     if (runningTimer) {
-      const startTime = new Date(runningTimer.start).getTime();
+      const startTime = Date.parse(runningTimer.start + "Z");
 
       const updateTimer = () => {
         const now = Date.now();
