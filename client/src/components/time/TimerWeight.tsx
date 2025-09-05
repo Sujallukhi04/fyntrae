@@ -19,7 +19,8 @@ export function TimerWidget() {
 
       const updateTimer = () => {
         const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
+        let elapsed = Math.floor((now - startTime) / 1000);
+        if (elapsed < 0 || isNaN(elapsed)) elapsed = 0;
         setElapsedTime(elapsed);
       };
 
@@ -58,6 +59,7 @@ export function TimerWidget() {
   };
 
   const formatTime = (totalSeconds: number) => {
+    if (!totalSeconds || totalSeconds < 0) totalSeconds = 0;
     const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
     const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(
       2,

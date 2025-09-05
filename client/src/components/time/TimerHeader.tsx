@@ -37,6 +37,7 @@ interface TimerHeaderProps {
 }
 
 const formatDuration = (seconds: number) => {
+  if (seconds < 0 || isNaN(seconds)) seconds = 0;
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
@@ -118,7 +119,8 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
 
       const updateTimer = () => {
         const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
+        let elapsed = Math.floor((now - startTime) / 1000);
+        if (elapsed < 0) elapsed = 0;
         setElapsedTime(elapsed);
       };
 
