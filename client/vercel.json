@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://server-uhs4.onrender.com/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }

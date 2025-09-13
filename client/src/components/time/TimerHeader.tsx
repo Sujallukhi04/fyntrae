@@ -120,7 +120,7 @@ const TimerHeader: React.FC<TimerHeaderProps> = ({
       const updateTimer = () => {
         const now = Date.now();
         let elapsed = Math.floor((now - startTime) / 1000);
-        if (elapsed < 0) elapsed = 0;
+        if (elapsed < 0 || isNaN(elapsed)) elapsed = 0;
         setElapsedTime(elapsed);
       };
 
