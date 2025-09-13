@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://server-uhs4.onrender.com/$1"
+      "destination": "https://server-uhs4.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
