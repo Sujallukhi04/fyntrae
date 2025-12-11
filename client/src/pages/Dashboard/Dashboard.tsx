@@ -21,6 +21,7 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
+  
   return (
     <div className="min-h-screen">
       <SidebarNav>

@@ -262,7 +262,7 @@ const Client = () => {
   );
 
   return (
-    <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
+    <div className="py-2 w-full space-y-4">
       <div className="flex flex-col gap-3 pb-1 pt-1">
         <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
           <div className="flex items-center gap-2">

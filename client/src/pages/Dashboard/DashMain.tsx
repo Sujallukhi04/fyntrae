@@ -189,7 +189,7 @@ const DashMain = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
+    <div className="py-2 w-full space-y-4">
       <TimerHeader
         getCurrencyIcon={getCurrencyIcon}
         projectsWithTasks={projectsWithTasks}

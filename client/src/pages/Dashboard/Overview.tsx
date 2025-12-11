@@ -390,7 +390,7 @@ const Overview = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl py-2 w-full space-y-4">
+    <div className=" py-2 w-full space-y-4">
       <div className="flex flex-col gap-3 pt-1">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-5 w-full">

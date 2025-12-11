@@ -95,7 +95,7 @@ const Shared = () => {
 
   return (
     <>
-      <div className="mx-auto max-w-6xl py-3.5 w-full space-y-4">
+      <div className="py-3.5 w-full space-y-4">
         <div className="flex flex-col gap-4.5 pt-1">
           {/* Header */}
           <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
