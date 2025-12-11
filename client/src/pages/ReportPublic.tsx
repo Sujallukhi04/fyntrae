@@ -36,7 +36,7 @@ const ReportPublic = () => {
   const { properties, data, history_data } = reportData;
 
   return (
-    <div className="mx-auto max-w-7xl py-4 w-full space-y-4">
+    <div className="py-4 w-full space-y-4">
       <div className="flex flex-col gap-4 pt-1">
         {/* Header */}
         <div className="flex flex-col items-start px-5 md:flex-row md:items-center md:justify-between gap-2 w-full">
